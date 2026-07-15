@@ -1,0 +1,244 @@
+{
+  "title": "CableCrew Lakeside",
+  "updated": "15/7/2026, 14:33:56",
+  "shifts": [
+    {
+      "date": "2026-08-03",
+      "zone": "PRO",
+      "employee": "Guy",
+      "start": "08:30",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-03",
+      "zone": "ROOKIE",
+      "employee": "Guy G",
+      "start": "09:00",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-03",
+      "zone": "STANDBY",
+      "employee": "Arno",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-03",
+      "zone": "STANDBY",
+      "employee": "Simon",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-03",
+      "zone": "2.0",
+      "employee": "Stefanie",
+      "start": "11:30",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-03",
+      "zone": "PRO",
+      "employee": "Ibe",
+      "start": "15:00",
+      "end": "21:30"
+    },
+    {
+      "date": "2026-08-03",
+      "zone": "ROOKIE",
+      "employee": "Bas",
+      "start": "15:00",
+      "end": "22:00"
+    },
+    {
+      "date": "2026-08-03",
+      "zone": "2.0",
+      "employee": "Guy G",
+      "start": "15:00",
+      "end": "16:00"
+    },
+    {
+      "date": "2026-08-03",
+      "zone": "2.0",
+      "employee": "Stefanie",
+      "start": "16:00",
+      "end": "19:30"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "PRO",
+      "employee": "Axel",
+      "start": "08:30",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "ROOKIE",
+      "employee": "Ibe",
+      "start": "09:00",
+      "end": "12:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "STANDBY",
+      "employee": "Arno",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "STANDBY",
+      "employee": "Simon",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "STANDBY",
+      "employee": "Nick",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "2.0",
+      "employee": "Bas",
+      "start": "11:30",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "ROOKIE",
+      "employee": "Guy",
+      "start": "12:00",
+      "end": "14:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "ROOKIE",
+      "employee": "Simon",
+      "start": "14:00",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "PRO",
+      "employee": "Ibe",
+      "start": "15:00",
+      "end": "21:30"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "ROOKIE",
+      "employee": "Guy",
+      "start": "15:00",
+      "end": "22:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "2.0",
+      "employee": "Axel",
+      "start": "15:00",
+      "end": "16:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "2.0",
+      "employee": "Nick",
+      "start": "16:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-04",
+      "zone": "2.0",
+      "employee": "Bas",
+      "start": "17:00",
+      "end": "19:30"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "PRO",
+      "employee": "Bas",
+      "start": "08:30",
+      "end": "12:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "ROOKIE",
+      "employee": "Axel",
+      "start": "08:30",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "STANDBY",
+      "employee": "Nick",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "STANDBY",
+      "employee": "Simon",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "TT / OVERIG",
+      "employee": "Arno",
+      "start": "09:00",
+      "end": "17:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "2.0",
+      "employee": "Stefanie",
+      "start": "11:30",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "PRO",
+      "employee": "Guy",
+      "start": "12:00",
+      "end": "14:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "PRO",
+      "employee": "Nick",
+      "start": "14:00",
+      "end": "15:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "PRO",
+      "employee": "Guy",
+      "start": "15:00",
+      "end": "21:30"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "ROOKIE",
+      "employee": "Bas",
+      "start": "15:00",
+      "end": "22:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "2.0",
+      "employee": "Axel",
+      "start": "15:00",
+      "end": "16:00"
+    },
+    {
+      "date": "2026-08-05",
+      "zone": "2.0",
+      "employee": "Stefanie",
+      "start": "16:00",
+      "end": "19:30"
+    }
+  ]
+}
