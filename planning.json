@@ -1,6 +1,6 @@
 {
   "title": "CableCrew Lakeside",
-  "updated": "16/7/2026, 13:34:10",
+  "updated": "16/7/2026, 14:10:47",
   "shifts": [
     {
       "date": "2026-07-27",
@@ -670,7 +670,7 @@
     {
       "date": "2026-08-04",
       "zone": "ROOKIE",
-      "employee": "Simon",
+      "employee": "Arno",
       "start": "14:00",
       "end": "15:00"
     },
@@ -747,7 +747,7 @@
     {
       "date": "2026-08-05",
       "zone": "2.0",
-      "employee": "Stefanie",
+      "employee": "Simon",
       "start": "11:30",
       "end": "15:00"
     },
@@ -789,7 +789,7 @@
     {
       "date": "2026-08-05",
       "zone": "2.0",
-      "employee": "Stefanie",
+      "employee": "Nick",
       "start": "16:00",
       "end": "19:30"
     },
@@ -831,7 +831,7 @@
     {
       "date": "2026-08-06",
       "zone": "2.0",
-      "employee": "Stefanie",
+      "employee": "Simon",
       "start": "11:30",
       "end": "15:00"
     },
@@ -845,7 +845,7 @@
     {
       "date": "2026-08-06",
       "zone": "PRO",
-      "employee": "Simon",
+      "employee": "Arno",
       "start": "14:00",
       "end": "15:00"
     },
@@ -868,13 +868,13 @@
       "zone": "2.0",
       "employee": "Axel",
       "start": "15:00",
-      "end": "16:00"
+      "end": "17:00"
     },
     {
       "date": "2026-08-06",
       "zone": "2.0",
-      "employee": "Stefanie",
-      "start": "16:00",
+      "employee": "Simon",
+      "start": "17:00",
       "end": "19:30"
     },
     {
@@ -1008,7 +1008,7 @@
       "zone": "PRO",
       "employee": "Axel",
       "start": "14:00",
-      "end": "19:00"
+      "end": "17:30"
     },
     {
       "date": "2026-08-08",
@@ -1481,10 +1481,10 @@
     },
     {
       "date": "2026-08-14",
-      "zone": "2.0",
-      "employee": "Stefanie",
-      "start": "11:30",
-      "end": "15:00"
+      "zone": "ROOKIE",
+      "employee": "Simon",
+      "start": "15:00",
+      "end": "16:00"
     },
     {
       "date": "2026-08-14",
@@ -1516,13 +1516,6 @@
     },
     {
       "date": "2026-08-14",
-      "zone": "2.0",
-      "employee": "Stefanie",
-      "start": "16:00",
-      "end": "19:30"
-    },
-    {
-      "date": "2026-08-14",
       "zone": "PRO",
       "employee": "Axel",
       "start": "17:00",
@@ -1547,7 +1540,7 @@
       "zone": "ROOKIE",
       "employee": "Guy G",
       "start": "10:00",
-      "end": "16:00"
+      "end": "22:00"
     },
     {
       "date": "2026-08-15",
@@ -1583,13 +1576,6 @@
       "employee": "Axel",
       "start": "16:00",
       "end": "19:00"
-    },
-    {
-      "date": "2026-08-15",
-      "zone": "ROOKIE",
-      "employee": "Guy G",
-      "start": "16:00",
-      "end": "22:00"
     },
     {
       "date": "2026-08-15",
