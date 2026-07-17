@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123e5a"><title>CableCrew Lakeside</title>
+<style>
+:root{--navy:#123e5a;--bg:#f4f7f9;--card:#fff;--text:#17212b;--muted:#667085;--line:#d9e1e7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+header{background:linear-gradient(135deg,var(--navy),#17617b);color:#fff;padding:18px 16px}
+.brand,main{max-width:1200px;margin:auto}.brand{display:flex;justify-content:space-between;gap:12px;align-items:center}
+h1{margin:0}.controls{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+select,button{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}
+.zones{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.zone{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.zone h2{margin:-14px -14px 10px;padding:10px 14px;border-radius:14px 14px 0 0}
+.pro h2{background:#f4cccc}.rookie h2{background:#d9ead3}.two h2{background:#cfe2f3}.standby h2{background:#fff2cc}.foil h2{background:#eadcf8}.tt h2{background:#fce5cd}
+.shift{padding:9px 0;border-bottom:1px solid #edf1f4}.shift:last-child{border:0}.mainline{display:flex;justify-content:space-between;gap:12px}.time{font-weight:700}.note{margin-top:4px;color:var(--muted);font-size:13px;font-style:italic}
+.empty{color:var(--muted);font-style:italic}
+@media(max-width:700px){.zones{grid-template-columns:1fr}.controls select,.controls button{width:100%}.brand{align-items:flex-start;flex-direction:column}.mainline{display:block}.time{display:block;margin-top:2px}}
+</style></head><body>
+<header><div class="brand"><div><h1>⚡ CableCrew Lakeside</h1><small>Crew planning</small></div><div id="updated"></div></div></header>
+<main><div class="controls"><select id="date"></select><select id="employee"><option value="">Volledige planning</option></select><button onclick="window.print()">Afdrukken</button></div>
+<div class="zones">
+<section class="zone pro"><h2>PRO</h2><div id="PRO"></div></section>
+<section class="zone rookie"><h2>ROOKIE</h2><div id="ROOKIE"></div></section>
+<section class="zone two"><h2>2.0</h2><div id="2.0"></div></section>
+<section class="zone standby"><h2>STAND-BY</h2><div id="STANDBY"></div></section>
+<section class="zone foil"><h2>FOIL</h2><div id="FOIL"></div></section>
+<section class="zone tt"><h2>TT / SP / KIDSSESSION</h2><div id="TT / SP / KIDSSESSION"></div></section>
+</div></main>
+<script>
+let shifts=[];const $=id=>document.getElementById(id);
+const label=d=>new Date(d+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+fetch("planning.json?"+Date.now()).then(r=>r.json()).then(data=>{
+ shifts=(data.shifts||[]).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
+ updated.textContent="Bijgewerkt: "+(data.updated||"");
+ const dates=[...new Set(shifts.map(x=>x.date))].sort(); date.innerHTML=dates.map(d=>`<option value="${d}">${label(d)}</option>`).join("");
+ const people=[...new Set(shifts.map(x=>x.employee))].sort(); employee.innerHTML='<option value="">Volledige planning</option>'+people.map(p=>`<option>${p}</option>`).join("");
+ date.onchange=render;employee.onchange=render;render();
+});
+function card(x){return `<div class="shift"><div class="mainline"><span>${x.employee}</span><span class="time">${x.start}–${x.end}</span></div>${x.note?`<div class="note">${x.note}</div>`:""}</div>`}
+function render(){
+ const d=date.value,p=employee.value;
+ ["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"].forEach(z=>{
+  const list=shifts.filter(x=>x.date===d&&x.zone===z&&(!p||x.employee===p));
+  $(z).innerHTML=list.length?list.map(card).join(""):'<div class="empty">Nog niemand ingepland</div>';
+ });
+}
+</script></body></html>
