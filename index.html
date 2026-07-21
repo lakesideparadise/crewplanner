@@ -3,188 +3,97 @@
 <meta name="theme-color" content="#123e5a"><title>CableCrew Lakeside</title>
 <style>
 :root{--navy:#123e5a;--bg:#f4f7f9;--card:#fff;--text:#17212b;--muted:#667085;--line:#d9e1e7}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}header{background:linear-gradient(135deg,var(--navy),#17617b);color:#fff;padding:18px 16px}.brand,main{max-width:1280px;margin:auto}.brand{display:flex;justify-content:space-between;gap:12px;align-items:center}h1{margin:0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}select,button,input{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}button{cursor:pointer;font-weight:700}button:hover{filter:brightness(.97)}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #9fc5d8;outline-offset:2px}.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.viewbtn.active{background:var(--navy);color:#fff}.panel{display:none}.panel.active{display:block}.zones{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.zone,.week-day,.month-cell{background:var(--card);border:1px solid var(--line);border-radius:14px}.zone{padding:14px}.zone h2{margin:-14px -14px 10px;padding:10px 14px;border-radius:14px 14px 0 0}.pro h2,.pro-label{background:#f4cccc}.rookie h2,.rookie-label{background:#d9ead3}.two h2,.two-label{background:#cfe2f3}.standby h2,.standby-label{background:#fff2cc}.foil h2,.foil-label{background:#eadcf8}.tt h2,.tt-label{background:#fce5cd}.shift{padding:9px 0;border-bottom:1px solid #edf1f4}.mainline{display:flex;justify-content:space-between;gap:12px}.time{font-weight:700}.note{margin-top:4px;color:var(--muted);font-size:13px;font-style:italic}.empty{color:var(--muted);font-style:italic;padding:8px 0}.week-grid{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px}.week-day{min-width:180px;padding:10px}.week-day h3{margin:0 0 10px;font-size:16px}.week-zone{margin-bottom:10px}.week-zone-title{font-size:12px;font-weight:700;padding:5px 7px;border-radius:7px;margin-bottom:3px}.week-item{font-size:13px;padding:4px 0;border-bottom:1px solid #edf1f4}.week-note{font-size:11px;color:var(--muted);font-style:italic}.month-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.weekday{font-weight:700;text-align:center;padding:7px;color:var(--muted)}.month-cell{min-height:150px;padding:9px;cursor:pointer}.month-cell:hover{outline:2px solid #9fc5d8}.month-cell.outside{opacity:.35}.daynum{font-weight:700;margin-bottom:7px}.month-zone{font-size:12px;margin:3px 0;padding:3px 5px;border-radius:6px;display:flex;justify-content:space-between}.legend{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.legend span{padding:5px 8px;border-radius:7px;font-size:12px}@media(max-width:900px){.zones{grid-template-columns:1fr}.month-cell{min-height:110px}}@media(max-width:650px){.brand{align-items:flex-start;flex-direction:column}.toolbar select,.toolbar button{width:100%}.mainline{display:block}.time{display:block;margin-top:2px}.month-grid{gap:4px}.month-cell{min-height:82px;padding:5px}.month-zone{font-size:10px}.weekday{font-size:11px;padding:3px}}@page{size:A4 landscape;margin:7mm}
-.print-only{display:none}.status{max-width:1280px;margin:10px auto;padding:10px 14px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--muted)}
-.print-options{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:14px}
-.print-options label{font-size:13px;font-weight:700}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}header{background:linear-gradient(135deg,var(--navy),#17617b);color:#fff;padding:18px 16px}.brand,main{max-width:1280px;margin:auto}.brand{display:flex;justify-content:space-between;gap:12px;align-items:center}h1{margin:0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}select,button{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;cursor:pointer}.viewbtn.active{background:var(--navy);color:#fff}.panel{display:none}.panel.active{display:block}.zones{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.zone,.week-day,.month-cell{background:var(--card);border:1px solid var(--line);border-radius:14px}.zone{padding:14px}.zone h2{margin:-14px -14px 10px;padding:10px 14px;border-radius:14px 14px 0 0}.pro h2,.pro-label{background:#f4cccc}.rookie h2,.rookie-label{background:#d9ead3}.two h2,.two-label{background:#cfe2f3}.standby h2,.standby-label{background:#fff2cc}.foil h2,.foil-label{background:#eadcf8}.tt h2,.tt-label{background:#fce5cd}.shift{padding:9px 0;border-bottom:1px solid #edf1f4}.mainline{display:flex;justify-content:space-between;gap:12px}.time{font-weight:700}.note{margin-top:4px;color:var(--muted);font-size:13px;font-style:italic}.empty{color:var(--muted);font-style:italic;padding:8px 0}.week-grid{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px}.week-day{min-width:180px;padding:10px}.week-day h3{margin:0 0 10px;font-size:16px}.week-zone{margin-bottom:10px}.week-zone-title{font-size:12px;font-weight:700;padding:5px 7px;border-radius:7px;margin-bottom:3px}.week-item{font-size:13px;padding:4px 0;border-bottom:1px solid #edf1f4}.week-note{font-size:11px;color:var(--muted);font-style:italic}.month-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.weekday{font-weight:700;text-align:center;padding:7px;color:var(--muted)}.month-cell{min-height:150px;padding:9px;cursor:pointer}.month-cell:hover{outline:2px solid #9fc5d8}.month-cell.outside{opacity:.35}.daynum{font-weight:700;margin-bottom:7px}.month-zone{font-size:12px;margin:3px 0;padding:3px 5px;border-radius:6px;display:flex;justify-content:space-between}.legend{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.legend span{padding:5px 8px;border-radius:7px;font-size:12px}@media(max-width:900px){.zones{grid-template-columns:1fr}.month-cell{min-height:110px}}@media(max-width:650px){.brand{align-items:flex-start;flex-direction:column}.toolbar select,.toolbar button{width:100%}.mainline{display:block}.time{display:block;margin-top:2px}.month-grid{gap:4px}.month-cell{min-height:82px;padding:5px}.month-zone{font-size:10px}.weekday{font-size:11px;padding:3px}}
+.print-only{display:none}
+@page{size:A4 landscape;margin:0}
 @media print{
-  html,body{width:297mm;height:auto;background:#fff!important}
-  header,.toolbar,.panel,.print-options{display:none!important}
+  html,body{width:297mm;background:#fff!important}
+  header,.toolbar,.panel{display:none!important}
   main{max-width:none;margin:0;padding:0}
-  #multiPrint.print-only{display:block!important}
-  .print-week{
-    width:297mm;height:210mm;min-height:210mm;
-    padding:7mm;margin:0;background:#fff;overflow:hidden;
-    page-break-after:always;break-after:page;color:#111
+  #printWeek.print-only{display:block!important}
+  .print-page{
+    width:297mm;height:210mm;box-sizing:border-box;
+    padding:7mm;background:#fff;overflow:hidden;
   }
-  .print-week:last-child{page-break-after:auto;break-after:auto}
-  .print-week-title{font-size:15pt;font-weight:800;margin:0 0 1mm}
-  .print-week-subtitle{font-size:8pt;color:#444;margin-bottom:3mm}
-  .print-card-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2.4mm;height:183mm}
-  .print-day-card{border:.25mm solid #cbd5df;border-radius:3mm;padding:2.2mm;overflow:hidden;min-width:0}
-  .print-day-title{font-size:9.5pt;font-weight:800;margin:0 0 2mm;white-space:nowrap}
-  .print-zone{margin-bottom:1.6mm}
-  .print-zone-title{font-size:6.8pt;font-weight:800;padding:1.1mm 1.4mm;border-radius:1.5mm;margin-bottom:.5mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .print-entry{font-size:6.2pt;line-height:1.12;padding:.55mm 0;border-bottom:.2mm solid #e5ebf0}
-  .print-entry:last-child{border-bottom:0}
-  .print-entry-name{font-weight:800}
-  .print-entry-note{font-size:5.2pt;font-style:italic;color:#555;margin-top:.2mm}
-  .print-empty{font-size:6pt;color:#999;font-style:italic}
+  .print-title{font-size:15pt;font-weight:800;margin:0 0 4mm}
+  .print-grid{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:2.5mm;
+    height:184mm;align-items:stretch
+  }
+  .print-day{
+    border:.25mm solid #d9e1e7;border-radius:3mm;
+    padding:2.2mm;overflow:hidden;min-width:0;background:#fff
+  }
+  .print-day h3{
+    font-size:9.5pt;margin:0 0 2mm;white-space:nowrap
+  }
+  .print-zone{margin-bottom:1.7mm}
+  .print-zone-title{
+    font-size:6.8pt;font-weight:800;padding:1.1mm 1.4mm;
+    border-radius:1.5mm;margin-bottom:.5mm;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis
+  }
+  .print-item{
+    font-size:6.2pt;line-height:1.12;padding:.55mm 0;
+    border-bottom:.2mm solid #edf1f4
+  }
+  .print-item:last-child{border-bottom:0}
+  .print-note{font-size:5.2pt;color:#667085;font-style:italic;margin-top:.2mm}
+  .print-empty{font-size:6pt;color:#667085;font-style:italic}
 }
 </style></head><body>
 <header><div class="brand"><div><h1>⚡ CableCrew Lakeside</h1><small>Crew planning</small></div><div id="updated"></div></div></header>
-<main>
-<div class="toolbar" aria-label="Hoofdnavigatie">
-  <button class="viewbtn active" data-view="day">Dag</button>
-  <button class="viewbtn" data-view="week">Week</button>
-  <button class="viewbtn" data-view="month">Maand</button>
-  <button id="todayBtn">Vandaag</button>
-  <button id="thisWeekBtn">Deze week</button>
-  <select id="date" aria-label="Kies datum"></select>
-  <select id="employee" aria-label="Filter op medewerker"><option value="">Iedereen</option></select>
-  <button id="singleWeekPrint" class="primary">Week afdrukken</button>
-  <label style="display:inline-flex;align-items:center;gap:7px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer">
-    Planning kiezen
-    <input id="jsonFile" type="file" accept=".json,application/json" style="display:none">
-  </label>
-</div>
-<div class="print-options">
-  <label for="printFrom">Print Center — meerdere weken:</label>
-  <select id="printFrom" aria-label="Eerste week"></select>
-  <span>tot en met</span>
-  <select id="printTo" aria-label="Laatste week"></select>
-  <button id="multiWeekPrint">Geselecteerde weken afdrukken</button>
-</div>
-<div id="multiPrint" class="print-only"></div>
+<main><div class="toolbar"><button class="viewbtn active" data-view="day">Dag</button><button class="viewbtn" data-view="week">Week</button><button class="viewbtn" data-view="month">Maand</button><select id="date"></select><select id="employee"><option value="">Volledige planning</option></select><button id="printWeekBtn">Week afdrukken</button></div>
 <section id="dayPanel" class="panel active"><div class="zones"><section class="zone pro"><h2>PRO</h2><div id="day-PRO"></div></section><section class="zone rookie"><h2>ROOKIE</h2><div id="day-ROOKIE"></div></section><section class="zone two"><h2>2.0</h2><div id="day-2.0"></div></section><section class="zone standby"><h2>STAND-BY</h2><div id="day-STANDBY"></div></section><section class="zone foil"><h2>FOIL</h2><div id="day-FOIL"></div></section><section class="zone tt"><h2>TT / SP / KIDSSESSION</h2><div id="day-TT / SP / KIDSSESSION"></div></section></div></section>
 <section id="weekPanel" class="panel"><div id="weekTitle" style="font-weight:700;margin:6px 0 12px"></div><div id="weekGrid" class="week-grid"></div></section>
-<section id="monthPanel" class="panel"><div class="month-head"><button id="prevMonth">←</button><strong id="monthTitle"></strong><button id="nextMonth">→</button></div><div class="legend"><span class="pro-label">PRO</span><span class="rookie-label">ROOKIE</span><span class="two-label">2.0</span><span class="standby-label">STAND-BY</span><span class="foil-label">FOIL</span><span class="tt-label">TT/SP/KIDS</span></div><div class="month-grid"><div class="weekday">Ma</div><div class="weekday">Di</div><div class="weekday">Wo</div><div class="weekday">Do</div><div class="weekday">Vr</div><div class="weekday">Za</div><div class="weekday">Zo</div></div><div id="monthGrid" class="month-grid"></div></section></main>
+<section id="monthPanel" class="panel"><div class="month-head"><button id="prevMonth">←</button><strong id="monthTitle"></strong><button id="nextMonth">→</button></div><div class="legend"><span class="pro-label">PRO</span><span class="rookie-label">ROOKIE</span><span class="two-label">2.0</span><span class="standby-label">STAND-BY</span><span class="foil-label">FOIL</span><span class="tt-label">TT/SP/KIDS</span></div><div class="month-grid"><div class="weekday">Ma</div><div class="weekday">Di</div><div class="weekday">Wo</div><div class="weekday">Do</div><div class="weekday">Vr</div><div class="weekday">Za</div><div class="weekday">Zo</div></div><div id="monthGrid" class="month-grid"></div></section><div id="printWeek" class="print-only"></div></main>
 <script>
 let shifts=[],currentMonth=null;const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"];const zoneClass={"PRO":"pro-label","ROOKIE":"rookie-label","2.0":"two-label","STANDBY":"standby-label","FOIL":"foil-label","TT / SP / KIDSSESSION":"tt-label"};const $=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));const label=d=>new Date(d+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-fetch("planning.json?"+Date.now()).then(r=>{if(!r.ok)throw new Error("planning.json niet gevonden");return r.json()}).then(data=>{shifts=(data.shifts||[]).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));$("updated").textContent="Bijgewerkt: "+(data.updated||"");const dates=[...new Set(shifts.map(x=>x.date))].sort();$("date").innerHTML=dates.map(d=>`<option value="${d}">${label(d)}</option>`).join("");const people=[...new Set(shifts.map(x=>x.employee))].sort();$("employee").innerHTML='<option value="">Iedereen</option>'+people.map(p=>`<option>${esc(p)}</option>`).join("");if(dates.length){currentMonth=new Date(dates[0]+"T12:00:00");fillWeekSelectors();renderAll()}}).catch(err=>{$("updated").textContent="Kies planning.json via de knop Planning kiezen";console.warn(err);});
+fetch("planning.json?"+Date.now()).then(r=>{if(!r.ok)throw new Error("planning.json niet gevonden");return r.json()}).then(data=>{shifts=(data.shifts||[]).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));$("updated").textContent="Bijgewerkt: "+(data.updated||"");const dates=[...new Set(shifts.map(x=>x.date))].sort();$("date").innerHTML=dates.map(d=>`<option value="${d}">${label(d)}</option>`).join("");const people=[...new Set(shifts.map(x=>x.employee))].sort();$("employee").innerHTML='<option value="">Volledige planning</option>'+people.map(p=>`<option>${esc(p)}</option>`).join("");if(dates.length){currentMonth=new Date(dates[0]+"T12:00:00");renderAll()}}).catch(err=>{document.querySelector("main").innerHTML="<p><b>Fout:</b> "+esc(err.message)+"</p>"});
 document.querySelectorAll(".viewbtn").forEach(btn=>btn.onclick=()=>{document.querySelectorAll(".viewbtn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));$(btn.dataset.view+"Panel").classList.add("active");renderAll()});$("date").onchange=()=>{const d=new Date($("date").value+"T12:00:00");currentMonth=new Date(d.getFullYear(),d.getMonth(),1);renderAll()};$("employee").onchange=renderAll;$("prevMonth").onclick=()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()-1,1);renderMonth()};$("nextMonth").onclick=()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+1,1);renderMonth()};
 function filtered(){const p=$("employee").value;return shifts.filter(x=>!p||x.employee===p)}function shiftCard(x){return `<div class="shift"><div class="mainline"><span>${esc(x.employee)}</span><span class="time">${esc(x.start)}–${esc(x.end)}</span></div>${x.note?`<div class="note">${esc(x.note)}</div>`:""}</div>`}function renderDay(){const d=$("date").value,list=filtered();zones.forEach(z=>{const rows=list.filter(x=>x.date===d&&x.zone===z);$("day-"+z).innerHTML=rows.length?rows.map(shiftCard).join(""):'<div class="empty">Nog niemand ingepland</div>'})}function mondayOf(dateStr){const d=new Date(dateStr+"T12:00:00"),day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return d}
 function renderWeek(){const start=mondayOf($("date").value),end=new Date(start);end.setDate(end.getDate()+6);$("weekTitle").textContent=start.toLocaleDateString("nl-BE",{day:"numeric",month:"long"})+" – "+end.toLocaleDateString("nl-BE",{day:"numeric",month:"long",year:"numeric"});const list=filtered();$("weekGrid").innerHTML="";for(let i=0;i<7;i++){const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);let content=`<h3>${d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"numeric"})}</h3>`;zones.forEach(z=>{const rows=list.filter(x=>x.date===dk&&x.zone===z);if(rows.length){content+=`<div class="week-zone"><div class="week-zone-title ${zoneClass[z]}">${esc(z)}</div>`+rows.map(x=>`<div class="week-item"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?`<div class="week-note">${esc(x.note)}</div>`:""}</div>`).join("")+"</div>"}});if(!list.some(x=>x.date===dk))content+='<div class="empty">Geen planning</div>';const el=document.createElement("section");el.className="week-day";el.innerHTML=content;el.onclick=()=>{const opts=[...$("date").options].map(o=>o.value);if(opts.includes(dk)){$("date").value=dk;document.querySelector('[data-view="day"]').click()}};$("weekGrid").appendChild(el)}}
 function renderMonth(){if(!currentMonth)return;$("monthTitle").textContent=currentMonth.toLocaleDateString("nl-BE",{month:"long",year:"numeric"});const list=filtered(),first=new Date(currentMonth.getFullYear(),currentMonth.getMonth(),1),start=new Date(first);start.setDate(start.getDate()-((start.getDay()+6)%7));$("monthGrid").innerHTML="";for(let i=0;i<42;i++){const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d),outside=d.getMonth()!==currentMonth.getMonth(),rows=list.filter(x=>x.date===dk);let body=`<div class="daynum">${d.getDate()}</div>`;zones.forEach(z=>{const zr=rows.filter(x=>x.zone===z);if(zr.length)body+=`<div class="month-zone ${zoneClass[z]}"><span>${z==="TT / SP / KIDSSESSION"?"TT/SP/KIDS":esc(z)}</span><b>${zr.length}</b></div>`});const cell=document.createElement("div");cell.className="month-cell"+(outside?" outside":"");cell.innerHTML=body;cell.onclick=()=>{const opts=[...$("date").options].map(o=>o.value);if(opts.includes(dk)){$("date").value=dk;currentMonth=new Date(d.getFullYear(),d.getMonth(),1);document.querySelector('[data-view="day"]').click()}};$("monthGrid").appendChild(cell)}}
-function weekKeyFromDate(dateStr){
-  return key(mondayOf(dateStr));
-}
 function weekNumber(d){
   const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
   const day=x.getUTCDay()||7;
   x.setUTCDate(x.getUTCDate()+4-day);
-  const yearStart=new Date(Date.UTC(x.getUTCFullYear(),0,1));
-  return Math.ceil((((x-yearStart)/86400000)+1)/7);
-}
-function availableWeeks(){
-  return [...new Set(shifts.map(x=>weekKeyFromDate(x.date)))].sort();
-}
-function fillWeekSelectors(){
-  const weeks=availableWeeks();
-  const options=weeks.map(w=>{
-    const s=new Date(w+"T12:00:00"),e=new Date(s);e.setDate(e.getDate()+6);
-    const labelText=`Week ${weekNumber(s)} — ${s.toLocaleDateString("nl-BE",{day:"numeric",month:"short"})} t.e.m. ${e.toLocaleDateString("nl-BE",{day:"numeric",month:"short",year:"numeric"})}`;
-    return `<option value="${w}">${labelText}</option>`;
-  }).join("");
-  $("printFrom").innerHTML=options;
-  $("printTo").innerHTML=options;
-  if(weeks.length){
-    const selected=weekKeyFromDate($("date").value||weeks[0]);
-    $("printFrom").value=selected;
-    $("printTo").value=selected;
-  }
+  const y=new Date(Date.UTC(x.getUTCFullYear(),0,1));
+  return Math.ceil((((x-y)/86400000)+1)/7);
 }
 function printZoneName(z){
-  return z==="TT / SP / KIDSSESSION"?"TT / SP / KIDS":z;
+  if(z==="STANDBY") return "STAND-BY";
+  if(z==="TT / SP / KIDSSESSION") return "TT / SP / KIDSSESSION";
+  return z;
 }
-function makePrintWeek(startKey){
-  const start=new Date(startKey+"T12:00:00"),end=new Date(start);end.setDate(end.getDate()+6);
+function buildPrintWeek(){
+  const start=mondayOf($("date").value),end=new Date(start);
+  end.setDate(end.getDate()+6);
   const list=filtered();
-  let html=`<article class="print-week">
-    <div class="print-week-title">CableCrew Lakeside — Week ${weekNumber(start)}</div>
-    <div class="print-week-subtitle">${start.toLocaleDateString("nl-BE",{day:"numeric",month:"long",year:"numeric"})} t.e.m. ${end.toLocaleDateString("nl-BE",{day:"numeric",month:"long",year:"numeric"})}</div>
-    <div class="print-card-grid">`;
+  let html=`<section class="print-page">
+    <div class="print-title">CableCrew Lakeside — Week ${weekNumber(start)} · ${start.toLocaleDateString("nl-BE",{day:"numeric",month:"long"})} – ${end.toLocaleDateString("nl-BE",{day:"numeric",month:"long",year:"numeric"})}</div>
+    <div class="print-grid">`;
   for(let i=0;i<7;i++){
-    const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);
-    html+=`<section class="print-day-card"><div class="print-day-title">${d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"numeric"})}</div>`;
+    const d=new Date(start);d.setDate(d.getDate()+i);
+    const dk=key(d);
+    html+=`<section class="print-day"><h3>${d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"numeric"})}</h3>`;
     zones.forEach(z=>{
       const rows=list.filter(x=>x.date===dk&&x.zone===z);
       if(rows.length){
         html+=`<div class="print-zone"><div class="print-zone-title ${zoneClass[z]}">${esc(printZoneName(z))}</div>`;
-        html+=rows.map(x=>`<div class="print-entry"><span class="print-entry-name">${esc(x.employee)}</span> ${esc(x.start)}–${esc(x.end)}${x.note?`<div class="print-entry-note">${esc(x.note)}</div>`:""}</div>`).join("");
+        html+=rows.map(x=>`<div class="print-item"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?`<div class="print-note">${esc(x.note)}</div>`:""}</div>`).join("");
         html+=`</div>`;
       }
     });
-    if(!list.some(x=>x.date===dk))html+=`<div class="print-empty">Geen planning</div>`;
+    if(!list.some(x=>x.date===dk)) html+=`<div class="print-empty">Geen planning</div>`;
     html+=`</section>`;
   }
-  html+=`</div></article>`;
-  return html;
+  html+=`</div></section>`;
+  $("printWeek").innerHTML=html;
 }
-function buildMultiWeekPrint(fromKey,toKey){
-  const weeks=availableWeeks();
-  let a=weeks.indexOf(fromKey),b=weeks.indexOf(toKey);
-  if(a<0||b<0)return false;
-  if(a>b)[a,b]=[b,a];
-  $("multiPrint").innerHTML=weeks.slice(a,b+1).map(makePrintWeek).join("");
-  return true;
-}
-function printWeeks(fromKey,toKey){
-  if(!buildMultiWeekPrint(fromKey,toKey))return;
-  document.body.classList.add("printing-weeks");
+$("printWeekBtn").onclick=()=>{
+  buildPrintWeek();
   window.print();
-}
-window.addEventListener("afterprint",()=>document.body.classList.remove("printing-weeks"));
-$("singleWeekPrint").onclick=()=>{
-  const wk=weekKeyFromDate($("date").value);
-  printWeeks(wk,wk);
-};
-$("multiWeekPrint").onclick=()=>printWeeks($("printFrom").value,$("printTo").value);
-$("printFrom").onchange=()=>{
-  const weeks=availableWeeks();
-  if(weeks.indexOf($("printTo").value)<weeks.indexOf($("printFrom").value)){
-    $("printTo").value=$("printFrom").value;
-  }
-};
-
-
-function selectClosestDate(targetKey){
-  const dates=[...$("date").options].map(o=>o.value);
-  if(!dates.length)return;
-  let chosen=dates.includes(targetKey)?targetKey:dates.reduce((best,d)=>
-    Math.abs(new Date(d)-new Date(targetKey))<Math.abs(new Date(best)-new Date(targetKey))?d:best,dates[0]);
-  $("date").value=chosen;
-  const dt=new Date(chosen+"T12:00:00");
-  currentMonth=new Date(dt.getFullYear(),dt.getMonth(),1);
-}
-$("todayBtn").onclick=()=>{
-  selectClosestDate(key(new Date()));
-  document.querySelector('[data-view="day"]').click();
-};
-$("thisWeekBtn").onclick=()=>{
-  selectClosestDate(key(new Date()));
-  document.querySelector('[data-view="week"]').click();
-};
-$("jsonFile").onchange=e=>{
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try{
-      const data=JSON.parse(reader.result);
-      shifts=(data.shifts||[]).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
-      $("updated").textContent="Lokale planning: "+file.name;
-      const dates=[...new Set(shifts.map(x=>x.date))].sort();
-      $("date").innerHTML=dates.map(d=>`<option value="${d}">${label(d)}</option>`).join("");
-      const people=[...new Set(shifts.map(x=>x.employee))].sort();
-      $("employee").innerHTML='<option value="">Iedereen</option>'+people.map(p=>`<option>${esc(p)}</option>`).join("");
-      if(dates.length){
-        selectClosestDate(key(new Date()));
-        currentMonth=new Date($("date").value+"T12:00:00");
-        fillWeekSelectors();renderAll();
-      }
-    }catch(err){alert("Dit bestand is geen geldige planning.json.");}
-  };
-  reader.readAsText(file);
 };
 
 function renderAll(){renderDay();renderWeek();renderMonth()}
