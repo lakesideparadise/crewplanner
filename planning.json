@@ -1,6 +1,6 @@
 {
   "title": "CableCrew Lakeside",
-  "updated": "23/7/2026, 13:57:14",
+  "updated": "23/7/2026, 15:30:29",
   "shifts": [
     {
       "date": "2026-07-27",
@@ -84,11 +84,19 @@
     },
     {
       "date": "2026-07-28",
-      "zone": "PRO",
+      "zone": "FOIL",
       "employee": "Axel",
       "start": "08:30",
-      "end": "09:45",
-      "note": "optioneel (10-12 2.0)"
+      "end": "12:00",
+      "note": "optioneel"
+    },
+    {
+      "date": "2026-07-28",
+      "zone": "PRO",
+      "employee": "Simon",
+      "start": "08:30",
+      "end": "12:15",
+      "note": "optioneel (8:30-10u pro)"
     },
     {
       "date": "2026-07-28",
@@ -133,18 +141,10 @@
     {
       "date": "2026-07-28",
       "zone": "PRO",
-      "employee": "Simon",
-      "start": "09:45",
-      "end": "12:15",
-      "note": "optioneel (10-12 pro)"
-    },
-    {
-      "date": "2026-07-28",
-      "zone": "FOIL",
       "employee": "Axel",
       "start": "10:00",
       "end": "12:00",
-      "note": "optioneel"
+      "note": "optioneel (8:30-12u  pro)"
     },
     {
       "date": "2026-07-28",
