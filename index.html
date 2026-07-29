@@ -197,7 +197,24 @@ body.admin-active .shift:hover{background:#fff8e8}
 .message-item.direct{border-left:5px solid #7c3aed}
 .message-item.direct.unread{background:#f5f0ff}
 
+
+.identity-hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.3}
+.identity-hint.known{color:#287a52;font-weight:800}
+
+
+.logbook-btn.has-unread{background:#fff0f0;border-color:#e58b8b;color:#8f1d1d}
+.message-item.shift-system{border-left:5px solid #f59e0b;background:#fffaf0}
+.message-item.shift-system.unread{background:#fff3d9}
 </style>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0f4b6d">
+<meta name="application-name" content="CableCrew">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CableCrew">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -212,6 +229,7 @@ body.admin-active .shift:hover{background:#fff8e8}
   <div class="quickcard">
   <div class="quicktitle">👤 Mijn planning</div>
   <div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div>
+  <div id="identityHint" class="identity-hint"></div>
   <button id="notifyBtn" class="notify-btn">🔔 Meldingen aanzetten</button>
   <div id="notifyStatus" class="notify-status"></div>
 </div>
@@ -241,6 +259,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button class="viewbtn active" data-view="day">Dag</button>
     <button class="viewbtn" data-view="week">Week</button>
     <select id="date"></select>
+    <button id="installAppBtn" style="display:none">📲 Installeer app</button>
     <button id="messagesBtn" class="messages-btn">📥 Inbox <span id="msgBadge" class="msg-badge" style="display:none">0</span></button>
     <div class="admin-login"><button id="loginBtn">🔐 Beheer login</button></div>
   </div>
@@ -253,7 +272,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button id="copyWeekBtn">Week kopiëren</button>
     <button id="yearPlannerBtn">📅 Jaarplanning</button>
     <button id="archiveBtn">🗂️ Verleden</button>
-    <button id="changeLogBtn">📒 Logboek</button>
+    <button id="changeLogBtn" class="logbook-btn">📒 Logboek <span id="logBadge" class="msg-badge" style="display:none">0</span></button>
     <button id="printBtn">Week afdrukken</button>
     <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
     <button id="logoutBtn">Uitloggen</button>
@@ -301,6 +320,15 @@ body.admin-active .shift:hover{background:#fff8e8}
 
 
 
+
+
+<div id="installHelpModal" class="modalback">
+  <div class="modal">
+    <h2>📲 CableCrew installeren</h2>
+    <p id="installHelpText">Open deze pagina in Safari, tik op <b>Delen</b> en kies <b>Zet op beginscherm</b>.</p>
+    <div class="modalactions"><button id="closeInstallHelp">Sluiten</button></div>
+  </div>
+</div>
 
 <div id="changeLogModal" class="modalback">
   <div class="modal log-modal">
@@ -430,7 +458,7 @@ function initDateOptions(){
 }
 function people(){return [...new Set(shifts.map(x=>x.employee))].filter(Boolean).sort()}
 function fillPeople(){
- const p=people(), old=$("myEmployee").value||localStorage.getItem("cc_my_name")||"";
+ const p=people(), old=automaticAdminName()||$("myEmployee").value||rememberedCrewName()||"";
  $("myEmployee").innerHTML='<option value="">Kies je naam</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
  if(p.includes(old))$("myEmployee").value=old;
  updateNotifyUI();
@@ -441,6 +469,7 @@ function fillPeople(){
    if(oldRecipient==="ALL" || p.includes(oldRecipient))$("messageRecipient").value=oldRecipient;
  }
 
+ applyAutomaticIdentity();
 }
 function renderToday(){
  const rows=shifts.filter(x=>x.date===key(new Date())), names=[...new Set(rows.map(x=>x.employee))].sort();
@@ -478,7 +507,16 @@ document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===currentView));
 });
 $("date").onchange=()=>{renderDay();renderWeek()};
-$("myEmployee").onchange=e=>{if(e.target.value)localStorage.setItem("cc_my_name",e.target.value);else localStorage.removeItem("cc_my_name");renderDay();renderWeek();updateMessageIdentity();updateNotifyUI()};
+$("myEmployee").onchange=e=>{
+ const adminName=automaticAdminName();
+ if(adminName){
+   $("myEmployee").value=adminName;
+   setRememberedCrewName(adminName);
+ }else{
+   setRememberedCrewName(e.target.value);
+ }
+ renderDay();renderWeek();updateMessageIdentity();updateNotifyUI();applyAutomaticIdentity();
+};
 
 function findShift(id){return shifts.find(x=>x._id===id)}
 document.addEventListener("click",e=>{
@@ -533,6 +571,43 @@ function updateOverlapWarning(){
 
 function formObj(){return {date:$("editDate").value,employee:$("editEmployee").value,start:$("editStart").value,end:$("editEnd").value,zone:$("editZone").value,note:$("editNote").value.trim()}}
 
+
+async function sendShiftInboxAlert(kind,recipient,before,after){
+ if(!isAdminUser()||!recipient)return;
+ const x=after||before||{};
+ let text="";
+ if(kind==="added"){
+   text=`➕ Nieuwe shift: ${x.date} · ${x.zone} · ${x.start}–${x.end}`;
+   if(x.note)text+=`\n📝 ${x.note}`;
+ }else if(kind==="removed"){
+   text=`❌ Shift verwijderd: ${x.date} · ${x.zone} · ${x.start}–${x.end}`;
+ }else if(kind==="changed"){
+   const parts=[];
+   if(before.start!==after.start||before.end!==after.end)parts.push(`🕒 Uren: ${before.start}–${before.end} → ${after.start}–${after.end}`);
+   if(before.date!==after.date)parts.push(`📅 Datum: ${before.date} → ${after.date}`);
+   if(before.zone!==after.zone)parts.push(`📍 Zone: ${before.zone} → ${after.zone}`);
+   if((before.note||"")!==(after.note||""))parts.push(`📝 Notitie: ${before.note||"—"} → ${after.note||"—"}`);
+   text=`🔄 Je shift is gewijzigd\n${parts.join("\n")||`${after.date} · ${after.zone} · ${after.start}–${after.end}`}`;
+ }else if(kind==="reassigned-away"){
+   text=`👤 Deze shift is niet langer aan jou toegewezen: ${before.date} · ${before.zone} · ${before.start}–${before.end}`;
+ }else if(kind==="reassigned-to"){
+   text=`👤 Nieuwe shift aan jou toegewezen: ${after.date} · ${after.zone} · ${after.start}–${after.end}`;
+   if(after.note)text+=`\n📝 ${after.note}`;
+ }
+ if(!text)return;
+ try{
+   await addDoc(collection(db,"messages"),{
+     text,
+     author:automaticAdminName()||"Beheer",
+     authorUid:user.uid,
+     recipient,
+     important:false,
+     systemShiftAlert:true,
+     createdAt:serverTimestamp()
+   });
+ }catch(e){console.warn("Shiftmelding Inbox:",e)}
+}
+
 async function writeAudit(action,before,after){
  if(!isAdminUser())return;
  try{
@@ -558,10 +633,17 @@ $("saveShift").onclick=async()=>{
    if(editing){
      await updateDoc(doc(db,"shifts",editing._id),v);
      await writeAudit("Shift gewijzigd",before,v);
+     if(before.employee!==v.employee){
+       await sendShiftInboxAlert("reassigned-away",before.employee,before,v);
+       await sendShiftInboxAlert("reassigned-to",v.employee,before,v);
+     }else{
+       await sendShiftInboxAlert("changed",v.employee,before,v);
+     }
      $("shiftModal").classList.remove("show");
    }else{
      await addDoc(collection(db,"shifts"),v);
      await writeAudit("Shift toegevoegd",null,v);
+     await sendShiftInboxAlert("added",v.employee,null,v);
      if($("keepAdding").checked){
        const keepDate=v.date, keepZone=v.zone;
        editing=null;
@@ -578,7 +660,15 @@ $("saveShift").onclick=async()=>{
    }
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 };
-$("deleteShift").onclick=async()=>{if(editing&&confirm("Deze shift verwijderen?")){await deleteDoc(doc(db,"shifts",editing._id));$("shiftModal").classList.remove("show")}};
+$("deleteShift").onclick=async()=>{
+ if(editing&&confirm("Deze shift verwijderen?")){
+   const old={...editing};
+   await deleteDoc(doc(db,"shifts",editing._id));
+   await writeAudit("Shift verwijderd",old,null);
+   await sendShiftInboxAlert("removed",old.employee,old,null);
+   $("shiftModal").classList.remove("show");
+ }
+};
 $("duplicateShift").onclick=async()=>{
  if(!editing)return;
  const v=formObj();
@@ -608,6 +698,11 @@ onAuthStateChanged(auth,u=>{
  document.body.classList.toggle("admin-active",admin);
  $("loginBtn").style.display=admin?"none":"inline-block";
  $("adminWho").textContent=admin?`🔧 ${u.email}`:"Beheer";
+ if(admin){
+   const adminName=automaticAdminName();
+   if(adminName)setRememberedCrewName(adminName);
+ }
+ applyAutomaticIdentity();
  updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();renderDay();renderWeek();renderMessages();
 });
 
@@ -771,15 +866,58 @@ function relevantToMe(x){
 }
 
 const ADMIN_EMAILS=["nick@lakesideparadise.be","arno@lakesideparadise.be"];
+const ADMIN_NAME_BY_EMAIL={
+  "nick@lakesideparadise.be":"Nick",
+  "arno@lakesideparadise.be":"Arno"
+};
+
+function automaticAdminName(){
+  const mail=(user?.email||"").toLowerCase();
+  return ADMIN_NAME_BY_EMAIL[mail]||"";
+}
+function rememberedCrewName(){
+  return localStorage.getItem("cc_identity_name") || localStorage.getItem("cc_my_name") || "";
+}
+function setRememberedCrewName(name){
+  if(name){
+    localStorage.setItem("cc_identity_name",name);
+    localStorage.setItem("cc_my_name",name);
+  }else{
+    localStorage.removeItem("cc_identity_name");
+    localStorage.removeItem("cc_my_name");
+  }
+}
+function applyAutomaticIdentity(){
+  const adminName=automaticAdminName();
+  const remembered=rememberedCrewName();
+  const name=adminName || remembered;
+
+  if(name && $("myEmployee") && [...$("myEmployee").options].some(o=>o.value===name)){
+    $("myEmployee").value=name;
+  }
+
+  if($("identityHint")){
+    if(adminName){
+      $("identityHint").textContent=`Automatisch herkend als ${adminName}`;
+      $("identityHint").classList.add("known");
+    }else if(name){
+      $("identityHint").textContent=`Dit toestel onthoudt jou als ${name}`;
+      $("identityHint").classList.add("known");
+    }else{
+      $("identityHint").textContent="Kies één keer je naam; de app onthoudt die op dit toestel.";
+      $("identityHint").classList.remove("known");
+    }
+  }
+}
 function isAdminUser(){return !!(user && user.email && ADMIN_EMAILS.includes(user.email.toLowerCase()))}
-function currentCrewName(){return $("myEmployee").value || localStorage.getItem("cc_my_name") || ""}
+function currentCrewName(){return automaticAdminName() || $("myEmployee").value || rememberedCrewName() || ""}
 function formatMessageTime(ts){
  if(!ts)return "zojuist";
  try{return ts.toDate().toLocaleString("nl-BE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(e){return ""}
 }
 function updateMessageIdentity(){
  const name=currentCrewName();
- $("messageIdentity").textContent=name?`Je plaatst dit bericht als ${name}.`:"Kies eerst je naam bij ‘Mijn planning’ om een bericht te plaatsen.";
+ $("messageIdentity").textContent=name?`Je plaatst dit bericht automatisch als ${name}.`:"Kies één keer je naam bij ‘Mijn planning’; daarna onthoudt de app jou op dit toestel.";
  $("sendMessageBtn").disabled=!name;
  $("importantWrap").style.display=isAdminUser()?"inline-flex":"none";
 }
@@ -826,10 +964,11 @@ function renderMessages(){
  $("messagesList").innerHTML=visible.length?visible.map(m=>{
    const own=uid && m.authorUid===uid;
    const read=isMessageRead(m._id);
-   return `<article class="message-item ${(m.recipient||"ALL")!=="ALL"?'direct ':''}${m.important?'pinned ':''}${read?'read':'unread'}">
+   return `<article class="message-item ${m.systemShiftAlert?'shift-system ':''}${(m.recipient||"ALL")!=="ALL"?'direct ':''}${m.important?'pinned ':''}${read?'read':'unread'}">
       <div class="message-top">
         <span class="message-author">${esc(m.author||"Crew")}</span>
         <span class="message-to">${(m.recipient||"ALL")==="ALL"?"Aan iedereen":"Aan "+esc(m.recipient)}</span>
+        ${m.systemShiftAlert?'<span class="message-pin">🗓️ PLANNING</span>':''}
         ${m.important?'<span class="message-pin">📌 BELANGRIJK</span>':''}
         <span class="message-time">${esc(formatMessageTime(m.createdAt))}</span>
         ${!read?`<button class="message-read-toggle" data-msg-read="${m._id}">Markeer gelezen</button>`:""}
@@ -888,7 +1027,11 @@ onSnapshot(messagesQuery,snap=>{
        showLocalNotice("📥 Nieuw belangrijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
      }
      else if((m.recipient||"ALL")!=="ALL" && messageVisibleToCurrentUser(m) && m.author!==currentCrewName()){
-       showLocalNotice("📩 Nieuw persoonlijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
+       if(m.systemShiftAlert){
+         showLocalNotice("🗓️ Wijziging in jouw planning",m.text||"Je planning is aangepast.","shiftchange");
+       }else{
+         showLocalNotice("📩 Nieuw persoonlijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
+       }
      }
    });
  }
@@ -910,6 +1053,22 @@ async function ensureAnonymousAuth(){
 let auditRows=[];
 let stopAuditListener=null;
 
+
+function auditMillis(r){try{return r.at?.toMillis?.()||0}catch(e){return 0}}
+function updateLogBadge(){
+ if(!isAdminUser()||!$("logBadge"))return;
+ const seen=Number(localStorage.getItem("cc_log_seen")||0);
+ const unread=auditRows.filter(r=>auditMillis(r)>seen).length;
+ $("logBadge").textContent=unread;
+ $("logBadge").style.display=unread>0?"inline-flex":"none";
+ $("changeLogBtn").classList.toggle("has-unread",unread>0);
+}
+function markLogSeen(){
+ const newest=auditRows.reduce((m,r)=>Math.max(m,auditMillis(r)),0);
+ if(newest)localStorage.setItem("cc_log_seen",String(newest));
+ updateLogBadge();
+}
+
 function startAuditListener(){
  if(stopAuditListener){stopAuditListener();stopAuditListener=null}
  auditRows=[];
@@ -921,6 +1080,7 @@ function startAuditListener(){
      .sort((a,b)=>(b.at?.toMillis?.()||0)-(a.at?.toMillis?.()||0))
      .slice(0,100);
    renderChangeLog();
+   updateLogBadge();
  },err=>{
    console.warn("Logboek kon niet geladen worden:",err);
    if($("changeLogList"))$("changeLogList").innerHTML='<div class="empty">Logboek kon niet geladen worden.</div>';
@@ -981,7 +1141,7 @@ function renderChangeLog(){
    </div>`;
  }).join(""):'<div class="empty">Nog geen logboekitems geregistreerd.</div>';
 }
-$("changeLogBtn").onclick=()=>{startAuditListener();$("changeLogModal").classList.add("show");renderChangeLog()};
+$("changeLogBtn").onclick=()=>{startAuditListener();$("changeLogModal").classList.add("show");renderChangeLog();setTimeout(markLogSeen,150)};
 $("closeChangeLogBtn").onclick=()=>$("changeLogModal").classList.remove("show");
 
 function realTodayKey(){return key(new Date())}
@@ -1111,6 +1271,66 @@ async function loadWeather(){
 loadWeather();
 setTodayHeader();
 updateNotifyUI();
+
+
+// =========================
+// PWA / APP INSTALLATIE
+// =========================
+let deferredInstallPrompt=null;
+const isIos=/iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone=window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone===true;
+
+function updateInstallButton(){
+  const b=$("installAppBtn");
+  if(!b)return;
+  if(isStandalone){
+    b.style.display="none";
+    return;
+  }
+  if(deferredInstallPrompt || isIos){
+    b.style.display="inline-block";
+  }
+}
+
+window.addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  updateInstallButton();
+});
+
+window.addEventListener("appinstalled",()=>{
+  deferredInstallPrompt=null;
+  $("installAppBtn").style.display="none";
+  showPersonalAlert("✅ CableCrew geïnstalleerd","Je kunt de planner voortaan openen vanaf je beginscherm.");
+});
+
+$("installAppBtn").onclick=async()=>{
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt=null;
+    updateInstallButton();
+  }else{
+    $("installHelpText").innerHTML=isIos
+      ? 'Open CableCrew in <b>Safari</b>, tik op <b>Delen</b> en kies <b>Zet op beginscherm</b>. Zet daarna <b>Open als webapp</b> aan als die optie verschijnt.'
+      : 'Open het browsermenu en kies <b>App installeren</b> of <b>Toevoegen aan beginscherm</b>.';
+    $("installHelpModal").classList.add("show");
+  }
+};
+$("closeInstallHelp").onclick=()=>$("installHelpModal").classList.remove("show");
+updateInstallButton();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load",async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register("./service-worker.js",{scope:"./"});
+      console.log("CableCrew service worker actief:",reg.scope);
+    }catch(e){
+      console.warn("Service worker kon niet starten:",e);
+    }
+  });
+}
+
 </script>
 </body>
 </html>
