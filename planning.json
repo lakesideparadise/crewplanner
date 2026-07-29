@@ -1,6 +1,6 @@
 {
   "title": "CableCrew Lakeside",
-  "updated": "23/7/2026, 15:36:11",
+  "updated": "29/7/2026, 11:15:53",
   "shifts": [
     {
       "date": "2026-07-27",
@@ -1056,6 +1056,14 @@
       "employee": "Simon",
       "start": "17:00",
       "end": "19:30",
+      "note": ""
+    },
+    {
+      "date": "2026-08-07",
+      "employee": "Axel",
+      "start": "08:30",
+      "end": "10:00",
+      "zone": "FOIL",
       "note": ""
     },
     {
