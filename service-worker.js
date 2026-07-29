@@ -1,4 +1,4 @@
-const CACHE_NAME = "cablecrew-pwa-v1-5-1";
+const CACHE_NAME = "cablecrew-pwa-v1-5-5";
 const APP_SHELL = [
   "./",
   "./index.html",
