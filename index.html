@@ -219,7 +219,7 @@ const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app)
 const $=id=>document.getElementById(id);
 const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt"};
-let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false;
+let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map();
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -416,7 +416,21 @@ onSnapshot(collection(db,"shifts"),snap=>{
      if(ch.type==="added"){
        showLocalNotice("➕ Nieuwe shift voor jou",shiftDescription(data),"shiftchange");
      }else if(ch.type==="modified"){
-       showLocalNotice("🔄 Je shift is gewijzigd",shiftDescription(data),"shiftchange");
+       const prev=previousShiftMap.get(data._id);
+       const noteChanged=prev && (prev.note||"")!==(data.note||"");
+       const coreChanged=prev && (
+         prev.date!==data.date ||
+         prev.employee!==data.employee ||
+         prev.start!==data.start ||
+         prev.end!==data.end ||
+         prev.zone!==data.zone
+       );
+       if(noteChanged && !coreChanged){
+         const note=(data.note||"").trim();
+         showLocalNotice("📝 Nieuwe notitie bij je shift",note || `Notitie verwijderd · ${shiftDescription(data)}`,"shiftchange");
+       }else{
+         showLocalNotice("🔄 Je shift is gewijzigd",shiftDescription(data),"shiftchange");
+       }
      }else if(ch.type==="removed"){
        showLocalNotice("❌ Je shift is verwijderd",shiftDescription(data),"shiftchange");
      }
@@ -424,6 +438,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
  }
 
  const online=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ previousShiftMap=new Map(online.map(x=>[x._id,{...x}]));
  if(online.length){
    shifts=sorted(online);$("syncStatus").textContent="🟢 Live planning";
  }else{
