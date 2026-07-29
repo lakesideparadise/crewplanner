@@ -209,6 +209,8 @@ body.admin-active .shift:hover{background:#fff8e8}
 .planning-view-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
 .planning-view-actions button{font-size:11px;padding:6px 8px}
 .planning-view-actions button.active{background:#0f4b6d;color:#fff;border-color:#0f4b6d}
+.message-item.private-admin{border-left:5px solid #111827;background:#f3f4f6}
+.message-item.private-admin.unread{background:#e7ebf0}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -473,8 +475,10 @@ function fillPeople(){
  $("editEmployee").innerHTML=p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+'<option value="__NEW__">+ Nieuwe medewerker…</option>';
  if($("messageRecipient")){
    const oldRecipient=$("messageRecipient").value||"ALL";
-   $("messageRecipient").innerHTML='<option value="ALL">Iedereen</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
-   if(oldRecipient==="ALL" || p.includes(oldRecipient))$("messageRecipient").value=oldRecipient;
+   $("messageRecipient").innerHTML='<option value="ALL">Iedereen</option>'
+     +(isAdminUser()?'<option value="PRIVATE_NICK">🔒 Privé naar Nick</option><option value="PRIVATE_ARNO">🔒 Privé naar Arno</option><option value="ADMIN_PRIVATE">🔒 Privé Nick & Arno</option>':'')
+     +p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+   if(oldRecipient==="ALL" || (isAdminUser() && ["PRIVATE_NICK","PRIVATE_ARNO","ADMIN_PRIVATE"].includes(oldRecipient)) || p.includes(oldRecipient))$("messageRecipient").value=oldRecipient;
  }
 
  applyAutomaticIdentity();
@@ -967,8 +971,9 @@ function markMessagesSeen(){updateMessageBadge()}
 
 function messageVisibleToCurrentUser(m){
  const recipient=m.recipient||"ALL";
- if(recipient==="ALL")return true;
  const me=currentCrewName();
+ if(["PRIVATE_NICK","PRIVATE_ARNO","ADMIN_PRIVATE"].includes(recipient))return isAdminUser();
+ if(recipient==="ALL")return true;
  if(recipient===me)return true;
  if(m.author===me)return true;
  if(isAdminUser())return true;
@@ -981,10 +986,10 @@ function renderMessages(){
  $("messagesList").innerHTML=visible.length?visible.map(m=>{
    const own=uid && m.authorUid===uid;
    const read=isMessageRead(m._id);
-   return `<article class="message-item ${m.systemShiftAlert?'shift-system ':''}${(m.recipient||"ALL")!=="ALL"?'direct ':''}${m.important?'pinned ':''}${read?'read':'unread'}">
+   return `<article class="message-item ${["PRIVATE_NICK","PRIVATE_ARNO","ADMIN_PRIVATE"].includes(m.recipient)?'private-admin ':''}${m.systemShiftAlert?'shift-system ':''}${(m.recipient||"ALL")!=="ALL"?'direct ':''}${m.important?'pinned ':''}${read?'read':'unread'}">
       <div class="message-top">
         <span class="message-author">${esc(m.author||"Crew")}</span>
-        <span class="message-to">${(m.recipient||"ALL")==="ALL"?"Aan iedereen":"Aan "+esc(m.recipient)}</span>
+        <span class="message-to">${(m.recipient||"ALL")==="ALL"?"Aan iedereen":m.recipient==="PRIVATE_NICK"?"🔒 Privé naar Nick":m.recipient==="PRIVATE_ARNO"?"🔒 Privé naar Arno":m.recipient==="ADMIN_PRIVATE"?"🔒 Privé Nick & Arno":"Aan "+esc(m.recipient)}</span>
         ${m.systemShiftAlert?'<span class="message-pin">🗓️ PLANNING</span>':''}
         ${m.important?'<span class="message-pin">📌 BELANGRIJK</span>':''}
         <span class="message-time">${esc(formatMessageTime(m.createdAt))}</span>
@@ -1014,6 +1019,8 @@ $("sendMessageBtn").onclick=async()=>{
      author:name,
      authorUid:user.uid,
      recipient:$("messageRecipient").value||"ALL",
+     privateAdmin:["PRIVATE_NICK","PRIVATE_ARNO","ADMIN_PRIVATE"].includes($("messageRecipient").value),
+     privateTarget:$("messageRecipient").value==="PRIVATE_NICK"?"Nick":($("messageRecipient").value==="PRIVATE_ARNO"?"Arno":""),
      important:isAdminUser()&&$("messageImportant").checked,
      createdAt:serverTimestamp()
    });
@@ -1046,6 +1053,8 @@ onSnapshot(messagesQuery,snap=>{
      else if((m.recipient||"ALL")!=="ALL" && messageVisibleToCurrentUser(m) && m.author!==currentCrewName()){
        if(m.systemShiftAlert){
          showLocalNotice("🗓️ Wijziging in jouw planning",m.text||"Je planning is aangepast.","shiftchange");
+       }else if(["PRIVATE_NICK","PRIVATE_ARNO","ADMIN_PRIVATE"].includes(m.recipient)){
+         showLocalNotice("🔒 Nieuw privébericht",`${m.author||"Beheer"}: ${m.text||""}`,"important");
        }else{
          showLocalNotice("📩 Nieuw persoonlijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
        }
