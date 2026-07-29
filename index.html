@@ -41,8 +41,22 @@
   .print-note{font-size:5.2pt;color:#667085;font-style:italic;margin-top:.2mm}
   .print-empty{font-size:6pt;color:#667085;font-style:italic}
 }
+
+.quickbar{max-width:1280px;margin:12px auto 0;padding:0 14px;display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px}
+.quickcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;min-height:62px}
+.quicktitle{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.quickvalue{font-weight:800;margin-top:5px}.weatherline{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.weathericon{font-size:25px}
+#myEmployee{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;max-width:100%}
+@media(max-width:760px){.quickbar{grid-template-columns:1fr}.quickcard{min-height:auto}}
+@media print{.quickbar{display:none!important}}
 </style></head><body>
 <header><div class="brand"><div><h1>⚡ CableCrew Lakeside</h1><small>Crew planning</small></div><div id="updated"></div></div></header>
+<div class="quickbar">
+<div class="quickcard"><div class="quicktitle">🌤️ Weer Knokke-Heist</div><div id="weather" class="quickvalue weatherline">Weer laden…</div></div>
+<div class="quickcard"><div class="quicktitle">👥 Wie werkt vandaag?</div><div id="workingToday" class="quickvalue">Planning laden…</div></div>
+<div class="quickcard"><div class="quicktitle">👤 Mijn planning</div><div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div></div>
+</div>
+
 <main><div class="toolbar"><button class="viewbtn active" data-view="day">Dag</button><button class="viewbtn" data-view="week">Week</button><button class="viewbtn" data-view="month">Maand</button><select id="date"></select><select id="employee"><option value="">Volledige planning</option></select><button id="printWeekBtn">Week afdrukken</button></div>
 <section id="dayPanel" class="panel active"><div class="zones"><section class="zone pro"><h2>PRO</h2><div id="day-PRO"></div></section><section class="zone rookie"><h2>ROOKIE</h2><div id="day-ROOKIE"></div></section><section class="zone two"><h2>2.0</h2><div id="day-2.0"></div></section><section class="zone standby"><h2>STAND-BY</h2><div id="day-STANDBY"></div></section><section class="zone foil"><h2>FOIL</h2><div id="day-FOIL"></div></section><section class="zone tt"><h2>TT / SP / KIDSSESSION</h2><div id="day-TT / SP / KIDSSESSION"></div></section></div></section>
 <section id="weekPanel" class="panel"><div id="weekTitle" style="font-weight:700;margin:6px 0 12px"></div><div id="weekGrid" class="week-grid"></div></section>
@@ -112,5 +126,38 @@ $("printWeekBtn").onclick=()=>{
   window.print();
 };
 
-function renderAll(){renderDay();renderWeek();renderMonth()}
+
+function renderTodaySummary(){
+ const today=key(new Date()),rows=shifts.filter(x=>x.date===today);
+ const names=[...new Set(rows.map(x=>x.employee))].sort();
+ $("workingToday").textContent=names.length?names.join(", "):"Geen crew ingepland";
+ const people=[...new Set(shifts.map(x=>x.employee))].sort(),sel=$("myEmployee");
+ const old=localStorage.getItem("cablecrew_my_name")||"";
+ sel.innerHTML='<option value="">Kies je naam</option>'+people.map(p=>`<option>${esc(p)}</option>`).join("");
+ if(people.includes(old))sel.value=old;
+}
+$("myEmployee").onchange=e=>{
+ const n=e.target.value;
+ if(n)localStorage.setItem("cablecrew_my_name",n);else localStorage.removeItem("cablecrew_my_name");
+ $("employee").value=n;renderAll();
+};
+function weatherIcon(c){
+ if(c===0)return "☀️";if([1,2].includes(c))return "🌤️";if(c===3)return "☁️";if([45,48].includes(c))return "🌫️";
+ if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(c))return "🌧️";
+ if([71,73,75,77,85,86].includes(c))return "🌨️";if([95,96,99].includes(c))return "⛈️";return "🌤️";
+}
+async function loadWeather(){
+ try{
+  const u="https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&timezone=Europe%2FBrussels&forecast_days=1";
+  const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw Error();
+  const d=await r.json(),c=d.current||{};let rain="";
+  if(d.hourly?.time?.length){let best=0,bd=Infinity,now=new Date();d.hourly.time.forEach((v,i)=>{let x=Math.abs(new Date(v)-now);if(x<bd){bd=x;best=i}});
+   let chance=d.hourly.precipitation_probability?.[best];if(chance!=null)rain=` · regen ${Math.round(chance)}%`;
+  }
+  $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${Math.round(c.wind_speed_10m)} km/u${rain}</span>`;
+ }catch(e){$("weather").textContent="Weer tijdelijk niet beschikbaar";}
+}
+
+loadWeather();
+function renderAll(){renderDay();renderWeek();renderMonth();renderTodaySummary()}
 </script></body></html>
