@@ -215,7 +215,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button id="copyWeekBtn">Week kopiëren</button>
     <button id="yearPlannerBtn">📅 Jaarplanning</button>
     <button id="archiveBtn">🗂️ Verleden</button>
-    <button id="changeLogBtn">🕘 Wijzigingen</button>
+    <button id="changeLogBtn">📒 Logboek</button>
     <button id="printBtn">Week afdrukken</button>
     <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
     <button id="logoutBtn">Uitloggen</button>
@@ -262,7 +262,7 @@ body.admin-active .shift:hover{background:#fff8e8}
 <div id="changeLogModal" class="modalback">
   <div class="modal log-modal">
     <div class="year-head">
-      <div><h2>🕘 Laatste wijzigingen</h2><div class="year-sub">Alleen zichtbaar voor Nick en Arno.</div></div>
+      <div><h2>📒 Logboek</h2><div class="year-sub">Alleen zichtbaar voor Nick en Arno. Hier zie je wie wat heeft aangepast en wanneer.</div></div>
       <button id="closeChangeLogBtn">Sluiten</button>
     </div>
     <div id="changeLogList" class="change-log-list"></div>
@@ -555,11 +555,11 @@ onAuthStateChanged(auth,u=>{
  user=u;
  const admin=isAdminUser();
  editMode=admin;
- $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");}
+ $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
  $("loginBtn").style.display=admin?"none":"inline-block";
  $("adminWho").textContent=admin?`🔧 ${u.email}`:"Beheer";
- updateImportButton();updateMessageIdentity();applyPastDateVisibility();renderDay();renderWeek();renderMessages();
+ updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();renderDay();renderWeek();renderMessages();
 });
 
 function updateImportButton(){
@@ -836,11 +836,25 @@ async function ensureAnonymousAuth(){
 
 
 let auditRows=[];
-onSnapshot(collection(db,"auditLog"),snap=>{
- auditRows=snap.docs.map(d=>({_id:d.id,...d.data()}))
-   .sort((a,b)=>(b.at?.toMillis?.()||0)-(a.at?.toMillis?.()||0)).slice(0,100);
+let stopAuditListener=null;
+
+function startAuditListener(){
+ if(stopAuditListener){stopAuditListener();stopAuditListener=null}
+ auditRows=[];
  renderChangeLog();
-},()=>{});
+ if(!isAdminUser())return;
+
+ stopAuditListener=onSnapshot(collection(db,"auditLog"),snap=>{
+   auditRows=snap.docs.map(d=>({_id:d.id,...d.data()}))
+     .sort((a,b)=>(b.at?.toMillis?.()||0)-(a.at?.toMillis?.()||0))
+     .slice(0,100);
+   renderChangeLog();
+ },err=>{
+   console.warn("Logboek kon niet geladen worden:",err);
+   if($("changeLogList"))$("changeLogList").innerHTML='<div class="empty">Logboek kon niet geladen worden.</div>';
+ });
+}
+
 function renderChangeLog(){
  if(!$("changeLogList"))return;
  $("changeLogList").innerHTML=auditRows.length?auditRows.map(r=>{
@@ -854,7 +868,7 @@ function renderChangeLog(){
    </div>`;
  }).join(""):'<div class="empty">Nog geen wijzigingen geregistreerd.</div>';
 }
-$("changeLogBtn").onclick=()=>{$("changeLogModal").classList.add("show");renderChangeLog()};
+$("changeLogBtn").onclick=()=>{startAuditListener();$("changeLogModal").classList.add("show");renderChangeLog()};
 $("closeChangeLogBtn").onclick=()=>$("changeLogModal").classList.remove("show");
 
 function realTodayKey(){return key(new Date())}
