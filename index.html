@@ -138,6 +138,27 @@ body.admin-active .shift:hover{background:#fff8e8}
 @media(max-width:620px){.today-bar{margin:8px 10px 0;align-items:flex-start}.today-bar button{font-size:11px}}
 @media print{.today-bar,#archiveModal{display:none!important}}
 
+
+.today-actions{display:flex;gap:7px}
+.overlap-warning{margin:8px 0;padding:9px 11px;background:#fff0e8;border:1px solid #f2a16f;border-radius:9px;font-size:12px;font-weight:800;line-height:1.35}
+.log-modal{width:min(850px,96vw);max-height:90vh;overflow:auto}
+.change-log-list{display:grid;gap:8px;margin-top:12px}
+.log-row{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.log-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.log-action{font-weight:900}.log-time{font-size:11px;color:var(--muted)}
+.log-detail{font-size:13px;margin-top:4px}.log-by{font-size:11px;color:var(--muted);margin-top:4px}
+
+
+.messages-btn{font-size:14px;font-weight:900}
+.messages-btn.has-unread{background:#fff0f0;border-color:#e58b8b;color:#8f1d1d}
+.inbox-head-actions{display:flex;gap:7px}
+.message-item.unread{background:#eef6ff;border-left:5px solid #2d73a7;padding-left:8px}
+.message-item.unread .message-author::before{content:"● ";color:#2d73a7}
+.message-item.read{opacity:.88}
+.message-read-toggle{margin-left:auto;font-size:11px;padding:4px 6px}
+.inbox-summary{font-size:12px;color:var(--muted);margin:8px 0 2px;font-weight:700}
+@media(max-width:620px){.inbox-head-actions{width:100%;justify-content:flex-end}}
+
 </style>
 </head>
 <body>
@@ -165,7 +186,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <span class="today-label">VANDAAG</span>
     <strong id="todayFullLabel"></strong>
   </div>
-  <button id="goTodayBtn">Ga naar vandaag</button>
+  <div class="today-actions"><button id="goTodayBtn">Vandaag</button><button id="goTomorrowBtn">Morgen →</button></div>
 </div>
 
 <div id="personalAlert" class="personal-alert" style="display:none">
@@ -182,7 +203,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button class="viewbtn active" data-view="day">Dag</button>
     <button class="viewbtn" data-view="week">Week</button>
     <select id="date"></select>
-    <button id="messagesBtn" class="messages-btn">💬 Berichten <span id="msgBadge" class="msg-badge" style="display:none">0</span></button>
+    <button id="messagesBtn" class="messages-btn">📥 Inbox <span id="msgBadge" class="msg-badge" style="display:none">0</span></button>
     <div class="admin-login"><button id="loginBtn">🔐 Beheer login</button></div>
   </div>
 
@@ -194,6 +215,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button id="copyWeekBtn">Week kopiëren</button>
     <button id="yearPlannerBtn">📅 Jaarplanning</button>
     <button id="archiveBtn">🗂️ Verleden</button>
+    <button id="changeLogBtn">🕘 Wijzigingen</button>
     <button id="printBtn">Week afdrukken</button>
     <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
     <button id="logoutBtn">Uitloggen</button>
@@ -203,12 +225,12 @@ body.admin-active .shift:hover{background:#fff8e8}
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-head">
       <div>
-        <h2>💬 Crewberichten</h2>
-        <div class="messages-sub">Berichten verschijnen meteen bij iedereen.</div>
+        <h2>📥 Crew Inbox</h2>
+        <div class="messages-sub">Nieuwe berichten verschijnen meteen bij iedereen. Ongelezen berichten staan duidelijk gemarkeerd.</div>
       </div>
-      <button id="closeMessagesBtn">Sluiten</button>
+      <div class="inbox-head-actions"><button id="markAllReadBtn">Alles gelezen</button><button id="closeMessagesBtn">Sluiten</button></div>
     </div>
-    <div id="messagesList" class="messages-list"></div>
+    <div id="inboxSummary" class="inbox-summary"></div><div id="messagesList" class="messages-list"></div>
     <div class="message-compose">
       <div id="messageIdentity" class="message-identity"></div>
       <textarea id="messageText" rows="3" placeholder="Schrijf een kort bericht voor de crew…"></textarea>
@@ -230,10 +252,22 @@ body.admin-active .shift:hover{background:#fff8e8}
     <input id="loginPassword" type="password" placeholder="Wachtwoord">
     <div id="loginError" style="color:#a33;font-size:13px"></div>
   </div>
+  <div id="overlapWarning" class="overlap-warning" style="display:none"></div>
   <div class="modalactions"><button id="cancelLogin">Annuleren</button><button id="doLogin" class="primary">Inloggen</button></div>
 </div></div>
 
 
+
+
+<div id="changeLogModal" class="modalback">
+  <div class="modal log-modal">
+    <div class="year-head">
+      <div><h2>🕘 Laatste wijzigingen</h2><div class="year-sub">Alleen zichtbaar voor Nick en Arno.</div></div>
+      <button id="closeChangeLogBtn">Sluiten</button>
+    </div>
+    <div id="changeLogList" class="change-log-list"></div>
+  </div>
+</div>
 
 <div id="archiveModal" class="modalback">
   <div class="modal archive-modal">
@@ -428,16 +462,57 @@ document.querySelectorAll(".quicktimes button").forEach(b=>b.onclick=()=>{
  $("editStart").value=a;$("editEnd").value=z;
 });
 
+
+function mins(t){const [h,m]=(t||"00:00").split(":").map(Number);return h*60+m}
+function overlapMatches(v){
+ if(!v.date||!v.employee||!v.start||!v.end)return [];
+ const a=mins(v.start),b=mins(v.end);
+ return shifts.filter(x=>x._id!==editing?._id && x.date===v.date && x.employee===v.employee &&
+   a<mins(x.end) && b>mins(x.start));
+}
+function updateOverlapWarning(){
+ const v=formObj(), hits=overlapMatches(v);
+ if(hits.length){
+   $("overlapWarning").style.display="block";
+   $("overlapWarning").textContent=`⚠️ Let op: ${v.employee} heeft al ${hits.map(x=>`${x.start}–${x.end} (${x.zone})`).join(", ")} op deze dag.`;
+ }else $("overlapWarning").style.display="none";
+}
+["editDate","editEmployee","editStart","editEnd"].forEach(id=>{
+ $(id).addEventListener("input",updateOverlapWarning);
+ $(id).addEventListener("change",updateOverlapWarning);
+});
+
 function formObj(){return {date:$("editDate").value,employee:$("editEmployee").value,start:$("editStart").value,end:$("editEnd").value,zone:$("editZone").value,note:$("editNote").value.trim()}}
+
+async function writeAudit(action,before,after){
+ if(!isAdminUser())return;
+ try{
+   await addDoc(collection(db,"auditLog"),{
+     action,
+     by:user.email||"",
+     at:serverTimestamp(),
+     employee:(after||before)?.employee||"",
+     date:(after||before)?.date||"",
+     before:before||null,
+     after:after||null
+   });
+ }catch(e){console.warn("Audit log:",e)}
+}
+
 $("saveShift").onclick=async()=>{
  const v=formObj();
  if(!v.date||!v.employee||!v.start||!v.end){alert("Vul datum, medewerker en uren in.");return}
+ const overlaps=overlapMatches(v);
+ if(overlaps.length && !confirm(`⚠️ ${v.employee} heeft al een overlappende shift. Toch opslaan?`))return;
+ const before=editing?{...editing}:null;
  try{
    if(editing){
      await updateDoc(doc(db,"shifts",editing._id),v);
+     await writeAudit("Shift gewijzigd",before,v);
      $("shiftModal").classList.remove("show");
    }else{
      await addDoc(collection(db,"shifts"),v);
+     await writeAudit("Shift toegevoegd",null,v);
      if($("keepAdding").checked){
        const keepDate=v.date, keepZone=v.zone;
        editing=null;
@@ -480,7 +555,7 @@ onAuthStateChanged(auth,u=>{
  user=u;
  const admin=isAdminUser();
  editMode=admin;
- $("adminBar").classList.toggle("show",admin); if(!admin)$("yearPlannerModal").classList.remove("show");
+ $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");}
  document.body.classList.toggle("admin-active",admin);
  $("loginBtn").style.display=admin?"none":"inline-block";
  $("adminWho").textContent=admin?`🔧 ${u.email}`:"Beheer";
@@ -659,29 +734,43 @@ function updateMessageIdentity(){
  $("sendMessageBtn").disabled=!name;
  $("importantWrap").style.display=isAdminUser()?"inline-flex":"none";
 }
+
+function readMessageIds(){
+  try{return new Set(JSON.parse(localStorage.getItem("cc_read_message_ids")||"[]"))}catch(e){return new Set()}
+}
+function saveReadMessageIds(set){
+  localStorage.setItem("cc_read_message_ids",JSON.stringify([...set]));
+}
+function isMessageRead(id){return readMessageIds().has(id)}
+function markMessageRead(id){
+  const set=readMessageIds();set.add(id);saveReadMessageIds(set);renderMessages();
+}
+function markAllMessagesRead(){
+  const set=readMessageIds();crewMessages.forEach(m=>set.add(m._id));saveReadMessageIds(set);renderMessages();
+}
+
 function newestMessageMillis(){
  return crewMessages.reduce((mx,m)=>Math.max(mx,m.createdAt?.toMillis?.()||0),0);
 }
 function updateMessageBadge(){
- const lastSeen=Number(localStorage.getItem("cc_messages_seen")||0);
- const unread=crewMessages.filter(m=>(m.createdAt?.toMillis?.()||0)>lastSeen).length;
+ const unread=crewMessages.filter(m=>!isMessageRead(m._id)).length;
  $("msgBadge").textContent=unread;
  $("msgBadge").style.display=unread>0?"inline-flex":"none";
+ $("messagesBtn").classList.toggle("has-unread",unread>0);
+ if($("inboxSummary"))$("inboxSummary").textContent=unread?`${unread} ongelezen bericht${unread===1?"":"en"}`:"Alles gelezen";
 }
-function markMessagesSeen(){
- const mx=newestMessageMillis();
- if(mx)localStorage.setItem("cc_messages_seen",String(mx));
- updateMessageBadge();
-}
+function markMessagesSeen(){updateMessageBadge()}
 function renderMessages(){
  const admin=isAdminUser(), uid=user?.uid||"";
  $("messagesList").innerHTML=crewMessages.length?crewMessages.map(m=>{
    const own=uid && m.authorUid===uid;
-   return `<article class="message-item ${m.important?'pinned':''}">
+   const read=isMessageRead(m._id);
+   return `<article class="message-item ${m.important?'pinned ':''}${read?'read':'unread'}">
       <div class="message-top">
         <span class="message-author">${esc(m.author||"Crew")}</span>
         ${m.important?'<span class="message-pin">📌 BELANGRIJK</span>':''}
         <span class="message-time">${esc(formatMessageTime(m.createdAt))}</span>
+        ${!read?`<button class="message-read-toggle" data-msg-read="${m._id}">Markeer gelezen</button>`:""}
       </div>
       <div class="message-body">${esc(m.text||"")}</div>
       ${(admin||own)?`<div class="message-actions">
@@ -694,6 +783,9 @@ function renderMessages(){
 }
 $("messagesBtn").onclick=()=>{$("messagesPanel").classList.add("show");markMessagesSeen();$("messagesPanel").scrollIntoView({behavior:"smooth",block:"start"})};
 $("closeMessagesBtn").onclick=()=>$("messagesPanel").classList.remove("show");
+
+$("markAllReadBtn").onclick=markAllMessagesRead;
+
 $("sendMessageBtn").onclick=async()=>{
  const name=currentCrewName(),txt=$("messageText").value.trim();
  if(!name)return alert("Kies eerst je naam bij ‘Mijn planning’.");
@@ -704,6 +796,8 @@ $("sendMessageBtn").onclick=async()=>{
  }catch(e){alert("Bericht plaatsen mislukt: "+e.message)}
 };
 document.addEventListener("click",async e=>{
+ const readBtn=e.target.closest("[data-msg-read]");
+ if(readBtn){markMessageRead(readBtn.dataset.msgRead);return}
  const del=e.target.closest("[data-msg-del]");
  if(del){
    if(confirm("Dit bericht verwijderen?")){try{await deleteDoc(doc(db,"messages",del.dataset.msgDel))}catch(err){alert("Verwijderen mislukt: "+err.message)}}
@@ -722,7 +816,7 @@ onSnapshot(messagesQuery,snap=>{
      if(ch.type!=="added")return;
      const m={_id:ch.doc.id,...ch.doc.data()};
      if(m.important){
-       showLocalNotice("📌 Belangrijk crewbericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
+       showLocalNotice("📥 Nieuw belangrijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
      }
    });
  }
@@ -739,6 +833,29 @@ async function ensureAnonymousAuth(){
 }
 
 
+
+
+let auditRows=[];
+onSnapshot(collection(db,"auditLog"),snap=>{
+ auditRows=snap.docs.map(d=>({_id:d.id,...d.data()}))
+   .sort((a,b)=>(b.at?.toMillis?.()||0)-(a.at?.toMillis?.()||0)).slice(0,100);
+ renderChangeLog();
+},()=>{});
+function renderChangeLog(){
+ if(!$("changeLogList"))return;
+ $("changeLogList").innerHTML=auditRows.length?auditRows.map(r=>{
+   let when="";
+   try{when=r.at?.toDate?.().toLocaleString("nl-BE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})||""}catch(e){}
+   const x=r.after||r.before||{};
+   return `<div class="log-row">
+     <div class="log-top"><span class="log-action">${esc(r.action||"Wijziging")}</span><span class="log-time">${esc(when)}</span></div>
+     <div class="log-detail">${esc(x.employee||"")} · ${esc(x.date||"")} · ${esc(x.zone||"")} · ${esc((x.start||"")+"–"+(x.end||""))}</div>
+     <div class="log-by">door ${esc(r.by||"beheer")}</div>
+   </div>`;
+ }).join(""):'<div class="empty">Nog geen wijzigingen geregistreerd.</div>';
+}
+$("changeLogBtn").onclick=()=>{$("changeLogModal").classList.add("show");renderChangeLog()};
+$("closeChangeLogBtn").onclick=()=>$("changeLogModal").classList.remove("show");
 
 function realTodayKey(){return key(new Date())}
 function setTodayHeader(){
@@ -757,6 +874,9 @@ function goToDate(target){
  renderDay();renderWeek();
 }
 $("goTodayBtn").onclick=()=>goToDate(realTodayKey());
+$("goTomorrowBtn").onclick=()=>{
+ const d=new Date(realTodayKey()+"T12:00:00");d.setDate(d.getDate()+1);goToDate(key(d));
+};
 
 function visibleDatesForUser(){
  const today=realTodayKey();
