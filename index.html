@@ -76,9 +76,20 @@ body.admin-active .shift:hover{background:#fff8e8}
 @media(max-width:720px){.messages-panel{padding:12px}.messages-list{max-height:360px}.messages-btn{flex:1}}
 @media print{.messages-panel,.messages-btn{display:none!important}}
 
+
+.notify-btn{margin-top:8px;padding:7px 9px;font-size:12px}
+.notify-btn.enabled{background:#287a52;color:#fff;border-color:#287a52}
+.notify-status{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.3}
+.toast-wrap{position:fixed;right:14px;top:14px;z-index:300;display:grid;gap:8px;max-width:min(390px,calc(100vw - 28px))}
+.toast{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;box-shadow:0 12px 35px rgba(0,0,0,.16)}
+.toast.important{border-left:5px solid #efb340}.toast.shiftchange{border-left:5px solid #287a52}
+.toast-title{font-weight:900;margin-bottom:3px}.toast-body{font-size:13px;line-height:1.35}
+@media print{.notify-btn,.notify-status,.toast-wrap{display:none!important}}
+
 </style>
 </head>
 <body>
+<div id="toastWrap" class="toast-wrap"></div>
 <header><div class="header-inner">
   <div class="brand">CableCrew Lakeside</div>
   <div id="syncStatus" class="status">Verbinden…</div>
@@ -87,7 +98,12 @@ body.admin-active .shift:hover{background:#fff8e8}
 <div class="quickbar">
   <div class="quickcard"><div class="quicktitle">🌤️ Weer Knokke-Heist</div><div id="weather" class="quickvalue weatherline">Weer laden…</div></div>
   <div class="quickcard"><div class="quicktitle">👥 Wie werkt vandaag?</div><div id="workingToday" class="quickvalue">Planning laden…</div></div>
-  <div class="quickcard"><div class="quicktitle">👤 Mijn planning</div><div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div></div>
+  <div class="quickcard">
+  <div class="quicktitle">👤 Mijn planning</div>
+  <div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div>
+  <button id="notifyBtn" class="notify-btn">🔔 Meldingen aanzetten</button>
+  <div id="notifyStatus" class="notify-status"></div>
+</div>
 </div>
 
 <main>
@@ -203,7 +219,7 @@ const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app)
 const $=id=>document.getElementById(id);
 const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt"};
-let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[];
+let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false;
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -234,6 +250,7 @@ function fillPeople(){
  const p=people(), old=$("myEmployee").value||localStorage.getItem("cc_my_name")||"";
  $("myEmployee").innerHTML='<option value="">Kies je naam</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
  if(p.includes(old))$("myEmployee").value=old;
+ updateNotifyUI();
  $("editEmployee").innerHTML=p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+'<option value="__NEW__">+ Nieuwe medewerker…</option>';
 }
 function renderToday(){
@@ -272,7 +289,7 @@ document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===currentView));
 });
 $("date").onchange=()=>{renderDay();renderWeek()};
-$("myEmployee").onchange=e=>{if(e.target.value)localStorage.setItem("cc_my_name",e.target.value);else localStorage.removeItem("cc_my_name");renderDay();renderWeek();updateMessageIdentity()};
+$("myEmployee").onchange=e=>{if(e.target.value)localStorage.setItem("cc_my_name",e.target.value);else localStorage.removeItem("cc_my_name");renderDay();renderWeek();updateMessageIdentity();updateNotifyUI()};
 
 function findShift(id){return shifts.find(x=>x._id===id)}
 document.addEventListener("click",e=>{
@@ -390,6 +407,22 @@ await ensureAnonymousAuth();
 
 onSnapshot(collection(db,"shifts"),snap=>{
  firestoreReady=true;
+
+ if(shiftsInitialized && notificationsEnabled()){
+   snap.docChanges().forEach(ch=>{
+     const data={_id:ch.doc.id,...ch.doc.data()};
+     if(!relevantToMe(data))return;
+
+     if(ch.type==="added"){
+       showLocalNotice("➕ Nieuwe shift voor jou",shiftDescription(data),"shiftchange");
+     }else if(ch.type==="modified"){
+       showLocalNotice("🔄 Je shift is gewijzigd",shiftDescription(data),"shiftchange");
+     }else if(ch.type==="removed"){
+       showLocalNotice("❌ Je shift is verwijderd",shiftDescription(data),"shiftchange");
+     }
+   });
+ }
+
  const online=snap.docs.map(d=>({_id:d.id,...d.data()}));
  if(online.length){
    shifts=sorted(online);$("syncStatus").textContent="🟢 Live planning";
@@ -397,12 +430,90 @@ onSnapshot(collection(db,"shifts"),snap=>{
    shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
    $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
  }
- updateImportButton();renderAll();
+ shiftsInitialized=true;
+ updateImportButton();renderAll();updateNotifyUI();
 },err=>{
  firestoreReady=false;shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
- $("syncStatus").textContent="🔴 Firebase niet bereikbaar – JSON-weergave";renderAll();
+ $("syncStatus").textContent="🔴 Firebase niet bereikbaar – JSON-weergave";renderAll();updateNotifyUI();
 });
 
+
+
+
+function closeMessagesPanel(){
+  $("messagesPanel")?.classList.remove("show");
+}
+
+// Altijd gesloten bij openen/heropenen van de website,
+// ook wanneer de browser de pagina uit de back-forward cache herstelt.
+window.addEventListener("pageshow", closeMessagesPanel);
+window.addEventListener("load", closeMessagesPanel);
+
+// Als de gebruiker de site verlaat, zorgen we dat het paneel
+// niet open blijft staan wanneer hij/zij terugkomt.
+window.addEventListener("pagehide", closeMessagesPanel);
+
+function notificationsSupported(){return "Notification" in window}
+function notificationsEnabled(){
+ return notificationsSupported() && Notification.permission==="granted" && localStorage.getItem("cc_notify_enabled")==="1";
+}
+function updateNotifyUI(){
+ const name=currentCrewName();
+ if(!notificationsSupported()){
+   $("notifyBtn").style.display="none";
+   $("notifyStatus").textContent="Browsermeldingen worden op dit toestel niet ondersteund.";
+   return;
+ }
+ $("notifyBtn").style.display="inline-block";
+ if(notificationsEnabled()){
+   $("notifyBtn").classList.add("enabled");
+   $("notifyBtn").textContent="🔔 Meldingen aan";
+   $("notifyStatus").textContent=name?`Je krijgt meldingen voor wijzigingen aan ${name} en belangrijke crewberichten.`:"Kies je naam om persoonlijke shiftmeldingen te ontvangen.";
+ }else{
+   $("notifyBtn").classList.remove("enabled");
+   $("notifyBtn").textContent="🔔 Meldingen aanzetten";
+   $("notifyStatus").textContent=name?"Ontvang een melding bij wijzigingen aan jouw shifts en belangrijke berichten.":"Kies eerst je naam.";
+ }
+}
+$("notifyBtn").onclick=async()=>{
+ const name=currentCrewName();
+ if(!name)return alert("Kies eerst je naam bij ‘Mijn planning’.");
+ if(!notificationsSupported())return alert("Deze browser ondersteunt geen meldingen.");
+ if(notificationsEnabled()){
+   localStorage.setItem("cc_notify_enabled","0");
+   updateNotifyUI();
+   return;
+ }
+ const permission=await Notification.requestPermission();
+ if(permission==="granted"){
+   localStorage.setItem("cc_notify_enabled","1");
+   updateNotifyUI();
+   showLocalNotice("Meldingen staan aan",`Je krijgt meldingen voor ${name} en belangrijke crewberichten.`,"shiftchange");
+ }else{
+   localStorage.setItem("cc_notify_enabled","0");
+   updateNotifyUI();
+ }
+};
+
+function showLocalNotice(title,body,type=""){
+ const wrap=$("toastWrap");
+ const el=document.createElement("div");
+ el.className=`toast ${type}`;
+ el.innerHTML=`<div class="toast-title">${esc(title)}</div><div class="toast-body">${esc(body)}</div>`;
+ wrap.appendChild(el);
+ setTimeout(()=>el.remove(),6500);
+
+ if(notificationsEnabled() && document.visibilityState!=="visible"){
+   try{new Notification(title,{body,icon:""})}catch(e){}
+ }
+}
+function shiftDescription(x){
+ return `${x.date} · ${x.zone} · ${x.start}–${x.end}`;
+}
+function relevantToMe(x){
+ const n=currentCrewName();
+ return !!n && x && x.employee===n;
+}
 
 const ADMIN_EMAILS=["nick@lakesideparadise.be","arno@lakesideparadise.be"];
 function isAdminUser(){return !!(user && user.email && ADMIN_EMAILS.includes(user.email.toLowerCase()))}
@@ -475,7 +586,18 @@ document.addEventListener("click",async e=>{
 });
 const messagesQuery=query(collection(db,"messages"),orderBy("createdAt","desc"),limit(100));
 onSnapshot(messagesQuery,snap=>{
+ if(messagesInitialized && notificationsEnabled()){
+   snap.docChanges().forEach(ch=>{
+     if(ch.type!=="added")return;
+     const m={_id:ch.doc.id,...ch.doc.data()};
+     if(m.important){
+       showLocalNotice("📌 Belangrijk crewbericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
+     }
+   });
+ }
+
  crewMessages=snap.docs.map(d=>({_id:d.id,...d.data()})).sort((a,b)=>(b.important?1:0)-(a.important?1:0)||((b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0)));
+ messagesInitialized=true;
  renderMessages();
 },err=>{
  $("messagesList").innerHTML='<div class="empty">Crewberichten konden niet worden geladen.</div>';
@@ -495,6 +617,7 @@ async function loadWeather(){
  }catch(e){$("weather").textContent="Weer tijdelijk niet beschikbaar"}
 }
 loadWeather();
+updateNotifyUI();
 </script>
 </body>
 </html>
