@@ -1,4 +1,4 @@
-const CACHE_NAME = "cablecrew-stable-v9-2-personal-notifications";
+const CACHE_NAME = "cablecrew-v9-3";
 const APP_SHELL = [
   "./manifest.webmanifest",
   "./icon-180.png",

@@ -434,12 +434,18 @@ async function loadFallback(){
 }
 
 function initDateOptions(){
- const dates=[...new Set(shifts.map(x=>x.date))].sort();
+ const today=key(new Date());
+ // In de gewone keuzelijst tonen we alleen vandaag en de toekomst.
+ // Oude shifts blijven gewoon in Firebase en zijn voor beheer bereikbaar via Verleden.
+ const dates=[...new Set(shifts.map(x=>x.date))].filter(d=>d>=today).sort();
  const old=$("date").value;
  $("date").innerHTML=dates.map(d=>`<option value="${d}">${label(d)}</option>`).join("");
- if(!dates.length)return;
- const today=key(new Date());
- let chosen=old&&dates.includes(old)?old:(dates.includes(today)?today:dates.reduce((best,d)=>Math.abs(new Date(d)-new Date(today))<Math.abs(new Date(best)-new Date(today))?d:best,dates[0]));
+ if(!dates.length){
+   ensureDateOption(today);
+   $("date").value=today;
+   return;
+ }
+ let chosen=old&&dates.includes(old)?old:(dates.includes(today)?today:dates[0]);
  $("date").value=chosen;
 }
 function people(){return [...new Set(shifts.map(x=>x.employee))].filter(Boolean).sort()}
@@ -729,7 +735,10 @@ function showPersonalAlert(title,body){
  $("personalAlertBody").textContent=body;
  $("personalAlert").style.display="flex";
 }
-$("personalAlertClose").onclick=()=>$("personalAlert").style.display="none";
+$("personalAlertClose").onclick=()=>{
+ $("personalAlert").style.display="none";
+ acknowledgeShiftAlerts();
+};
 
 function notificationsSupported(){return "Notification" in window}
 function notificationsEnabled(){
@@ -749,7 +758,7 @@ function updateNotifyUI(){
  if(notificationsEnabled()){
    $("notifyBtn").classList.add("enabled");
    $("notifyBtn").textContent="🔔 Meldingen aan";
-   $("notifyStatus").textContent=name?`Persoonlijke meldingen actief voor ${name}. Je mag de planning ondertussen gewoon op ‘Iedereen’ laten staan.`:"Kies één keer je naam om persoonlijke shiftmeldingen te ontvangen.";
+   $("notifyStatus").textContent=name?`Persoonlijke meldingen actief voor ${name}. Wijzigingen tellen ook mee op het app-icoon als je toestel badges ondersteunt.`:"Kies één keer je naam om persoonlijke shiftmeldingen te ontvangen.";
  }else{
    $("notifyBtn").classList.remove("enabled");
    $("notifyBtn").textContent="🔔 Meldingen aanzetten";
@@ -778,6 +787,9 @@ $("notifyBtn").onclick=async()=>{
 
 function showLocalNotice(title,body,type=""){
  showPersonalAlert(title,body);
+ if(type==="shiftchange"){
+   addPendingShiftAlert();
+ }
 
  const wrap=$("toastWrap");
  const el=document.createElement("div");
@@ -790,6 +802,12 @@ function showLocalNotice(title,body,type=""){
    try{new Notification(title,{body,icon:""})}catch(e){}
  }
 }
+
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible")syncAppIconBadge();
+});
+window.addEventListener("pageshow",syncAppIconBadge);
+
 function shiftDescription(x){
  return `${x.date} · ${x.zone} · ${x.start}–${x.end}`;
 }
@@ -839,12 +857,43 @@ function markAllMessagesRead(){
 function newestMessageMillis(){
  return crewMessages.reduce((mx,m)=>Math.max(mx,m.createdAt?.toMillis?.()||0),0);
 }
+
+function appBadgeSupported(){
+ return typeof navigator!=="undefined" && "setAppBadge" in navigator;
+}
+function pendingShiftAlerts(){
+ return Math.max(0,Number(localStorage.getItem("cc_pending_shift_alerts")||0)||0);
+}
+function setPendingShiftAlerts(n){
+ localStorage.setItem("cc_pending_shift_alerts",String(Math.max(0,n||0)));
+ syncAppIconBadge();
+}
+function addPendingShiftAlert(){
+ setPendingShiftAlerts(pendingShiftAlerts()+1);
+}
+function unreadMessageCount(){
+ return crewMessages.filter(m=>messageVisibleToCurrentUser(m) && !isMessageRead(m._id)).length;
+}
+async function syncAppIconBadge(){
+ if(!appBadgeSupported())return;
+ const total=unreadMessageCount()+pendingShiftAlerts();
+ try{
+   if(total>0) await navigator.setAppBadge(total);
+   else if("clearAppBadge" in navigator) await navigator.clearAppBadge();
+   else await navigator.setAppBadge(0);
+ }catch(e){console.warn("App-icoonbadge:",e)}
+}
+function acknowledgeShiftAlerts(){
+ if(pendingShiftAlerts()>0)setPendingShiftAlerts(0);
+}
+
 function updateMessageBadge(){
  const unread=crewMessages.filter(m=>messageVisibleToCurrentUser(m) && !isMessageRead(m._id)).length;
  $("msgBadge").textContent=unread;
  $("msgBadge").style.display=unread>0?"inline-flex":"none";
  $("messagesBtn").classList.toggle("has-unread",unread>0);
  if($("inboxSummary"))$("inboxSummary").textContent=unread?`${unread} ongelezen bericht${unread===1?"":"en"}`:"Alles gelezen";
+ syncAppIconBadge();
 }
 function markMessagesSeen(){updateMessageBadge()}
 
@@ -1019,7 +1068,10 @@ function renderChangeLog(){
    </div>`;
  }).join(""):'<div class="empty">Nog geen logboekitems geregistreerd.</div>';
 }
-$("changeLogBtn").onclick=()=>{startAuditListener();$("changeLogModal").classList.add("show");renderChangeLog()};
+$("changeLogBtn").onclick=()=>{
+ if(!isAdminUser())return;
+ startAuditListener();$("changeLogModal").classList.add("show");renderChangeLog();
+};
 $("closeChangeLogBtn").onclick=()=>$("changeLogModal").classList.remove("show");
 
 function realTodayKey(){return key(new Date())}
@@ -1048,12 +1100,14 @@ function visibleDatesForUser(){
  return isAdminUser()?dates():dates().filter(d=>d>=today);
 }
 function applyPastDateVisibility(){
- const today=realTodayKey(),admin=isAdminUser();
+ const today=realTodayKey();
  [...$("date").options].forEach(o=>{
-   o.hidden=!admin && o.value<today;
-   o.disabled=!admin && o.value<today;
+   o.hidden=o.value<today;
+   o.disabled=o.value<today;
  });
- if(!admin && $("date").value<today)goToDate(today);
+ if($("date").value<today && !$("archiveModal").classList.contains("show")){
+   goToDate(today);
+ }
 }
 function renderArchive(){
  const today=realTodayKey();
@@ -1066,7 +1120,10 @@ function renderArchive(){
      <div class="archive-count">${grouped[d].length} shift${grouped[d].length===1?"":"s"}</div>
    </div>`).join(""):'<div class="empty">Nog geen voorbije planning.</div>';
 }
-$("archiveBtn").onclick=()=>{renderArchive();$("archiveModal").classList.add("show")};
+$("archiveBtn").onclick=()=>{
+ if(!isAdminUser())return;
+ renderArchive();$("archiveModal").classList.add("show");
+};
 $("closeArchiveBtn").onclick=()=>$("archiveModal").classList.remove("show");
 document.addEventListener("click",e=>{
  const row=e.target.closest("[data-archive-date]");
@@ -1104,6 +1161,7 @@ function renderYearPlanner(){
  $("yearGrid").innerHTML=html;
 }
 $("yearPlannerBtn").onclick=()=>{
+ if(!isAdminUser())return;
  yearViewYear=new Date(($("date").value||key(new Date()))+"T12:00:00").getFullYear();
  renderYearPlanner();
  $("yearPlannerModal").classList.add("show");
