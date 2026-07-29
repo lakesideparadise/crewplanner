@@ -205,6 +205,10 @@ body.admin-active .shift:hover{background:#fff8e8}
 .logbook-btn.has-unread{background:#fff0f0;border-color:#e58b8b;color:#8f1d1d}
 .message-item.shift-system{border-left:5px solid #f59e0b;background:#fffaf0}
 .message-item.shift-system.unread{background:#fff3d9}
+
+.planning-view-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.planning-view-actions button{font-size:11px;padding:6px 8px}
+.planning-view-actions button.active{background:#0f4b6d;color:#fff;border-color:#0f4b6d}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -229,6 +233,10 @@ body.admin-active .shift:hover{background:#fff8e8}
   <div class="quickcard">
   <div class="quicktitle">👤 Mijn planning</div>
   <div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div>
+  <div class="planning-view-actions">
+    <button id="showAllPlanningBtn" class="secondary">👥 Volledige planning</button>
+    <button id="showMyPlanningBtn" class="secondary">👤 Mijn planning</button>
+  </div>
   <div id="identityHint" class="identity-hint"></div>
   <button id="notifyBtn" class="notify-btn">🔔 Meldingen aanzetten</button>
   <div id="notifyStatus" class="notify-status"></div>
@@ -910,6 +918,15 @@ function applyAutomaticIdentity(){
   }
 }
 function isAdminUser(){return !!(user && user.email && ADMIN_EMAILS.includes(user.email.toLowerCase()))}
+let planningViewMode="ALL";
+function planningEmployeeFilter(){
+  return planningViewMode==="MINE" ? currentCrewName() : "";
+}
+function updatePlanningViewButtons(){
+  if($("showAllPlanningBtn"))$("showAllPlanningBtn").classList.toggle("active",planningViewMode==="ALL");
+  if($("showMyPlanningBtn"))$("showMyPlanningBtn").classList.toggle("active",planningViewMode==="MINE");
+}
+
 function currentCrewName(){return automaticAdminName() || $("myEmployee").value || rememberedCrewName() || ""}
 function formatMessageTime(ts){
  if(!ts)return "zojuist";
@@ -1272,6 +1289,23 @@ loadWeather();
 setTodayHeader();
 updateNotifyUI();
 
+
+
+$("showAllPlanningBtn").onclick=()=>{
+ planningViewMode="ALL";
+ updatePlanningViewButtons();
+ renderDay();renderWeek();
+};
+$("showMyPlanningBtn").onclick=()=>{
+ if(!currentCrewName()){
+   alert("Kies eerst één keer je naam bij Mijn planning.");
+   return;
+ }
+ planningViewMode="MINE";
+ updatePlanningViewButtons();
+ renderDay();renderWeek();
+};
+updatePlanningViewButtons();
 
 // =========================
 // PWA / APP INSTALLATIE
