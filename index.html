@@ -198,111 +198,8 @@ body.admin-active .shift:hover{background:#fff8e8}
 .message-item.direct.unread{background:#f5f0ff}
 
 
-/* ===== V9.1 INBOX + APP BADGE ===== */
-.messages-panel{
-  box-shadow:0 12px 35px rgba(15,75,109,.12);
-}
-.messages-head h2{font-size:22px}
-.inbox-summary{
-  padding:8px 10px;
-  border-radius:9px;
-  background:#f6f9fb;
-  border:1px solid #e3ebf0;
-  margin:10px 0;
-}
-.message-item{
-  margin:8px 0;
-  padding:12px 12px;
-  border:1px solid #e3e9ee;
-  border-radius:12px;
-  background:#fff;
-}
-.message-item.unread{
-  background:#eef6ff;
-  border:2px solid #6aa7d5;
-  border-left:7px solid #2d73a7;
-  padding-left:10px;
-  box-shadow:0 5px 16px rgba(45,115,167,.10);
-}
-.message-item.unread .message-author::before{
-  content:"NIEUW · ";
-  color:#d92d20;
-  font-size:10px;
-  letter-spacing:.04em;
-}
-.message-item.pinned{
-  background:#fff9e8;
-  border:2px solid #efb340;
-  margin:8px 0;
-  padding:12px;
-}
-.message-item.direct{
-  border-left:7px solid #7c3aed;
-}
-.message-item.direct.unread{
-  background:#f6f0ff;
-  border-color:#b69ae9;
-  border-left-color:#7c3aed;
-}
-.message-top{gap:7px}
-.message-author{font-size:14px}
-.message-to{
-  font-size:10px;
-  padding:3px 7px;
-}
-.message-time{
-  margin-left:auto;
-}
-.message-body{
-  font-size:14px;
-  margin-top:8px;
-  line-height:1.45;
-}
-.message-read-toggle{
-  background:#fff;
-  border-color:#9eb8ca;
-}
-.messages-btn.has-unread{
-  background:#fff0f0;
-  border:2px solid #d92d20;
-  color:#8f1d1d;
-  box-shadow:0 0 0 3px rgba(217,45,32,.08);
-}
-.msg-badge{
-  min-width:22px;
-  height:22px;
-  font-size:12px;
-  font-weight:900;
-}
-.personal-alert{
-  position:sticky;
-  top:8px;
-  z-index:80;
-}
-.personal-alert.message-notice{
-  background:#eef6ff;
-  border-color:#2d73a7;
-}
-.personal-alert.shift-notice{
-  background:#fff3d9;
-  border-color:#f59e0b;
-}
-.personal-alert.important-notice{
-  background:#fff0f0;
-  border-color:#d92d20;
-}
-.personal-alert-title{
-  text-transform:none;
-  font-size:17px;
-}
-.app-badge-note{
-  font-size:11px;
-  color:var(--muted);
-  margin-top:5px;
-}
-@media(max-width:620px){
-  .message-time{width:100%;margin-left:0}
-  .message-read-toggle{margin-left:0}
+.notification-identity{
+ font-size:11px;font-weight:800;color:#287a52;margin-top:4px;
 }
 
 </style>
@@ -330,7 +227,7 @@ body.admin-active .shift:hover{background:#fff8e8}
   <div class="quicktitle">👤 Mijn planning</div>
   <div class="quickvalue"><select id="myEmployee"><option value="">Iedereen</option></select></div>
   <button id="notifyBtn" class="notify-btn">🔔 Meldingen aanzetten</button>
-  <div id="notifyStatus" class="notify-status"></div>
+  <div id="notifyStatus" class="notify-status"></div><div id="notificationIdentity" class="notification-identity"></div>
 </div>
 </div>
 
@@ -385,7 +282,7 @@ body.admin-active .shift:hover{background:#fff8e8}
       </div>
       <div class="inbox-head-actions"><button id="markAllReadBtn">Alles gelezen</button><button id="closeMessagesBtn">Sluiten</button></div>
     </div>
-    <div id="inboxSummary" class="inbox-summary"></div><div id="appBadgeNote" class="app-badge-note"></div><div id="messagesList" class="messages-list"></div>
+    <div id="inboxSummary" class="inbox-summary"></div><div id="messagesList" class="messages-list"></div>
     <div class="message-compose">
       <div id="messageIdentity" class="message-identity"></div>
       <label class="message-recipient-label">Aan
@@ -595,7 +492,14 @@ document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===currentView));
 });
 $("date").onchange=()=>{renderDay();renderWeek()};
-$("myEmployee").onchange=e=>{if(e.target.value)localStorage.setItem("cc_my_name",e.target.value);else localStorage.removeItem("cc_my_name");renderDay();renderWeek();updateMessageIdentity();updateNotifyUI()};
+$("myEmployee").onchange=e=>{
+ if(e.target.value){
+   localStorage.setItem("cc_my_name",e.target.value);
+ }
+ // Bij "Iedereen" blijft de laatst gekozen persoonlijke naam bewaard
+ // zodat persoonlijke meldingen blijven werken.
+ renderDay();renderWeek();updateMessageIdentity();updateNotifyUI();
+};
 
 function findShift(id){return shifts.find(x=>x._id===id)}
 document.addEventListener("click",e=>{
@@ -725,6 +629,10 @@ onAuthStateChanged(auth,u=>{
  document.body.classList.toggle("admin-active",admin);
  $("loginBtn").style.display=admin?"none":"inline-block";
  $("adminWho").textContent=admin?`🔧 ${u.email}`:"Beheer";
+ if(admin && adminCrewName()){
+   localStorage.setItem("cc_my_name",adminCrewName());
+ }
+
  updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();renderDay();renderWeek();renderMessages();
 });
 
@@ -761,7 +669,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
      if(!relevantToMe(data))return;
 
      if(ch.type==="added"){
-       showLocalNotice("➕ NIEUWE SHIFT VOOR JOU",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
+       showLocalNotice("➕ Nieuwe shift ingepland",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
      }else if(ch.type==="modified"){
        const prev=previousShiftMap.get(data._id);
        const noteChanged=prev && (prev.note||"")!==(data.note||"");
@@ -774,12 +682,12 @@ onSnapshot(collection(db,"shifts"),snap=>{
        );
        if(noteChanged && !coreChanged){
          const note=(data.note||"").trim();
-         showLocalNotice("📝 NIEUWE NOTITIE BIJ JE SHIFT",note || `Notitie verwijderd · ${shiftDescription(data)}`,"shiftchange");
+         showLocalNotice("📝 Nieuwe notitie bij je shift",note || `Notitie verwijderd · ${shiftDescription(data)}`,"shiftchange");
        }else{
-         showLocalNotice("🔄 JOUW SHIFT IS GEWIJZIGD",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
+         showLocalNotice("🔄 Je planning is aangepast",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
        }
      }else if(ch.type==="removed"){
-       showLocalNotice("❌ JOUW SHIFT IS VERWIJDERD",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
+       showLocalNotice("❌ Shift verwijderd",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
      }
    });
  }
@@ -819,17 +727,6 @@ window.addEventListener("pagehide", closeMessagesPanel);
 function showPersonalAlert(title,body){
  $("personalAlertTitle").textContent=title;
  $("personalAlertBody").textContent=body;
- $("personalAlert").classList.remove("message-notice","shift-notice","important-notice");
-
- const combined=(title+" "+body).toLowerCase();
- if(combined.includes("belangrijk")){
-   $("personalAlert").classList.add("important-notice");
- }else if(combined.includes("shift") || combined.includes("planning") || combined.includes("notitie")){
-   $("personalAlert").classList.add("shift-notice");
- }else{
-   $("personalAlert").classList.add("message-notice");
- }
-
  $("personalAlert").style.display="flex";
 }
 $("personalAlertClose").onclick=()=>$("personalAlert").style.display="none";
@@ -840,6 +737,9 @@ function notificationsEnabled(){
 }
 function updateNotifyUI(){
  const name=currentCrewName();
+ if($("notificationIdentity")){
+   $("notificationIdentity").textContent=name?`🔔 Herkend voor meldingen als: ${name}`:"";
+ }
  if(!notificationsSupported()){
    $("notifyBtn").style.display="none";
    $("notifyStatus").textContent="Browsermeldingen worden op dit toestel niet ondersteund.";
@@ -849,11 +749,11 @@ function updateNotifyUI(){
  if(notificationsEnabled()){
    $("notifyBtn").classList.add("enabled");
    $("notifyBtn").textContent="🔔 Meldingen aan";
-   $("notifyStatus").textContent=name?`Je krijgt meldingen voor wijzigingen aan ${name} en belangrijke crewberichten.`:"Kies je naam om persoonlijke shiftmeldingen te ontvangen.";
+   $("notifyStatus").textContent=name?`Persoonlijke meldingen actief voor ${name}. Je mag de planning ondertussen gewoon op ‘Iedereen’ laten staan.`:"Kies één keer je naam om persoonlijke shiftmeldingen te ontvangen.";
  }else{
    $("notifyBtn").classList.remove("enabled");
    $("notifyBtn").textContent="🔔 Meldingen aanzetten";
-   $("notifyStatus").textContent=name?"Ontvang een melding bij wijzigingen aan jouw shifts en belangrijke berichten.":"Kies eerst je naam.";
+   $("notifyStatus").textContent=name?`Zet meldingen aan voor wijzigingen aan de shifts van ${name}.`:"Kies eerst één keer je naam.";
  }
 }
 $("notifyBtn").onclick=async()=>{
@@ -899,8 +799,18 @@ function relevantToMe(x){
 }
 
 const ADMIN_EMAILS=["nick@lakesideparadise.be","arno@lakesideparadise.be"];
+const ADMIN_NAME_BY_EMAIL={
+ "nick@lakesideparadise.be":"Nick",
+ "arno@lakesideparadise.be":"Arno"
+};
 function isAdminUser(){return !!(user && user.email && ADMIN_EMAILS.includes(user.email.toLowerCase()))}
-function currentCrewName(){return $("myEmployee").value || localStorage.getItem("cc_my_name") || ""}
+function adminCrewName(){
+ const email=(user?.email||"").toLowerCase();
+ return ADMIN_NAME_BY_EMAIL[email]||"";
+}
+function currentCrewName(){
+ return adminCrewName() || $("myEmployee").value || localStorage.getItem("cc_my_name") || "";
+}
 function formatMessageTime(ts){
  if(!ts)return "zojuist";
  try{return ts.toDate().toLocaleString("nl-BE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(e){return ""}
@@ -929,41 +839,12 @@ function markAllMessagesRead(){
 function newestMessageMillis(){
  return crewMessages.reduce((mx,m)=>Math.max(mx,m.createdAt?.toMillis?.()||0),0);
 }
-
-function appBadgeSupported(){
-  return typeof navigator !== "undefined" && "setAppBadge" in navigator;
-}
-async function setCableCrewAppBadge(count){
-  if(!appBadgeSupported())return;
-  try{
-    if(count>0){
-      await navigator.setAppBadge(count);
-    }else if("clearAppBadge" in navigator){
-      await navigator.clearAppBadge();
-    }else{
-      await navigator.setAppBadge(0);
-    }
-  }catch(e){
-    console.warn("App-badge kon niet worden bijgewerkt:",e);
-  }
-}
-
 function updateMessageBadge(){
  const unread=crewMessages.filter(m=>messageVisibleToCurrentUser(m) && !isMessageRead(m._id)).length;
  $("msgBadge").textContent=unread;
  $("msgBadge").style.display=unread>0?"inline-flex":"none";
  $("messagesBtn").classList.toggle("has-unread",unread>0);
- if($("inboxSummary")){
-   $("inboxSummary").textContent=unread
-     ? `📥 ${unread} ongelezen bericht${unread===1?"":"en"}`
-     : "✅ Alles gelezen";
- }
- if($("appBadgeNote")){
-   $("appBadgeNote").textContent=appBadgeSupported()
-     ? (unread ? "Hetzelfde aantal wordt ook op het CableCrew-appicoon gezet." : "Geen ongelezen berichten.")
-     : "App-icoonbadge wordt op dit toestel/browser niet ondersteund.";
- }
- setCableCrewAppBadge(unread);
+ if($("inboxSummary"))$("inboxSummary").textContent=unread?`${unread} ongelezen bericht${unread===1?"":"en"}`:"Alles gelezen";
 }
 function markMessagesSeen(){updateMessageBadge()}
 
@@ -1042,10 +923,10 @@ onSnapshot(messagesQuery,snap=>{
      if(ch.type!=="added")return;
      const m={_id:ch.doc.id,...ch.doc.data()};
      if(m.important && messageVisibleToCurrentUser(m)){
-       showLocalNotice("📌 BELANGRIJK BERICHT",`${m.author||"Crew"}: ${m.text||""}`,"important");
+       showLocalNotice("📥 Nieuw belangrijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
      }
      else if((m.recipient||"ALL")!=="ALL" && messageVisibleToCurrentUser(m) && m.author!==currentCrewName()){
-       showLocalNotice("📩 NIEUW PERSOONLIJK BERICHT",`${m.author||"Crew"}: ${m.text||""}`,"important");
+       showLocalNotice("📩 Nieuw persoonlijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
      }
    });
  }

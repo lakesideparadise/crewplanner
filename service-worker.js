@@ -1,4 +1,4 @@
-const CACHE_NAME = "cablecrew-stable-v9-1-inbox-badge";
+const CACHE_NAME = "cablecrew-stable-v9-2-personal-notifications";
 const APP_SHELL = [
   "./manifest.webmanifest",
   "./icon-180.png",
