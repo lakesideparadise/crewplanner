@@ -1,300 +1,300 @@
 <!doctype html>
-<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#123e5a"><title>CableCrew Lakeside</title>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CableCrew Planner – Firebase TEST</title>
 <style>
-:root{--navy:#123e5a;--bg:#f4f7f9;--card:#fff;--text:#17212b;--muted:#667085;--line:#d9e1e7}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}header{background:linear-gradient(135deg,var(--navy),#17617b);color:#fff;padding:18px 16px}.brand,main{max-width:1280px;margin:auto}.brand{display:flex;justify-content:space-between;gap:12px;align-items:center}h1{margin:0}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}select,button{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;cursor:pointer}.viewbtn.active{background:var(--navy);color:#fff}.panel{display:none}.panel.active{display:block}.zones{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.zone,.week-day,.month-cell{background:var(--card);border:1px solid var(--line);border-radius:14px}.zone{padding:14px}.zone h2{margin:-14px -14px 10px;padding:10px 14px;border-radius:14px 14px 0 0}.pro h2,.pro-label{background:#f4cccc}.rookie h2,.rookie-label{background:#d9ead3}.two h2,.two-label{background:#cfe2f3}.standby h2,.standby-label{background:#fff2cc}.foil h2,.foil-label{background:#eadcf8}.tt h2,.tt-label{background:#fce5cd}.shift{padding:9px 0;border-bottom:1px solid #edf1f4}.mainline{display:flex;justify-content:space-between;gap:12px}.time{font-weight:700}.note{margin-top:4px;color:var(--muted);font-size:13px;font-style:italic}.empty{color:var(--muted);font-style:italic;padding:8px 0}.week-grid{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px}.week-day{min-width:180px;padding:10px}.week-day h3{margin:0 0 10px;font-size:16px}.week-zone{margin-bottom:10px}.week-zone-title{font-size:12px;font-weight:700;padding:5px 7px;border-radius:7px;margin-bottom:3px}.week-item{font-size:13px;padding:4px 0;border-bottom:1px solid #edf1f4}.week-note{font-size:11px;color:var(--muted);font-style:italic}.month-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.weekday{font-weight:700;text-align:center;padding:7px;color:var(--muted)}.month-cell{min-height:150px;padding:9px;cursor:pointer}.month-cell:hover{outline:2px solid #9fc5d8}.month-cell.outside{opacity:.35}.daynum{font-weight:700;margin-bottom:7px}.month-zone{font-size:12px;margin:3px 0;padding:3px 5px;border-radius:6px;display:flex;justify-content:space-between}.legend{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.legend span{padding:5px 8px;border-radius:7px;font-size:12px}@media(max-width:900px){.zones{grid-template-columns:1fr}.month-cell{min-height:110px}}@media(max-width:650px){.brand{align-items:flex-start;flex-direction:column}.toolbar select,.toolbar button{width:100%}.mainline{display:block}.time{display:block;margin-top:2px}.month-grid{gap:4px}.month-cell{min-height:82px;padding:5px}.month-zone{font-size:10px}.weekday{font-size:11px;padding:3px}}
-.print-only{display:none}
-@page{size:A4 landscape;margin:0}
-@media print{
-  html,body{width:297mm;background:#fff!important}
-  header,.toolbar,.panel{display:none!important}
-  main{max-width:none;margin:0;padding:0}
-  #printWeek.print-only{display:block!important}
-  .print-page{
-    width:297mm;height:210mm;box-sizing:border-box;
-    padding:7mm;background:#fff;overflow:hidden;
-  }
-  .print-title{font-size:15pt;font-weight:800;margin:0 0 4mm}
-  .print-grid{
-    display:grid;grid-template-columns:repeat(7,1fr);gap:2.5mm;
-    height:184mm;align-items:stretch
-  }
-  .print-day{
-    border:.25mm solid #d9e1e7;border-radius:3mm;
-    padding:2.2mm;overflow:hidden;min-width:0;background:#fff
-  }
-  .print-day h3{
-    font-size:9.5pt;margin:0 0 2mm;white-space:nowrap
-  }
-  .print-zone{margin-bottom:1.7mm}
-  .print-zone-title{
-    font-size:6.8pt;font-weight:800;padding:1.1mm 1.4mm;
-    border-radius:1.5mm;margin-bottom:.5mm;white-space:nowrap;
-    overflow:hidden;text-overflow:ellipsis
-  }
-  .print-item{
-    font-size:6.2pt;line-height:1.12;padding:.55mm 0;
-    border-bottom:.2mm solid #edf1f4
-  }
-  .print-item:last-child{border-bottom:0}
-  .print-note{font-size:5.2pt;color:#667085;font-style:italic;margin-top:.2mm}
-  .print-empty{font-size:6pt;color:#667085;font-style:italic}
+:root{
+  --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
+  --pro:#f4cccc;--rookie:#d9ead3;--two:#d9e6f7;--standby:#fff2cc;--foil:#e6dcf7;--tt:#d9eeee;
 }
-
+*{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:var(--text)}
+header{background:#fff;border-bottom:1px solid var(--line);padding:14px 18px}
+.header-inner{max-width:1280px;margin:auto;display:flex;align-items:center;gap:12px}
+.brand{font-size:22px;font-weight:900}.status{margin-left:auto;font-size:13px;color:var(--muted)}
 .quickbar{max-width:1280px;margin:12px auto 0;padding:0 14px;display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px}
-.quickcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;min-height:62px}
-.quicktitle{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.quickvalue{font-weight:800;margin-top:5px}.weatherline{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.weathericon{font-size:25px}
-#myEmployee{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;max-width:100%}
-@media(max-width:760px){.quickbar{grid-template-columns:1fr}.quickcard{min-height:auto}}
-@media print{.quickbar{display:none!important}}
+.quickcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;min-height:76px}
+.quicktitle{font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.quickvalue{font-weight:800;margin-top:6px;line-height:1.35}.weatherline{display:flex;align-items:center;gap:9px}.weathericon{font-size:25px}
+main{max-width:1280px;margin:auto;padding:14px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+button,select,input,textarea{font:inherit}
+button,select,input{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+button{cursor:pointer;font-weight:800}.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.danger{background:#a33;color:#fff;border-color:#a33}.success{background:#287a52;color:#fff;border-color:#287a52}
+.viewbtn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.admin-login{margin-left:auto}.adminbar{display:none;background:#fff4d8;border:1px solid #ead39b;border-radius:12px;padding:10px 12px;margin-bottom:12px;gap:8px;align-items:center;flex-wrap:wrap}
+.adminbar.show{display:flex}.adminbar strong{margin-right:auto}.editToggle.on{background:#ef8f00;color:#fff;border-color:#ef8f00;font-size:16px}
+.panel{display:none}.panel.active{display:block}
+.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.zone{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.zone h2{font-size:20px;margin:0;padding:12px 16px}.pro h2{background:var(--pro)}.rookie h2{background:var(--rookie)}.two h2{background:var(--two)}.standby h2{background:var(--standby)}.foil h2{background:var(--foil)}.tt h2{background:var(--tt)}
+.shift{padding:11px 16px;border-top:1px solid #edf1f4;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.shift:first-of-type{border-top:0}
+.shift.editable{cursor:pointer}.shift.editable:hover{background:#fff8e8;outline:2px solid #f0b95d}.time{white-space:nowrap;color:#41505c}.note{font-size:12px;color:var(--muted);font-style:italic;margin-top:3px}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}.week-day{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px;min-width:0}.week-day h3{margin:0 0 8px;font-size:14px}.mini-zone{margin-bottom:8px}.mini-title{font-size:11px;font-weight:900;padding:4px 6px;border-radius:6px}.mini-shift{font-size:11px;padding:3px 1px;cursor:default}.mini-shift.editable{cursor:pointer}.mini-shift.editable:hover{text-decoration:underline}
+.empty{color:var(--muted);font-style:italic;padding:10px 0}
+.modalback{display:none;position:fixed;inset:0;background:rgba(10,25,35,.45);z-index:100;padding:18px;align-items:center;justify-content:center}.modalback.show{display:flex}
+.modal{background:#fff;border-radius:14px;padding:18px;width:min(520px,100%);box-shadow:0 20px 60px rgba(0,0,0,.25)}.modal h2{margin-top:0}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formgrid label{font-size:12px;font-weight:800;color:#51606b}.formgrid input,.formgrid select,.formgrid textarea{width:100%;margin-top:4px;padding:10px;border:1px solid var(--line);border-radius:8px}.wide{grid-column:1/-1}.modalactions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.loginbox{display:grid;gap:10px}.loginbox input{width:100%}
+@media(max-width:900px){.week-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.quickbar,.day-grid{grid-template-columns:1fr}.week-grid{grid-template-columns:1fr}.status{display:none}.admin-login{margin-left:0}.formgrid{grid-template-columns:1fr}.wide{grid-column:auto}}
+@media print{header,.quickbar,.toolbar,.adminbar,.modalback{display:none!important}body{background:#fff}.panel{display:none!important}#week.panel{display:block!important}.week-grid{grid-template-columns:repeat(7,1fr);gap:2mm}.week-day{border-radius:2mm;padding:2mm}.mini-shift{font-size:8pt}.mini-title{font-size:8pt}}
+@page{size:A4 landscape;margin:7mm}
+</style>
+</head>
+<body>
+<header><div class="header-inner">
+  <div class="brand">CableCrew Lakeside</div>
+  <div id="syncStatus" class="status">Verbinden…</div>
+</div></header>
 
-.admin-login{position:fixed;right:14px;bottom:14px;z-index:30}
-.admin-login button{opacity:.72;font-size:12px}
-.adminbar{max-width:1280px;margin:10px auto 0;padding:10px 14px;background:#fff4d8;border:1px solid #ead39b;border-radius:12px;display:none;gap:8px;align-items:center;flex-wrap:wrap}
-.adminbar.show{display:flex}.adminbar b{margin-right:auto}.adminbar button{padding:8px 10px}
-.shift.editable{cursor:pointer;outline:1px dashed transparent}.shift.editable:hover{outline-color:#7c8b95;transform:translateY(-1px)}
-.modalback{display:none;position:fixed;inset:0;background:rgba(10,25,35,.42);z-index:100;padding:18px;align-items:center;justify-content:center}
-.modalback.show{display:flex}.modal{background:#fff;border-radius:14px;padding:18px;width:min(520px,100%);box-shadow:0 20px 60px rgba(0,0,0,.22)}
-.modal h2{margin-top:0}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formgrid label{font-size:12px;font-weight:700;color:#51606b}
-.formgrid input,.formgrid select,.formgrid textarea{width:100%;margin-top:4px;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit}
-.formgrid .wide{grid-column:1/-1}.modalactions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}.danger{background:#a33!important}.success{background:#287a52!important}
-@media(max-width:620px){.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}}
-@media print{.admin-login,.adminbar,.modalback{display:none!important}}
-
-</style></head><body>
-<header><div class="brand"><div><h1>⚡ CableCrew Lakeside</h1><small>Crew planning</small></div><div id="updated"></div></div></header>
 <div class="quickbar">
-<div class="quickcard"><div class="quicktitle">🌤️ Weer Knokke-Heist</div><div id="weather" class="quickvalue weatherline">Weer laden…</div></div>
-<div class="quickcard"><div class="quicktitle">👥 Wie werkt vandaag?</div><div id="workingToday" class="quickvalue">Planning laden…</div></div>
-<div class="quickcard"><div class="quicktitle">👤 Mijn planning</div><div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div></div>
+  <div class="quickcard"><div class="quicktitle">🌤️ Weer Knokke-Heist</div><div id="weather" class="quickvalue weatherline">Weer laden…</div></div>
+  <div class="quickcard"><div class="quicktitle">👥 Wie werkt vandaag?</div><div id="workingToday" class="quickvalue">Planning laden…</div></div>
+  <div class="quickcard"><div class="quicktitle">👤 Mijn planning</div><div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div></div>
 </div>
 
+<main>
+  <div class="toolbar">
+    <button class="viewbtn active" data-view="day">Dag</button>
+    <button class="viewbtn" data-view="week">Week</button>
+    <select id="date"></select>
+    <div class="admin-login"><button id="loginBtn">🔐 Beheer login</button></div>
+  </div>
 
-<div id="adminBar" class="adminbar">
-  <b>🔧 Beheermodus</b>
-  <button id="addShiftBtn">+ Shift</button>
-  <button id="copyWeekBtn">Week kopiëren</button>
-  <button id="downloadJsonBtn" class="success">Planning publiceren</button>
-  <button id="adminPrintBtn">Week afdrukken</button>
-  <button id="exitAdminBtn">Afsluiten</button>
-</div>
-<div class="admin-login"><button id="adminLoginBtn">Beheer</button></div>
+  <div id="adminBar" class="adminbar">
+    <strong id="adminWho">Beheer</strong>
+    <button id="editToggle" class="editToggle">✏️ BEWERKEN</button>
+    <button id="addShiftBtn">+ Shift</button>
+    <button id="copyWeekBtn">Week kopiëren</button>
+    <button id="printBtn">Week afdrukken</button>
+    <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
+    <button id="logoutBtn">Uitloggen</button>
+  </div>
 
-<div id="shiftModal" class="modalback">
- <div class="modal">
-  <h2 id="modalTitle">Shift</h2>
+  <section id="day" class="panel active"><div id="dayGrid" class="day-grid"></div></section>
+  <section id="week" class="panel"><div id="weekGrid" class="week-grid"></div></section>
+</main>
+
+<div id="loginModal" class="modalback"><div class="modal">
+  <h2>Beheer login</h2>
+  <div class="loginbox">
+    <input id="loginEmail" type="email" placeholder="E-mailadres">
+    <input id="loginPassword" type="password" placeholder="Wachtwoord">
+    <div id="loginError" style="color:#a33;font-size:13px"></div>
+  </div>
+  <div class="modalactions"><button id="cancelLogin">Annuleren</button><button id="doLogin" class="primary">Inloggen</button></div>
+</div></div>
+
+<div id="shiftModal" class="modalback"><div class="modal">
+  <h2 id="shiftTitle">Shift</h2>
   <div class="formgrid">
-   <label>Datum<input id="editDate" type="date"></label>
-   <label>Medewerker<input id="editEmployee" list="employeeList"></label>
-   <datalist id="employeeList"></datalist>
-   <label>Startuur<input id="editStart" type="time"></label>
-   <label>Einduur<input id="editEnd" type="time"></label>
-   <label class="wide">Zone<select id="editZone">
-    <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option>
-   </select></label>
-   <label class="wide">Opmerking<textarea id="editNote" rows="2"></textarea></label>
+    <label>Datum<input id="editDate" type="date"></label>
+    <label>Medewerker<select id="editEmployee"></select></label>
+    <label>Startuur<input id="editStart" type="time"></label>
+    <label>Einduur<input id="editEnd" type="time"></label>
+    <label class="wide">Zone<select id="editZone">
+      <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option>
+    </select></label>
+    <label class="wide">Opmerking<textarea id="editNote" rows="2"></textarea></label>
   </div>
   <div class="modalactions">
-   <button id="deleteShiftBtn" class="danger">Verwijderen</button>
-   <button id="cancelShiftBtn">Annuleren</button>
-   <button id="saveShiftBtn" class="success">Opslaan</button>
+    <button id="deleteShift" class="danger">Verwijderen</button>
+    <button id="duplicateShift">Dupliceren</button>
+    <button id="cancelShift">Annuleren</button>
+    <button id="saveShift" class="success">Opslaan</button>
   </div>
- </div>
-</div>
+</div></div>
 
-<div id="copyModal" class="modalback">
- <div class="modal">
-  <h2>Week kopiëren</h2>
-  <p>De volledige zichtbare week wordt gekopieerd naar de week die je hieronder kiest.</p>
-  <label>Maandag van doelweek <input id="copyTarget" type="date"></label>
-  <div class="modalactions"><button id="cancelCopyBtn">Annuleren</button><button id="doCopyBtn" class="success">Week kopiëren</button></div>
- </div>
-</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-<main><div class="toolbar"><button class="viewbtn active" data-view="day">Dag</button><button class="viewbtn" data-view="week">Week</button><button class="viewbtn" data-view="month">Maand</button><select id="date"></select><select id="employee"><option value="">Volledige planning</option></select><button id="printWeekBtn" style="display:none">Week afdrukken</button></div>
-<section id="dayPanel" class="panel active"><div class="zones"><section class="zone pro"><h2>PRO</h2><div id="day-PRO"></div></section><section class="zone rookie"><h2>ROOKIE</h2><div id="day-ROOKIE"></div></section><section class="zone two"><h2>2.0</h2><div id="day-2.0"></div></section><section class="zone standby"><h2>STAND-BY</h2><div id="day-STANDBY"></div></section><section class="zone foil"><h2>FOIL</h2><div id="day-FOIL"></div></section><section class="zone tt"><h2>TT / SP / KIDSSESSION</h2><div id="day-TT / SP / KIDSSESSION"></div></section></div></section>
-<section id="weekPanel" class="panel"><div id="weekTitle" style="font-weight:700;margin:6px 0 12px"></div><div id="weekGrid" class="week-grid"></div></section>
-<section id="monthPanel" class="panel"><div class="month-head"><button id="prevMonth">←</button><strong id="monthTitle"></strong><button id="nextMonth">→</button></div><div class="legend"><span class="pro-label">PRO</span><span class="rookie-label">ROOKIE</span><span class="two-label">2.0</span><span class="standby-label">STAND-BY</span><span class="foil-label">FOIL</span><span class="tt-label">TT/SP/KIDS</span></div><div class="month-grid"><div class="weekday">Ma</div><div class="weekday">Di</div><div class="weekday">Wo</div><div class="weekday">Do</div><div class="weekday">Vr</div><div class="weekday">Za</div><div class="weekday">Zo</div></div><div id="monthGrid" class="month-grid"></div></section><div id="printWeek" class="print-only"></div></main>
-<script>
-let shifts=[],currentMonth=null;const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"];const zoneClass={"PRO":"pro-label","ROOKIE":"rookie-label","2.0":"two-label","STANDBY":"standby-label","FOIL":"foil-label","TT / SP / KIDSSESSION":"tt-label"};const $=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));const label=d=>new Date(d+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-fetch("planning.json?"+Date.now()).then(r=>{if(!r.ok)throw new Error("planning.json niet gevonden");return r.json()}).then(data=>{shifts=(data.shifts||[]).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));$("updated").textContent="Bijgewerkt: "+(data.updated||"");const dates=[...new Set(shifts.map(x=>x.date))].sort();$("date").innerHTML=dates.map(d=>`<option value="${d}">${label(d)}</option>`).join("");const people=[...new Set(shifts.map(x=>x.employee))].sort();$("employee").innerHTML='<option value="">Volledige planning</option>'+people.map(p=>`<option>${esc(p)}</option>`).join("");if(dates.length){
-  const today=key(new Date());
-  let chosen;
-  if(dates.includes(today)){
-    chosen=today;
-  }else{
-    chosen=dates.reduce((best,d)=>{
-      const diff=Math.abs(new Date(d+"T12:00:00")-new Date(today+"T12:00:00"));
-      const bestDiff=Math.abs(new Date(best+"T12:00:00")-new Date(today+"T12:00:00"));
-      return diff<bestDiff?d:best;
-    },dates[0]);
-  }
-  $("date").value=chosen;
-  const selected=new Date(chosen+"T12:00:00");
-  currentMonth=new Date(selected.getFullYear(),selected.getMonth(),1);
-  renderAll()
-}}).catch(err=>{document.querySelector("main").innerHTML="<p><b>Fout:</b> "+esc(err.message)+"</p>"});
-document.querySelectorAll(".viewbtn").forEach(btn=>btn.onclick=()=>{document.querySelectorAll(".viewbtn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));$(btn.dataset.view+"Panel").classList.add("active");renderAll()});$("date").onchange=()=>{const d=new Date($("date").value+"T12:00:00");currentMonth=new Date(d.getFullYear(),d.getMonth(),1);renderAll()};$("employee").onchange=renderAll;$("prevMonth").onclick=()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()-1,1);renderMonth()};$("nextMonth").onclick=()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+1,1);renderMonth()};
-function filtered(){const p=$("employee").value;return shifts.filter(x=>!p||x.employee===p)}function shiftCard(x){return `<div class="shift"><div class="mainline"><span>${esc(x.employee)}</span><span class="time">${esc(x.start)}–${esc(x.end)}</span></div>${x.note?`<div class="note">${esc(x.note)}</div>`:""}</div>`}function renderDay(){const d=$("date").value,list=filtered();zones.forEach(z=>{const rows=list.filter(x=>x.date===d&&x.zone===z);$("day-"+z).innerHTML=rows.length?rows.map(shiftCard).join(""):'<div class="empty">Nog niemand ingepland</div>'})}function mondayOf(dateStr){const d=new Date(dateStr+"T12:00:00"),day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return d}
-function renderWeek(){const start=mondayOf($("date").value),end=new Date(start);end.setDate(end.getDate()+6);$("weekTitle").textContent=start.toLocaleDateString("nl-BE",{day:"numeric",month:"long"})+" – "+end.toLocaleDateString("nl-BE",{day:"numeric",month:"long",year:"numeric"});const list=filtered();$("weekGrid").innerHTML="";for(let i=0;i<7;i++){const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);let content=`<h3>${d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"numeric"})}</h3>`;zones.forEach(z=>{const rows=list.filter(x=>x.date===dk&&x.zone===z);if(rows.length){content+=`<div class="week-zone"><div class="week-zone-title ${zoneClass[z]}">${esc(z)}</div>`+rows.map(x=>`<div class="week-item"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?`<div class="week-note">${esc(x.note)}</div>`:""}</div>`).join("")+"</div>"}});if(!list.some(x=>x.date===dk))content+='<div class="empty">Geen planning</div>';const el=document.createElement("section");el.className="week-day";el.innerHTML=content;el.onclick=()=>{const opts=[...$("date").options].map(o=>o.value);if(opts.includes(dk)){$("date").value=dk;document.querySelector('[data-view="day"]').click()}};$("weekGrid").appendChild(el)}}
-function renderMonth(){if(!currentMonth)return;$("monthTitle").textContent=currentMonth.toLocaleDateString("nl-BE",{month:"long",year:"numeric"});const list=filtered(),first=new Date(currentMonth.getFullYear(),currentMonth.getMonth(),1),start=new Date(first);start.setDate(start.getDate()-((start.getDay()+6)%7));$("monthGrid").innerHTML="";for(let i=0;i<42;i++){const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d),outside=d.getMonth()!==currentMonth.getMonth(),rows=list.filter(x=>x.date===dk);let body=`<div class="daynum">${d.getDate()}</div>`;zones.forEach(z=>{const zr=rows.filter(x=>x.zone===z);if(zr.length)body+=`<div class="month-zone ${zoneClass[z]}"><span>${z==="TT / SP / KIDSSESSION"?"TT/SP/KIDS":esc(z)}</span><b>${zr.length}</b></div>`});const cell=document.createElement("div");cell.className="month-cell"+(outside?" outside":"");cell.innerHTML=body;cell.onclick=()=>{const opts=[...$("date").options].map(o=>o.value);if(opts.includes(dk)){$("date").value=dk;currentMonth=new Date(d.getFullYear(),d.getMonth(),1);document.querySelector('[data-view="day"]').click()}};$("monthGrid").appendChild(cell)}}
-function weekNumber(d){
-  const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
-  const day=x.getUTCDay()||7;
-  x.setUTCDate(x.getUTCDate()+4-day);
-  const y=new Date(Date.UTC(x.getUTCFullYear(),0,1));
-  return Math.ceil((((x-y)/86400000)+1)/7);
-}
-function printZoneName(z){
-  if(z==="STANDBY") return "STAND-BY";
-  if(z==="TT / SP / KIDSSESSION") return "TT / SP / KIDSSESSION";
-  return z;
-}
-function buildPrintWeek(){
-  const start=mondayOf($("date").value),end=new Date(start);
-  end.setDate(end.getDate()+6);
-  const list=filtered();
-  let html=`<section class="print-page">
-    <div class="print-title">CableCrew Lakeside — Week ${weekNumber(start)} · ${start.toLocaleDateString("nl-BE",{day:"numeric",month:"long"})} – ${end.toLocaleDateString("nl-BE",{day:"numeric",month:"long",year:"numeric"})}</div>
-    <div class="print-grid">`;
-  for(let i=0;i<7;i++){
-    const d=new Date(start);d.setDate(d.getDate()+i);
-    const dk=key(d);
-    html+=`<section class="print-day"><h3>${d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"numeric"})}</h3>`;
-    zones.forEach(z=>{
-      const rows=list.filter(x=>x.date===dk&&x.zone===z);
-      if(rows.length){
-        html+=`<div class="print-zone"><div class="print-zone-title ${zoneClass[z]}">${esc(printZoneName(z))}</div>`;
-        html+=rows.map(x=>`<div class="print-item"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?`<div class="print-note">${esc(x.note)}</div>`:""}</div>`).join("");
-        html+=`</div>`;
-      }
-    });
-    if(!list.some(x=>x.date===dk)) html+=`<div class="print-empty">Geen planning</div>`;
-    html+=`</section>`;
-  }
-  html+=`</div></section>`;
-  $("printWeek").innerHTML=html;
-}
-$("printWeekBtn").onclick=()=>{
-  buildPrintWeek();
-  window.print();
+const firebaseConfig = {
+  apiKey: "AIzaSyBdeGM27e5xNRGipmEeQzmTW4aNMrKtc3A",
+  authDomain: "cable-crew-planner.firebaseapp.com",
+  projectId: "cable-crew-planner",
+  storageBucket: "cable-crew-planner.firebasestorage.app",
+  messagingSenderId: "179845869941",
+  appId: "1:179845869941:web:3a4c640053c9eaf9f9e33c"
 };
 
+const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"];
+const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt"};
+let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day";
 
-function renderTodaySummary(){
- const today=key(new Date()),rows=shifts.filter(x=>x.date===today);
- const names=[...new Set(rows.map(x=>x.employee))].sort();
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function mondayOf(k){const d=new Date(k+"T12:00:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
+function label(k){return new Date(k+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+function sorted(a){return [...a].sort((x,y)=>x.date.localeCompare(y.date)||x.start.localeCompare(y.start)||x.zone.localeCompare(y.zone)||x.employee.localeCompare(y.employee))}
+function visibleShifts(){const n=$("myEmployee").value;return n?shifts.filter(x=>x.employee===n):shifts}
+
+async function loadFallback(){
+ try{
+   const r=await fetch("./planning.json?ts="+Date.now(),{cache:"no-store"});
+   if(!r.ok)throw Error();
+   const d=await r.json();fallbackShifts=sorted((d.shifts||[]).map(x=>({...x})));
+ }catch(e){fallbackShifts=[]}
+}
+
+function initDateOptions(){
+ const dates=[...new Set(shifts.map(x=>x.date))].sort();
+ const old=$("date").value;
+ $("date").innerHTML=dates.map(d=>`<option value="${d}">${label(d)}</option>`).join("");
+ if(!dates.length)return;
+ const today=key(new Date());
+ let chosen=old&&dates.includes(old)?old:(dates.includes(today)?today:dates.reduce((best,d)=>Math.abs(new Date(d)-new Date(today))<Math.abs(new Date(best)-new Date(today))?d:best,dates[0]));
+ $("date").value=chosen;
+}
+function people(){return [...new Set(shifts.map(x=>x.employee))].filter(Boolean).sort()}
+function fillPeople(){
+ const p=people(), old=$("myEmployee").value||localStorage.getItem("cc_my_name")||"";
+ $("myEmployee").innerHTML='<option value="">Kies je naam</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+ if(p.includes(old))$("myEmployee").value=old;
+ $("editEmployee").innerHTML=p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+'<option value="__NEW__">+ Nieuwe medewerker…</option>';
+}
+function renderToday(){
+ const rows=shifts.filter(x=>x.date===key(new Date())), names=[...new Set(rows.map(x=>x.employee))].sort();
  $("workingToday").textContent=names.length?names.join(", "):"Geen crew ingepland";
- const people=[...new Set(shifts.map(x=>x.employee))].sort(),sel=$("myEmployee");
- const old=localStorage.getItem("cablecrew_my_name")||"";
- sel.innerHTML='<option value="">Kies je naam</option>'+people.map(p=>`<option>${esc(p)}</option>`).join("");
- if(people.includes(old))sel.value=old;
 }
-$("myEmployee").onchange=e=>{
- const n=e.target.value;
- if(n)localStorage.setItem("cablecrew_my_name",n);else localStorage.removeItem("cablecrew_my_name");
- $("employee").value=n;renderAll();
+function shiftHtml(x){
+ return `<div class="shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}">
+   <div><b>${esc(x.employee)}</b>${x.note?`<div class="note">${esc(x.note)}</div>`:""}</div>
+   <div class="time">${esc(x.start)}–${esc(x.end)}</div></div>`;
+}
+function renderDay(){
+ const d=$("date").value, list=visibleShifts();
+ $("dayGrid").innerHTML=zones.map(z=>{
+   const rows=list.filter(x=>x.date===d&&x.zone===z);
+   return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${rows.length?rows.map(shiftHtml).join(""):'<div class="empty" style="padding:12px 16px">Geen planning</div>'}</section>`;
+ }).join("");
+}
+function renderWeek(){
+ const start=mondayOf($("date").value),list=visibleShifts();let html="";
+ for(let i=0;i<7;i++){
+   const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);
+   html+=`<section class="week-day"><h3>${d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"numeric"})}</h3>`;
+   zones.forEach(z=>{
+     const rows=list.filter(x=>x.date===dk&&x.zone===z);
+     if(rows.length)html+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${rows.map(x=>`<div class="mini-shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}</div>`).join("")}</div>`;
+   });
+   html+=`</section>`;
+ }
+ $("weekGrid").innerHTML=html;
+}
+function renderAll(){initDateOptions();fillPeople();renderToday();renderDay();renderWeek()}
+
+document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
+ currentView=b.dataset.view;document.querySelectorAll(".viewbtn").forEach(x=>x.classList.toggle("active",x===b));
+ document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===currentView));
+});
+$("date").onchange=()=>{renderDay();renderWeek()};
+$("myEmployee").onchange=e=>{if(e.target.value)localStorage.setItem("cc_my_name",e.target.value);else localStorage.removeItem("cc_my_name");renderDay();renderWeek()};
+
+function findShift(id){return shifts.find(x=>x._id===id)}
+document.addEventListener("click",e=>{
+ const el=e.target.closest("[data-id]");if(!el||!editMode||!user)return;
+ const x=findShift(el.dataset.id);if(x)openShift(x);
+});
+
+function openShift(x=null){
+ editing=x;
+ $("shiftTitle").textContent=x?"Shift aanpassen":"Nieuwe shift";
+ $("editDate").value=x?.date||$("date").value;
+ $("editEmployee").value=x?.employee||people()[0]||"";
+ $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
+ $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";
+ $("deleteShift").style.display=x?"inline-block":"none";$("duplicateShift").style.display=x?"inline-block":"none";
+ $("shiftModal").classList.add("show");
+}
+$("addShiftBtn").onclick=()=>openShift();
+$("cancelShift").onclick=()=>$("shiftModal").classList.remove("show");
+$("editEmployee").onchange=()=>{
+ if($("editEmployee").value==="__NEW__"){
+  const n=prompt("Naam nieuwe medewerker:");
+  if(n){const o=document.createElement("option");o.value=n;o.textContent=n;$("editEmployee").insertBefore(o,$("editEmployee").lastElementChild);$("editEmployee").value=n}
+  else $("editEmployee").value=editing?.employee||people()[0]||"";
+ }
 };
-function weatherIcon(c){
- if(c===0)return "☀️";if([1,2].includes(c))return "🌤️";if(c===3)return "☁️";if([45,48].includes(c))return "🌫️";
- if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(c))return "🌧️";
- if([71,73,75,77,85,86].includes(c))return "🌨️";if([95,96,99].includes(c))return "⛈️";return "🌤️";
+function formObj(){return {date:$("editDate").value,employee:$("editEmployee").value,start:$("editStart").value,end:$("editEnd").value,zone:$("editZone").value,note:$("editNote").value.trim()}}
+$("saveShift").onclick=async()=>{
+ const v=formObj();if(!v.date||!v.employee||!v.start||!v.end){alert("Vul datum, medewerker en uren in.");return}
+ try{
+   if(editing)await updateDoc(doc(db,"shifts",editing._id),v); else await addDoc(collection(db,"shifts"),v);
+   $("shiftModal").classList.remove("show");
+ }catch(e){alert("Opslaan mislukt: "+e.message)}
+};
+$("deleteShift").onclick=async()=>{if(editing&&confirm("Deze shift verwijderen?")){await deleteDoc(doc(db,"shifts",editing._id));$("shiftModal").classList.remove("show")}};
+$("duplicateShift").onclick=async()=>{if(!editing)return;try{await addDoc(collection(db,"shifts"),formObj());$("shiftModal").classList.remove("show")}catch(e){alert(e.message)}};
+
+$("editToggle").onclick=()=>{editMode=!editMode;$("editToggle").classList.toggle("on",editMode);$("editToggle").textContent=editMode?"✅ BEWERKEN AAN":"✏️ BEWERKEN";renderDay();renderWeek()};
+$("printBtn").onclick=()=>window.print();
+
+$("loginBtn").onclick=()=>$("loginModal").classList.add("show");
+$("cancelLogin").onclick=()=>$("loginModal").classList.remove("show");
+$("doLogin").onclick=async()=>{
+ $("loginError").textContent="";
+ try{await signInWithEmailAndPassword(auth,$("loginEmail").value.trim(),$("loginPassword").value);$("loginModal").classList.remove("show");$("loginPassword").value=""}
+ catch(e){$("loginError").textContent="Inloggen mislukt. Controleer e-mail en wachtwoord."}
+};
+$("logoutBtn").onclick=()=>signOut(auth);
+
+onAuthStateChanged(auth,u=>{
+ user=u;$("adminBar").classList.toggle("show",!!u);$("loginBtn").style.display=u?"none":"inline-block";
+ $("adminWho").textContent=u?`🔧 Beheer: ${u.email}`:"Beheer";
+ if(!u){editMode=false;$("editToggle").classList.remove("on");$("editToggle").textContent="✏️ BEWERKEN"}
+ updateImportButton();renderDay();renderWeek();
+});
+
+function updateImportButton(){
+ $("importBtn").style.display=(user&&firestoreReady&&shifts.length===0&&fallbackShifts.length)?"inline-block":"none";
 }
+$("importBtn").onclick=async()=>{
+ if(!user||!fallbackShifts.length)return;
+ if(!confirm(`${fallbackShifts.length} bestaande shifts éénmalig naar Firebase kopiëren?`))return;
+ try{
+   for(let i=0;i<fallbackShifts.length;i+=450){
+     const batch=writeBatch(db);
+     fallbackShifts.slice(i,i+450).forEach(x=>{
+       const ref=doc(collection(db,"shifts"));
+       batch.set(ref,{date:x.date,employee:x.employee,start:x.start,end:x.end,zone:x.zone,note:x.note||""});
+     });
+     await batch.commit();
+   }
+   alert("De huidige planning staat nu online in Firebase.");
+ }catch(e){alert("Import mislukt: "+e.message)}
+};
+
+await loadFallback();
+
+onSnapshot(collection(db,"shifts"),snap=>{
+ firestoreReady=true;
+ const online=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ if(online.length){
+   shifts=sorted(online);$("syncStatus").textContent="🟢 Live planning";
+ }else{
+   shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
+   $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
+ }
+ updateImportButton();renderAll();
+},err=>{
+ firestoreReady=false;shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
+ $("syncStatus").textContent="🔴 Firebase niet bereikbaar – JSON-weergave";renderAll();
+});
+
+function weatherIcon(c){if(c===0)return"☀️";if([1,2].includes(c))return"🌤️";if(c===3)return"☁️";if([45,48].includes(c))return"🌫️";if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(c))return"🌧️";if([71,73,75,77,85,86].includes(c))return"🌨️";if([95,96,99].includes(c))return"⛈️";return"🌤️"}
 async function loadWeather(){
  try{
-  const u="https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&timezone=Europe%2FBrussels&forecast_days=1";
-  const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw Error();
-  const d=await r.json(),c=d.current||{};let rain="";
-  if(d.hourly?.time?.length){let best=0,bd=Infinity,now=new Date();d.hourly.time.forEach((v,i)=>{let x=Math.abs(new Date(v)-now);if(x<bd){bd=x;best=i}});
-   let chance=d.hourly.precipitation_probability?.[best];if(chance!=null)rain=` · regen ${Math.round(chance)}%`;
-  }
-  $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${Math.round(c.wind_speed_10m)} km/u${rain}</span>`;
- }catch(e){$("weather").textContent="Weer tijdelijk niet beschikbaar";}
+   const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&timezone=Europe%2FBrussels&forecast_days=1",{cache:"no-store"});
+   const d=await r.json(),c=d.current||{};let rain="";
+   if(d.hourly?.time?.length){let bi=0,bd=Infinity,now=new Date();d.hourly.time.forEach((t,i)=>{const z=Math.abs(new Date(t)-now);if(z<bd){bd=z;bi=i}});const ch=d.hourly.precipitation_probability?.[bi];if(ch!=null)rain=` · regen ${Math.round(ch)}%`}
+   $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${Math.round(c.wind_speed_10m)} km/u${rain}</span>`;
+ }catch(e){$("weather").textContent="Weer tijdelijk niet beschikbaar"}
 }
-
 loadWeather();
-
-let adminMode=false, editingShift=null;
-// Practical lock only; change this PIN in the HTML before publishing if desired.
-const ADMIN_PIN="2580";
-
-function openAdmin(){
- const pin=prompt("Beheerpincode:");
- if(pin!==ADMIN_PIN){if(pin!==null)alert("Onjuiste pincode.");return}
- adminMode=true;$("adminBar").classList.add("show");renderAll();
-}
-$("adminLoginBtn").onclick=openAdmin;
-$("exitAdminBtn").onclick=()=>{adminMode=false;$("adminBar").classList.remove("show");renderAll()};
-
-function peopleList(){
- return [...new Set(shifts.map(x=>x.employee))].sort();
-}
-function fillEditor(e){
- $("editDate").value=e?.date||$("date").value;
- $("editEmployee").value=e?.employee||"";
- $("editStart").value=e?.start||"09:00";
- $("editEnd").value=e?.end||"17:00";
- $("editZone").value=e?.zone||"PRO";
- $("editNote").value=e?.note||"";
- $("employeeList").innerHTML=peopleList().map(p=>`<option value="${esc(p)}">`).join("");
-}
-function showShiftModal(e=null){
- editingShift=e;fillEditor(e);$("modalTitle").textContent=e?"Shift aanpassen":"Nieuwe shift";
- $("deleteShiftBtn").style.display=e?"inline-block":"none";$("shiftModal").classList.add("show");
-}
-function editShiftByRef(e){if(adminMode)showShiftModal(e)}
-function editShiftByValues(s){
- if(!adminMode)return;
- try{
-  const v=JSON.parse(decodeURIComponent(s));
-  const e=shifts.find(x=>x.date===v.date&&x.employee===v.employee&&x.start===v.start&&x.end===v.end&&x.zone===v.zone&&(x.note||"")===(v.note||""));
-  if(e)showShiftModal(e);
- }catch(err){}
-}
-$("addShiftBtn").onclick=()=>showShiftModal();
-$("cancelShiftBtn").onclick=()=>$("shiftModal").classList.remove("show");
-$("shiftModal").onclick=e=>{if(e.target===$("shiftModal"))$("shiftModal").classList.remove("show")};
-
-$("saveShiftBtn").onclick=()=>{
- const obj={date:$("editDate").value,employee:$("editEmployee").value.trim(),start:$("editStart").value,end:$("editEnd").value,zone:$("editZone").value,note:$("editNote").value.trim()};
- if(!obj.date||!obj.employee||!obj.start||!obj.end){alert("Vul datum, medewerker, start- en einduur in.");return}
- if(editingShift){Object.assign(editingShift,obj)}else{shifts.push(obj)}
- shifts.sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start)||a.zone.localeCompare(b.zone));
- $("shiftModal").classList.remove("show");renderAll();
-};
-$("deleteShiftBtn").onclick=()=>{
- if(!editingShift||!confirm("Deze shift verwijderen?"))return;
- const i=shifts.indexOf(editingShift);if(i>=0)shifts.splice(i,1);
- $("shiftModal").classList.remove("show");renderAll();
-};
-
-$("copyWeekBtn").onclick=()=>{
- const src=mondayOf($("date").value),target=new Date(src);target.setDate(target.getDate()+7);
- $("copyTarget").value=key(target);$("copyModal").classList.add("show");
-};
-$("cancelCopyBtn").onclick=()=>$("copyModal").classList.remove("show");
-$("doCopyBtn").onclick=()=>{
- const src=mondayOf($("date").value),target=new Date($("copyTarget").value+"T12:00:00");
- if(!target||isNaN(target)){alert("Kies een geldige doelweek.");return}
- const srcKey=key(src),end=new Date(src);end.setDate(end.getDate()+6);
- const rows=shifts.filter(x=>x.date>=srcKey&&x.date<=key(end));
- if(!rows.length){alert("Deze week bevat geen shifts.");return}
- if(!confirm(`${rows.length} shifts kopiëren naar de gekozen week?`))return;
- const delta=Math.round((target-src)/86400000);
- rows.forEach(x=>{const d=new Date(x.date+"T12:00:00");d.setDate(d.getDate()+delta);shifts.push({...x,date:key(d)})});
- shifts.sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
- $("copyModal").classList.remove("show");renderAll();
-};
-
-$("downloadJsonBtn").onclick=()=>{
- const payload={title:"CableCrew Lakeside",updated:new Date().toLocaleString("nl-BE"),shifts:shifts};
- const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
- const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="planning.json";a.click();
- setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-};
-$("adminPrintBtn").onclick=()=>$("printWeekBtn").click();
-
-function renderAll(){renderDay();renderWeek();renderMonth();renderTodaySummary()}
-</script></body></html>
+</script>
+</body>
+</html>
