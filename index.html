@@ -211,7 +211,7 @@ body.admin-active .shift:hover{background:#fff8e8}
   <div class="quickcard"><div class="quicktitle">👥 Wie werkt vandaag?</div><div id="workingToday" class="quickvalue">Planning laden…</div></div>
   <div class="quickcard">
   <div class="quicktitle">👤 Mijn planning</div>
-  <div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div>
+  <div class="quickvalue"><select id="myEmployee"><option value="">Iedereen</option></select></div>
   <button id="notifyBtn" class="notify-btn">🔔 Meldingen aanzetten</button>
   <div id="notifyStatus" class="notify-status"></div>
 </div>
@@ -431,7 +431,7 @@ function initDateOptions(){
 function people(){return [...new Set(shifts.map(x=>x.employee))].filter(Boolean).sort()}
 function fillPeople(){
  const p=people(), old=$("myEmployee").value||localStorage.getItem("cc_my_name")||"";
- $("myEmployee").innerHTML='<option value="">Kies je naam</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+ $("myEmployee").innerHTML='<option value="">Iedereen</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
  if(p.includes(old))$("myEmployee").value=old;
  updateNotifyUI();
  $("editEmployee").innerHTML=p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+'<option value="__NEW__">+ Nieuwe medewerker…</option>';
