@@ -159,6 +159,44 @@ body.admin-active .shift:hover{background:#fff8e8}
 .inbox-summary{font-size:12px;color:var(--muted);margin:8px 0 2px;font-weight:700}
 @media(max-width:620px){.inbox-head-actions{width:100%;justify-content:flex-end}}
 
+
+.log-row{position:relative;overflow:hidden}
+.log-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:#cbd5df}
+.log-row.log-hours::before{background:#f59e0b}
+.log-row.log-person::before{background:#2563eb}
+.log-row.log-zone::before{background:#7c3aed}
+.log-row.log-note::before{background:#0f9f7f}
+.log-row.log-added::before{background:#16a34a}
+.log-row.log-removed::before{background:#dc2626}
+.log-row.log-mixed::before{background:#475569}
+.log-type-badge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:900;margin-left:7px}
+.log-type-badge.hours{background:#fff4d6;color:#9a6700}
+.log-type-badge.person{background:#e9f0ff;color:#1d4ed8}
+.log-type-badge.zone{background:#f1eaff;color:#6d28d9}
+.log-type-badge.note{background:#e7f8f2;color:#0f766e}
+.log-type-badge.added{background:#eaf7ee;color:#15803d}
+.log-type-badge.removed{background:#fdecec;color:#b91c1c}
+.log-type-badge.mixed{background:#eef2f6;color:#334155}
+.log-detail-change{margin-top:5px;font-size:12px;line-height:1.4}
+.log-detail-change b{font-weight:900}
+
+
+.log-row{position:relative;overflow:hidden}
+.log-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#cbd5df}
+.log-row.log-hours::before{background:#f59e0b}
+.log-type-badge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:900;margin-left:7px;background:#eef2f6;color:#334155}
+.log-type-badge.hours{background:#fff4d6;color:#9a6700}
+.log-detail-change{margin-top:5px;font-size:12px;line-height:1.4}
+.log-detail-change b{font-weight:900}
+.log-hours-change{margin-top:6px;padding:7px 9px;background:#fff7e6;border:1px solid #f2c46d;border-radius:8px;font-size:12px;font-weight:800}
+
+
+.message-recipient-label{display:block;font-size:12px;font-weight:800;color:#51606b;margin-bottom:8px}
+.message-recipient-label select{display:block;width:100%;margin-top:4px;padding:9px;border:1px solid var(--line);border-radius:9px;background:#fff}
+.message-to{font-size:11px;font-weight:800;color:#51606b;background:#eef2f6;padding:2px 6px;border-radius:999px}
+.message-item.direct{border-left:5px solid #7c3aed}
+.message-item.direct.unread{background:#f5f0ff}
+
 </style>
 </head>
 <body>
@@ -233,7 +271,12 @@ body.admin-active .shift:hover{background:#fff8e8}
     <div id="inboxSummary" class="inbox-summary"></div><div id="messagesList" class="messages-list"></div>
     <div class="message-compose">
       <div id="messageIdentity" class="message-identity"></div>
-      <textarea id="messageText" rows="3" placeholder="Schrijf een kort bericht voor de crew…"></textarea>
+      <label class="message-recipient-label">Aan
+        <select id="messageRecipient">
+          <option value="ALL">Iedereen</option>
+        </select>
+      </label>
+      <textarea id="messageText" rows="3" placeholder="Schrijf een kort bericht…"></textarea>
       <div class="compose-actions">
         <label id="importantWrap" style="display:none"><input id="messageImportant" type="checkbox"> 📌 Belangrijk</label>
         <button id="sendMessageBtn" class="primary">Bericht plaatsen</button>
@@ -392,6 +435,12 @@ function fillPeople(){
  if(p.includes(old))$("myEmployee").value=old;
  updateNotifyUI();
  $("editEmployee").innerHTML=p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+'<option value="__NEW__">+ Nieuwe medewerker…</option>';
+ if($("messageRecipient")){
+   const oldRecipient=$("messageRecipient").value||"ALL";
+   $("messageRecipient").innerHTML='<option value="ALL">Iedereen</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+   if(oldRecipient==="ALL" || p.includes(oldRecipient))$("messageRecipient").value=oldRecipient;
+ }
+
 }
 function renderToday(){
  const rows=shifts.filter(x=>x.date===key(new Date())), names=[...new Set(rows.map(x=>x.employee))].sort();
@@ -746,28 +795,41 @@ function markMessageRead(id){
   const set=readMessageIds();set.add(id);saveReadMessageIds(set);renderMessages();
 }
 function markAllMessagesRead(){
-  const set=readMessageIds();crewMessages.forEach(m=>set.add(m._id));saveReadMessageIds(set);renderMessages();
+  const set=readMessageIds();crewMessages.filter(messageVisibleToCurrentUser).forEach(m=>set.add(m._id));saveReadMessageIds(set);renderMessages();
 }
 
 function newestMessageMillis(){
  return crewMessages.reduce((mx,m)=>Math.max(mx,m.createdAt?.toMillis?.()||0),0);
 }
 function updateMessageBadge(){
- const unread=crewMessages.filter(m=>!isMessageRead(m._id)).length;
+ const unread=crewMessages.filter(m=>messageVisibleToCurrentUser(m) && !isMessageRead(m._id)).length;
  $("msgBadge").textContent=unread;
  $("msgBadge").style.display=unread>0?"inline-flex":"none";
  $("messagesBtn").classList.toggle("has-unread",unread>0);
  if($("inboxSummary"))$("inboxSummary").textContent=unread?`${unread} ongelezen bericht${unread===1?"":"en"}`:"Alles gelezen";
 }
 function markMessagesSeen(){updateMessageBadge()}
+
+function messageVisibleToCurrentUser(m){
+ const recipient=m.recipient||"ALL";
+ if(recipient==="ALL")return true;
+ const me=currentCrewName();
+ if(recipient===me)return true;
+ if(m.author===me)return true;
+ if(isAdminUser())return true;
+ return false;
+}
+
 function renderMessages(){
  const admin=isAdminUser(), uid=user?.uid||"";
- $("messagesList").innerHTML=crewMessages.length?crewMessages.map(m=>{
+ const visible=crewMessages.filter(messageVisibleToCurrentUser);
+ $("messagesList").innerHTML=visible.length?visible.map(m=>{
    const own=uid && m.authorUid===uid;
    const read=isMessageRead(m._id);
-   return `<article class="message-item ${m.important?'pinned ':''}${read?'read':'unread'}">
+   return `<article class="message-item ${(m.recipient||"ALL")!=="ALL"?'direct ':''}${m.important?'pinned ':''}${read?'read':'unread'}">
       <div class="message-top">
         <span class="message-author">${esc(m.author||"Crew")}</span>
+        <span class="message-to">${(m.recipient||"ALL")==="ALL"?"Aan iedereen":"Aan "+esc(m.recipient)}</span>
         ${m.important?'<span class="message-pin">📌 BELANGRIJK</span>':''}
         <span class="message-time">${esc(formatMessageTime(m.createdAt))}</span>
         ${!read?`<button class="message-read-toggle" data-msg-read="${m._id}">Markeer gelezen</button>`:""}
@@ -791,7 +853,14 @@ $("sendMessageBtn").onclick=async()=>{
  if(!name)return alert("Kies eerst je naam bij ‘Mijn planning’.");
  if(!txt)return;
  try{
-   await addDoc(collection(db,"messages"),{text:txt,author:name,authorUid:user.uid,important:isAdminUser()&&$("messageImportant").checked,createdAt:serverTimestamp()});
+   await addDoc(collection(db,"messages"),{
+     text:txt,
+     author:name,
+     authorUid:user.uid,
+     recipient:$("messageRecipient").value||"ALL",
+     important:isAdminUser()&&$("messageImportant").checked,
+     createdAt:serverTimestamp()
+   });
    $("messageText").value="";$("messageImportant").checked=false;
  }catch(e){alert("Bericht plaatsen mislukt: "+e.message)}
 };
@@ -815,8 +884,11 @@ onSnapshot(messagesQuery,snap=>{
    snap.docChanges().forEach(ch=>{
      if(ch.type!=="added")return;
      const m={_id:ch.doc.id,...ch.doc.data()};
-     if(m.important){
+     if(m.important && messageVisibleToCurrentUser(m)){
        showLocalNotice("📥 Nieuw belangrijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
+     }
+     else if((m.recipient||"ALL")!=="ALL" && messageVisibleToCurrentUser(m) && m.author!==currentCrewName()){
+       showLocalNotice("📩 Nieuw persoonlijk bericht",`${m.author||"Crew"}: ${m.text||""}`,"important");
      }
    });
  }
@@ -855,18 +927,59 @@ function startAuditListener(){
  });
 }
 
+function classifyLog(r){
+ const before=r.before||null, after=r.after||null;
+ if(!before && after)return {cls:"neutral",label:"Nieuwe shift",icon:"➕"};
+ if(before && !after)return {cls:"neutral",label:"Shift verwijderd",icon:"❌"};
+ if(!before || !after)return {cls:"neutral",label:r.action||"Wijziging",icon:"✏️"};
+
+ const hoursChanged=before.start!==after.start || before.end!==after.end;
+ if(hoursChanged)return {cls:"hours",label:"Uren gewijzigd",icon:"🕒"};
+
+ if(before.employee!==after.employee)return {cls:"neutral",label:"Medewerker gewijzigd",icon:"👤"};
+ if(before.zone!==after.zone)return {cls:"neutral",label:"Zone gewijzigd",icon:"📍"};
+ if((before.note||"")!==(after.note||""))return {cls:"neutral",label:"Notitie gewijzigd",icon:"📝"};
+ if(before.date!==after.date)return {cls:"neutral",label:"Datum gewijzigd",icon:"📅"};
+ return {cls:"neutral",label:"Wijziging",icon:"✏️"};
+}
+
+function changeDetails(r){
+ const b=r.before||{},a=r.after||{};
+ if(!r.before || !r.after)return "";
+
+ const parts=[];
+ const hoursChanged=b.start!==a.start || b.end!==a.end;
+
+ if(hoursChanged){
+   parts.push(`<div class="log-hours-change">🕒 ${esc((b.start||"")+"–"+(b.end||""))} → ${esc((a.start||"")+"–"+(a.end||""))}</div>`);
+ }
+ if(b.employee!==a.employee)parts.push(`<div><b>Medewerker:</b> ${esc(b.employee||"")} → ${esc(a.employee||"")}</div>`);
+ if(b.zone!==a.zone)parts.push(`<div><b>Zone:</b> ${esc(b.zone||"")} → ${esc(a.zone||"")}</div>`);
+ if(b.date!==a.date)parts.push(`<div><b>Datum:</b> ${esc(b.date||"")} → ${esc(a.date||"")}</div>`);
+ if((b.note||"")!==(a.note||""))parts.push(`<div><b>Notitie:</b> ${esc(b.note||"—")} → ${esc(a.note||"—")}</div>`);
+
+ return parts.join("");
+}
+
 function renderChangeLog(){
  if(!$("changeLogList"))return;
  $("changeLogList").innerHTML=auditRows.length?auditRows.map(r=>{
    let when="";
    try{when=r.at?.toDate?.().toLocaleString("nl-BE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})||""}catch(e){}
    const x=r.after||r.before||{};
-   return `<div class="log-row">
-     <div class="log-top"><span class="log-action">${esc(r.action||"Wijziging")}</span><span class="log-time">${esc(when)}</span></div>
+   const info=classifyLog(r), details=changeDetails(r);
+   return `<div class="log-row log-${info.cls}">
+     <div class="log-top">
+       <span class="log-action">${info.icon} ${esc(info.label)}
+         <span class="log-type-badge ${info.cls==="hours"?"hours":""}">${esc(info.label)}</span>
+       </span>
+       <span class="log-time">${esc(when)}</span>
+     </div>
      <div class="log-detail">${esc(x.employee||"")} · ${esc(x.date||"")} · ${esc(x.zone||"")} · ${esc((x.start||"")+"–"+(x.end||""))}</div>
+     ${details?`<div class="log-detail-change">${details}</div>`:""}
      <div class="log-by">door ${esc(r.by||"beheer")}</div>
    </div>`;
- }).join(""):'<div class="empty">Nog geen wijzigingen geregistreerd.</div>';
+ }).join(""):'<div class="empty">Nog geen logboekitems geregistreerd.</div>';
 }
 $("changeLogBtn").onclick=()=>{startAuditListener();$("changeLogModal").classList.add("show");renderChangeLog()};
 $("closeChangeLogBtn").onclick=()=>$("changeLogModal").classList.remove("show");
