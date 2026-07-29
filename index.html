@@ -250,7 +250,9 @@ onAuthStateChanged(auth,u=>{
 });
 
 function updateImportButton(){
- $("importBtn").style.display=(user&&firestoreReady&&shifts.length===0&&fallbackShifts.length)?"inline-block":"none";
+ const usingFallback = firestoreReady && fallbackShifts.length > 0 &&
+   $("syncStatus").textContent.includes("Huidige JSON");
+ $("importBtn").style.display=(user && usingFallback)?"inline-block":"none";
 }
 $("importBtn").onclick=async()=>{
  if(!user||!fallbackShifts.length)return;
