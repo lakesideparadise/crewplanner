@@ -198,6 +198,15 @@ body.admin-active .shift:hover{background:#fff8e8}
 .message-item.direct.unread{background:#f5f0ff}
 
 </style>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0f4b6d">
+<meta name="application-name" content="CableCrew">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CableCrew">
+<link rel="apple-touch-icon" href="./icon-180.png">
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -1112,5 +1121,16 @@ loadWeather();
 setTodayHeader();
 updateNotifyUI();
 </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(err => {
+      console.warn("CableCrew service worker:", err);
+    });
+  });
+}
+</script>
+
 </body>
 </html>
