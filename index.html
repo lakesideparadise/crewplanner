@@ -39,6 +39,22 @@ button{cursor:pointer;font-weight:800}.primary{background:var(--navy);color:#fff
 @media(max-width:720px){.quickbar,.day-grid{grid-template-columns:1fr}.week-grid{grid-template-columns:1fr}.status{display:none}.admin-login{margin-left:0}.formgrid{grid-template-columns:1fr}.wide{grid-column:auto}}
 @media print{header,.quickbar,.toolbar,.adminbar,.modalback{display:none!important}body{background:#fff}.panel{display:none!important}#week.panel{display:block!important}.week-grid{grid-template-columns:repeat(7,1fr);gap:2mm}.week-day{border-radius:2mm;padding:2mm}.mini-shift{font-size:8pt}.mini-title{font-size:8pt}}
 @page{size:A4 landscape;margin:7mm}
+
+.edit-hint{font-weight:800;color:#8a5a00;background:#fff;border:1px solid #ead39b;border-radius:9px;padding:9px 11px}
+.quicktimes{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:2px}
+.quicktimes span{font-size:12px;font-weight:800;color:#51606b}
+.quicktimes button{padding:6px 8px;font-size:12px}
+.keepadding{display:flex;align-items:center;gap:6px;margin-right:auto;font-size:12px;font-weight:700;color:#51606b}
+.keepadding input{width:auto}
+body.admin-active .shift,body.admin-active .mini-shift{cursor:pointer}
+body.admin-active .shift:hover{background:#fff8e8}
+@media(max-width:720px){
+  .adminbar{align-items:stretch}
+  .adminbar strong,.edit-hint{width:100%}
+  .adminbar button{flex:1 1 46%}
+  .quicktimes button{flex:1 1 44%}
+}
+
 </style>
 </head>
 <body>
@@ -63,8 +79,9 @@ button{cursor:pointer;font-weight:800}.primary{background:var(--navy);color:#fff
 
   <div id="adminBar" class="adminbar">
     <strong id="adminWho">Beheer</strong>
-    <button id="editToggle" class="editToggle">✏️ BEWERKEN</button>
-    <button id="addShiftBtn">+ Shift</button>
+    <span class="edit-hint">✏️ Klik op een shift om te bewerken</span>
+    <button id="addShiftBtn" class="primary">+ Shift toevoegen</button>
+    <button id="duplicateDayBtn">Dag kopiëren</button>
     <button id="copyWeekBtn">Week kopiëren</button>
     <button id="printBtn">Week afdrukken</button>
     <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
@@ -92,6 +109,13 @@ button{cursor:pointer;font-weight:800}.primary{background:var(--navy);color:#fff
     <label>Medewerker<select id="editEmployee"></select></label>
     <label>Startuur<input id="editStart" type="time"></label>
     <label>Einduur<input id="editEnd" type="time"></label>
+    <div class="wide quicktimes">
+      <span>Snelle uren:</span>
+      <button type="button" data-time="08:30,13:00">08:30–13:00</button>
+      <button type="button" data-time="09:00,17:00">09:00–17:00</button>
+      <button type="button" data-time="11:30,15:00">11:30–15:00</button>
+      <button type="button" data-time="15:00,19:30">15:00–19:30</button>
+    </div>
     <label class="wide">Zone<select id="editZone">
       <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option>
     </select></label>
@@ -101,7 +125,21 @@ button{cursor:pointer;font-weight:800}.primary{background:var(--navy);color:#fff
     <button id="deleteShift" class="danger">Verwijderen</button>
     <button id="duplicateShift">Dupliceren</button>
     <button id="cancelShift">Annuleren</button>
-    <button id="saveShift" class="success">Opslaan</button>
+    <label class="keepadding"><input id="keepAdding" type="checkbox"> Nog een shift toevoegen</label><button id="saveShift" class="success">Opslaan</button>
+  </div>
+</div></div>
+
+
+<div id="dayCopyModal" class="modalback"><div class="modal">
+  <h2>Dag kopiëren</h2>
+  <p>Kopieer alle shifts van de gekozen dag naar een andere datum.</p>
+  <div class="formgrid">
+    <label>Van<input id="dayCopySource" type="date"></label>
+    <label>Naar<input id="dayCopyTarget" type="date"></label>
+  </div>
+  <div class="modalactions">
+    <button id="cancelDayCopy">Annuleren</button>
+    <button id="doDayCopy" class="success">Dag kopiëren</button>
   </div>
 </div></div>
 
@@ -208,7 +246,7 @@ function openShift(x=null){
  $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
  $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";
  $("deleteShift").style.display=x?"inline-block":"none";$("duplicateShift").style.display=x?"inline-block":"none";
- $("shiftModal").classList.add("show");
+ $("keepAdding").checked=false;$("shiftModal").classList.add("show");
 }
 $("addShiftBtn").onclick=()=>openShift();
 $("cancelShift").onclick=()=>$("shiftModal").classList.remove("show");
@@ -219,18 +257,49 @@ $("editEmployee").onchange=()=>{
   else $("editEmployee").value=editing?.employee||people()[0]||"";
  }
 };
+
+document.querySelectorAll(".quicktimes button").forEach(b=>b.onclick=()=>{
+ const [a,z]=b.dataset.time.split(",");
+ $("editStart").value=a;$("editEnd").value=z;
+});
+
 function formObj(){return {date:$("editDate").value,employee:$("editEmployee").value,start:$("editStart").value,end:$("editEnd").value,zone:$("editZone").value,note:$("editNote").value.trim()}}
 $("saveShift").onclick=async()=>{
- const v=formObj();if(!v.date||!v.employee||!v.start||!v.end){alert("Vul datum, medewerker en uren in.");return}
+ const v=formObj();
+ if(!v.date||!v.employee||!v.start||!v.end){alert("Vul datum, medewerker en uren in.");return}
  try{
-   if(editing)await updateDoc(doc(db,"shifts",editing._id),v); else await addDoc(collection(db,"shifts"),v);
-   $("shiftModal").classList.remove("show");
+   if(editing){
+     await updateDoc(doc(db,"shifts",editing._id),v);
+     $("shiftModal").classList.remove("show");
+   }else{
+     await addDoc(collection(db,"shifts"),v);
+     if($("keepAdding").checked){
+       const keepDate=v.date, keepZone=v.zone;
+       editing=null;
+       $("editDate").value=keepDate;
+       $("editZone").value=keepZone;
+       $("editEmployee").value=people()[0]||"";
+       $("editStart").value=v.start;
+       $("editEnd").value=v.end;
+       $("editNote").value="";
+       $("editEmployee").focus();
+     }else{
+       $("shiftModal").classList.remove("show");
+     }
+   }
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 };
 $("deleteShift").onclick=async()=>{if(editing&&confirm("Deze shift verwijderen?")){await deleteDoc(doc(db,"shifts",editing._id));$("shiftModal").classList.remove("show")}};
-$("duplicateShift").onclick=async()=>{if(!editing)return;try{await addDoc(collection(db,"shifts"),formObj());$("shiftModal").classList.remove("show")}catch(e){alert(e.message)}};
+$("duplicateShift").onclick=async()=>{
+ if(!editing)return;
+ const v=formObj();
+ try{
+   await addDoc(collection(db,"shifts"),v);
+   $("shiftModal").classList.remove("show");
+ }catch(e){alert("Dupliceren mislukt: "+e.message)}
+};
 
-$("editToggle").onclick=()=>{editMode=!editMode;$("editToggle").classList.toggle("on",editMode);$("editToggle").textContent=editMode?"✅ BEWERKEN AAN":"✏️ BEWERKEN";renderDay();renderWeek()};
+
 $("printBtn").onclick=()=>window.print();
 
 $("loginBtn").onclick=()=>$("loginModal").classList.add("show");
@@ -243,10 +312,13 @@ $("doLogin").onclick=async()=>{
 $("logoutBtn").onclick=()=>signOut(auth);
 
 onAuthStateChanged(auth,u=>{
- user=u;$("adminBar").classList.toggle("show",!!u);$("loginBtn").style.display=u?"none":"inline-block";
- $("adminWho").textContent=u?`🔧 Beheer: ${u.email}`:"Beheer";
- if(!u){editMode=false;$("editToggle").classList.remove("on");$("editToggle").textContent="✏️ BEWERKEN"}
- updateImportButton();renderDay();renderWeek();
+ user=u;
+ editMode=!!u;
+ $("adminBar").classList.toggle("show",!!u); document.body.classList.toggle("admin-active",!!u);
+ $("loginBtn").style.display=u?"none":"inline-block";
+ $("adminWho").textContent=u?`🔧 ${u.email}`:"Beheer";
+ updateImportButton();
+ renderDay();renderWeek();
 });
 
 function updateImportButton(){
