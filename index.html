@@ -50,19 +50,18 @@
 @media(max-width:760px){.quickbar{grid-template-columns:1fr}.quickcard{min-height:auto}}
 @media print{.quickbar{display:none!important}}
 
-.notes-card{max-width:1280px;margin:14px auto;padding:0 14px 18px}
-.notes-inner{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
-.notes-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
-.notes-title{font-weight:800;font-size:17px}
-.notes-form{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}
-.notes-form textarea{width:100%;min-height:64px;resize:vertical;padding:10px;border:1px solid var(--line);border-radius:9px;font:inherit}
-.notes-form button{align-self:end}
-.note-item{border-top:1px solid var(--line);padding:9px 0}
-.note-meta{font-size:12px;color:var(--muted);margin-bottom:3px}
-.note-text{white-space:pre-wrap}
-.note-actions{margin-top:5px}
-.note-delete{background:#fff;color:#a33;border:1px solid #e3b8b8;padding:5px 8px;border-radius:7px;font-size:12px}
-@media print{.notes-card{display:none!important}}
+.admin-login{position:fixed;right:14px;bottom:14px;z-index:30}
+.admin-login button{opacity:.72;font-size:12px}
+.adminbar{max-width:1280px;margin:10px auto 0;padding:10px 14px;background:#fff4d8;border:1px solid #ead39b;border-radius:12px;display:none;gap:8px;align-items:center;flex-wrap:wrap}
+.adminbar.show{display:flex}.adminbar b{margin-right:auto}.adminbar button{padding:8px 10px}
+.shift.editable{cursor:pointer;outline:1px dashed transparent}.shift.editable:hover{outline-color:#7c8b95;transform:translateY(-1px)}
+.modalback{display:none;position:fixed;inset:0;background:rgba(10,25,35,.42);z-index:100;padding:18px;align-items:center;justify-content:center}
+.modalback.show{display:flex}.modal{background:#fff;border-radius:14px;padding:18px;width:min(520px,100%);box-shadow:0 20px 60px rgba(0,0,0,.22)}
+.modal h2{margin-top:0}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formgrid label{font-size:12px;font-weight:700;color:#51606b}
+.formgrid input,.formgrid select,.formgrid textarea{width:100%;margin-top:4px;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit}
+.formgrid .wide{grid-column:1/-1}.modalactions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}.danger{background:#a33!important}.success{background:#287a52!important}
+@media(max-width:620px){.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:auto}}
+@media print{.admin-login,.adminbar,.modalback{display:none!important}}
 
 </style></head><body>
 <header><div class="brand"><div><h1>⚡ CableCrew Lakeside</h1><small>Crew planning</small></div><div id="updated"></div></div></header>
@@ -72,24 +71,52 @@
 <div class="quickcard"><div class="quicktitle">👤 Mijn planning</div><div class="quickvalue"><select id="myEmployee"><option value="">Kies je naam</option></select></div></div>
 </div>
 
-<main><div class="toolbar"><button class="viewbtn active" data-view="day">Dag</button><button class="viewbtn" data-view="week">Week</button><select id="date"></select><select id="employee" style="display:none"><option value="">Volledige planning</option></select><button id="printWeekBtn">Week afdrukken</button></div>
-<section id="dayPanel" class="panel active"><div class="zones"><section class="zone pro"><h2>PRO</h2><div id="day-PRO"></div></section><section class="zone rookie"><h2>ROOKIE</h2><div id="day-ROOKIE"></div></section><section class="zone two"><h2>2.0</h2><div id="day-2.0"></div></section><section class="zone standby"><h2>STAND-BY</h2><div id="day-STANDBY"></div></section><section class="zone foil"><h2>FOIL</h2><div id="day-FOIL"></div></section><section class="zone tt"><h2>TT / SP / KIDSSESSION</h2><div id="day-TT / SP / KIDSSESSION"></div></section></div></section>
-<section id="weekPanel" class="panel"><div id="weekTitle" style="font-weight:700;margin:6px 0 12px"></div><div id="weekGrid" class="week-grid"></div></section>
-<section id="monthPanel" class="panel"><div class="month-head"><button id="prevMonth">←</button><strong id="monthTitle"></strong><button id="nextMonth">→</button></div><div class="legend"><span class="pro-label">PRO</span><span class="rookie-label">ROOKIE</span><span class="two-label">2.0</span><span class="standby-label">STAND-BY</span><span class="foil-label">FOIL</span><span class="tt-label">TT/SP/KIDS</span></div><div class="month-grid"><div class="weekday">Ma</div><div class="weekday">Di</div><div class="weekday">Wo</div><div class="weekday">Do</div><div class="weekday">Vr</div><div class="weekday">Za</div><div class="weekday">Zo</div></div><div id="monthGrid" class="month-grid"></div></section>
-<div class="notes-card">
-  <div class="notes-inner">
-    <div class="notes-head">
-      <div class="notes-title">📝 Notities voor <span id="notesDateLabel"></span></div>
-    </div>
-    <div id="notesList"></div>
-    <div class="notes-form">
-      <textarea id="noteText" placeholder="Schrijf hier een notitie voor deze dag…"></textarea>
-      <button id="addNoteBtn">Notitie toevoegen</button>
-    </div>
+
+<div id="adminBar" class="adminbar">
+  <b>🔧 Beheermodus</b>
+  <button id="addShiftBtn">+ Shift</button>
+  <button id="copyWeekBtn">Week kopiëren</button>
+  <button id="downloadJsonBtn" class="success">Planning publiceren</button>
+  <button id="adminPrintBtn">Week afdrukken</button>
+  <button id="exitAdminBtn">Afsluiten</button>
+</div>
+<div class="admin-login"><button id="adminLoginBtn">Beheer</button></div>
+
+<div id="shiftModal" class="modalback">
+ <div class="modal">
+  <h2 id="modalTitle">Shift</h2>
+  <div class="formgrid">
+   <label>Datum<input id="editDate" type="date"></label>
+   <label>Medewerker<input id="editEmployee" list="employeeList"></label>
+   <datalist id="employeeList"></datalist>
+   <label>Startuur<input id="editStart" type="time"></label>
+   <label>Einduur<input id="editEnd" type="time"></label>
+   <label class="wide">Zone<select id="editZone">
+    <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option>
+   </select></label>
+   <label class="wide">Opmerking<textarea id="editNote" rows="2"></textarea></label>
   </div>
+  <div class="modalactions">
+   <button id="deleteShiftBtn" class="danger">Verwijderen</button>
+   <button id="cancelShiftBtn">Annuleren</button>
+   <button id="saveShiftBtn" class="success">Opslaan</button>
+  </div>
+ </div>
 </div>
 
-<div id="printWeek" class="print-only"></div></main>
+<div id="copyModal" class="modalback">
+ <div class="modal">
+  <h2>Week kopiëren</h2>
+  <p>De volledige zichtbare week wordt gekopieerd naar de week die je hieronder kiest.</p>
+  <label>Maandag van doelweek <input id="copyTarget" type="date"></label>
+  <div class="modalactions"><button id="cancelCopyBtn">Annuleren</button><button id="doCopyBtn" class="success">Week kopiëren</button></div>
+ </div>
+</div>
+
+<main><div class="toolbar"><button class="viewbtn active" data-view="day">Dag</button><button class="viewbtn" data-view="week">Week</button><button class="viewbtn" data-view="month">Maand</button><select id="date"></select><select id="employee"><option value="">Volledige planning</option></select><button id="printWeekBtn" style="display:none">Week afdrukken</button></div>
+<section id="dayPanel" class="panel active"><div class="zones"><section class="zone pro"><h2>PRO</h2><div id="day-PRO"></div></section><section class="zone rookie"><h2>ROOKIE</h2><div id="day-ROOKIE"></div></section><section class="zone two"><h2>2.0</h2><div id="day-2.0"></div></section><section class="zone standby"><h2>STAND-BY</h2><div id="day-STANDBY"></div></section><section class="zone foil"><h2>FOIL</h2><div id="day-FOIL"></div></section><section class="zone tt"><h2>TT / SP / KIDSSESSION</h2><div id="day-TT / SP / KIDSSESSION"></div></section></div></section>
+<section id="weekPanel" class="panel"><div id="weekTitle" style="font-weight:700;margin:6px 0 12px"></div><div id="weekGrid" class="week-grid"></div></section>
+<section id="monthPanel" class="panel"><div class="month-head"><button id="prevMonth">←</button><strong id="monthTitle"></strong><button id="nextMonth">→</button></div><div class="legend"><span class="pro-label">PRO</span><span class="rookie-label">ROOKIE</span><span class="two-label">2.0</span><span class="standby-label">STAND-BY</span><span class="foil-label">FOIL</span><span class="tt-label">TT/SP/KIDS</span></div><div class="month-grid"><div class="weekday">Ma</div><div class="weekday">Di</div><div class="weekday">Wo</div><div class="weekday">Do</div><div class="weekday">Vr</div><div class="weekday">Za</div><div class="weekday">Zo</div></div><div id="monthGrid" class="month-grid"></div></section><div id="printWeek" class="print-only"></div></main>
 <script>
 let shifts=[],currentMonth=null;const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"];const zoneClass={"PRO":"pro-label","ROOKIE":"rookie-label","2.0":"two-label","STANDBY":"standby-label","FOIL":"foil-label","TT / SP / KIDSSESSION":"tt-label"};const $=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));const label=d=>new Date(d+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 fetch("planning.json?"+Date.now()).then(r=>{if(!r.ok)throw new Error("planning.json niet gevonden");return r.json()}).then(data=>{shifts=(data.shifts||[]).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));$("updated").textContent="Bijgewerkt: "+(data.updated||"");const dates=[...new Set(shifts.map(x=>x.date))].sort();$("date").innerHTML=dates.map(d=>`<option value="${d}">${label(d)}</option>`).join("");const people=[...new Set(shifts.map(x=>x.employee))].sort();$("employee").innerHTML='<option value="">Volledige planning</option>'+people.map(p=>`<option>${esc(p)}</option>`).join("");if(dates.length){
@@ -189,40 +216,85 @@ async function loadWeather(){
 
 loadWeather();
 
-function noteKey(){
-  return "cablecrew_notes_"+$("date").value;
+let adminMode=false, editingShift=null;
+// Practical lock only; change this PIN in the HTML before publishing if desired.
+const ADMIN_PIN="2580";
+
+function openAdmin(){
+ const pin=prompt("Beheerpincode:");
+ if(pin!==ADMIN_PIN){if(pin!==null)alert("Onjuiste pincode.");return}
+ adminMode=true;$("adminBar").classList.add("show");renderAll();
 }
-function getNotes(){
-  try{return JSON.parse(localStorage.getItem(noteKey())||"[]")}catch(e){return []}
+$("adminLoginBtn").onclick=openAdmin;
+$("exitAdminBtn").onclick=()=>{adminMode=false;$("adminBar").classList.remove("show");renderAll()};
+
+function peopleList(){
+ return [...new Set(shifts.map(x=>x.employee))].sort();
 }
-function saveNotes(notes){
-  localStorage.setItem(noteKey(),JSON.stringify(notes));
+function fillEditor(e){
+ $("editDate").value=e?.date||$("date").value;
+ $("editEmployee").value=e?.employee||"";
+ $("editStart").value=e?.start||"09:00";
+ $("editEnd").value=e?.end||"17:00";
+ $("editZone").value=e?.zone||"PRO";
+ $("editNote").value=e?.note||"";
+ $("employeeList").innerHTML=peopleList().map(p=>`<option value="${esc(p)}">`).join("");
 }
-function renderNotes(){
-  const d=$("date").value;
-  if(!d)return;
-  $("notesDateLabel").textContent=new Date(d+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  const notes=getNotes();
-  $("notesList").innerHTML=notes.length?notes.map((n,i)=>`
-    <div class="note-item">
-      <div class="note-meta">${esc(n.author||"Crew")} · ${esc(n.created||"")}</div>
-      <div class="note-text">${esc(n.text)}</div>
-      <div class="note-actions"><button class="note-delete" onclick="deleteNote(${i})">Verwijderen</button></div>
-    </div>`).join(""):'<div class="empty">Nog geen notities voor deze dag.</div>';
+function showShiftModal(e=null){
+ editingShift=e;fillEditor(e);$("modalTitle").textContent=e?"Shift aanpassen":"Nieuwe shift";
+ $("deleteShiftBtn").style.display=e?"inline-block":"none";$("shiftModal").classList.add("show");
 }
-function deleteNote(i){
-  const notes=getNotes();notes.splice(i,1);saveNotes(notes);renderNotes();
+function editShiftByRef(e){if(adminMode)showShiftModal(e)}
+function editShiftByValues(s){
+ if(!adminMode)return;
+ try{
+  const v=JSON.parse(decodeURIComponent(s));
+  const e=shifts.find(x=>x.date===v.date&&x.employee===v.employee&&x.start===v.start&&x.end===v.end&&x.zone===v.zone&&(x.note||"")===(v.note||""));
+  if(e)showShiftModal(e);
+ }catch(err){}
 }
-$("addNoteBtn").onclick=()=>{
-  const txt=$("noteText").value.trim();
-  if(!txt)return;
-  const author=$("myEmployee").value||"Crew";
-  const notes=getNotes();
-  notes.push({text:txt,author,created:new Date().toLocaleString("nl-BE")});
-  saveNotes(notes);
-  $("noteText").value="";
-  renderNotes();
+$("addShiftBtn").onclick=()=>showShiftModal();
+$("cancelShiftBtn").onclick=()=>$("shiftModal").classList.remove("show");
+$("shiftModal").onclick=e=>{if(e.target===$("shiftModal"))$("shiftModal").classList.remove("show")};
+
+$("saveShiftBtn").onclick=()=>{
+ const obj={date:$("editDate").value,employee:$("editEmployee").value.trim(),start:$("editStart").value,end:$("editEnd").value,zone:$("editZone").value,note:$("editNote").value.trim()};
+ if(!obj.date||!obj.employee||!obj.start||!obj.end){alert("Vul datum, medewerker, start- en einduur in.");return}
+ if(editingShift){Object.assign(editingShift,obj)}else{shifts.push(obj)}
+ shifts.sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start)||a.zone.localeCompare(b.zone));
+ $("shiftModal").classList.remove("show");renderAll();
+};
+$("deleteShiftBtn").onclick=()=>{
+ if(!editingShift||!confirm("Deze shift verwijderen?"))return;
+ const i=shifts.indexOf(editingShift);if(i>=0)shifts.splice(i,1);
+ $("shiftModal").classList.remove("show");renderAll();
 };
 
-function renderAll(){renderDay();renderWeek();renderTodaySummary();renderNotes()}
+$("copyWeekBtn").onclick=()=>{
+ const src=mondayOf($("date").value),target=new Date(src);target.setDate(target.getDate()+7);
+ $("copyTarget").value=key(target);$("copyModal").classList.add("show");
+};
+$("cancelCopyBtn").onclick=()=>$("copyModal").classList.remove("show");
+$("doCopyBtn").onclick=()=>{
+ const src=mondayOf($("date").value),target=new Date($("copyTarget").value+"T12:00:00");
+ if(!target||isNaN(target)){alert("Kies een geldige doelweek.");return}
+ const srcKey=key(src),end=new Date(src);end.setDate(end.getDate()+6);
+ const rows=shifts.filter(x=>x.date>=srcKey&&x.date<=key(end));
+ if(!rows.length){alert("Deze week bevat geen shifts.");return}
+ if(!confirm(`${rows.length} shifts kopiëren naar de gekozen week?`))return;
+ const delta=Math.round((target-src)/86400000);
+ rows.forEach(x=>{const d=new Date(x.date+"T12:00:00");d.setDate(d.getDate()+delta);shifts.push({...x,date:key(d)})});
+ shifts.sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
+ $("copyModal").classList.remove("show");renderAll();
+};
+
+$("downloadJsonBtn").onclick=()=>{
+ const payload={title:"CableCrew Lakeside",updated:new Date().toLocaleString("nl-BE"),shifts:shifts};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="planning.json";a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$("adminPrintBtn").onclick=()=>$("printWeekBtn").click();
+
+function renderAll(){renderDay();renderWeek();renderMonth();renderTodaySummary()}
 </script></body></html>
