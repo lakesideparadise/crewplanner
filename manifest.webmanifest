@@ -1,13 +1,12 @@
 {
   "name": "CableCrew Lakeside",
   "short_name": "CableCrew",
-  "description": "Crewplanning Lakeside Paradise",
+  "description": "Crewplanner Lakeside Paradise Cable Crew",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f2f6f9",
   "theme_color": "#0f4b6d",
-  "lang": "nl-BE",
   "icons": [
     {
       "src": "./icon-192.png",
