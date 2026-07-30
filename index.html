@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
+<meta name="cablecrew-version" content="v10-mobile-hotfix-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -925,12 +926,9 @@ $("importBtn").onclick=async()=>{
 
 await loadFallback();
 
-/*
- * MOBILE/iOS HOTFIX:
- * Toon de lokale planning onmiddellijk. We wachten NIET eerst op Firebase.
- * Zo blijft de planner zichtbaar wanneer iOS/Safari de pagina opnieuw opent
- * terwijl Firebase Auth/Firestore nog aan het herstellen is.
- */
+/* V10 MOBILE/iOS HOTFIX:
+   Teken de planning meteen vanuit planning.json.
+   Firebase mag de eerste zichtbare render niet blokkeren. */
 shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
 $("syncStatus").textContent=fallbackShifts.length
   ?"🟡 Planning geladen – live verbinding maken…"
@@ -939,9 +937,7 @@ renderAll();
 applyPastDateVisibility();
 updateNotifyUI();
 
-/*
- * Laat Firebase-auth herstellen, maar blokkeer de zichtbare planner niet.
- */
+/* Auth op de achtergrond herstellen. */
 ensureAnonymousAuth().catch(err=>{
   console.warn("Anonymous auth kon niet onmiddellijk herstellen:",err);
 });
@@ -1000,19 +996,15 @@ function closeMessagesPanel(){
   $("messagesPanel")?.classList.remove("show");
 }
 
-// Bij openen/heropenen op iPhone/Safari/PWA tekenen we de planner opnieuw.
-// iOS kan de pagina uit de back-forward cache herstellen zonder de module
-// volledig opnieuw uit te voeren.
+// Altijd gesloten bij openen/heropenen van de website,
+// ook wanneer de browser de pagina uit de back-forward cache herstelt.
 function restorePlannerAfterResume(){
   closeMessagesPanel();
-
   try{
     setTodayHeader();
-
     if(!shifts.length && fallbackShifts.length){
       shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
     }
-
     renderAll();
     applyPastDateVisibility();
     updateNotifyUI();
