@@ -575,7 +575,7 @@ const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app)
 const $=id=>document.getElementById(id);
 const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt"};
-let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear();
+let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false;
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -613,10 +613,10 @@ function fillPeople(){
  const locked=localStorage.getItem("cc_my_name")||"";
  const current=$("myEmployee").value||"";
 
- // Nick en Arno behouden als beheerder de volledige personenlijst.
- // Andere medewerkers zien na hun eerste persoonlijke keuze alleen
- // nog 'Iedereen' en hun eigen naam.
  let visiblePeople=p;
+
+ // Gewone medewerkers zien na hun eerste keuze alleen
+ // 'Iedereen' en hun eigen naam.
  if(!isAdminUser() && locked && p.includes(locked)){
    visiblePeople=[locked];
  }
@@ -625,9 +625,20 @@ function fillPeople(){
    '<option value="">Iedereen</option>'+
    visiblePeople.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
 
- const preferred=current || locked;
- if(preferred && visiblePeople.includes(preferred))$("myEmployee").value=preferred;
- else $("myEmployee").value="";
+ if(isAdminUser()){
+   // Nick en Arno starten bij elk openen op 'Iedereen'
+   // voor meteen een volledig overzicht.
+   // Pas nadat ze zelf een filter kiezen, bewaren we die keuze binnen deze sessie.
+   if(adminPlanningFilterChosen){
+     $("myEmployee").value=(current && visiblePeople.includes(current))?current:"";
+   }else{
+     $("myEmployee").value="";
+   }
+ }else{
+   const preferred=current || locked;
+   if(preferred && visiblePeople.includes(preferred))$("myEmployee").value=preferred;
+   else $("myEmployee").value="";
+ }
 
  updateNotifyUI();
  updateAdminLoginVisibility();
@@ -683,21 +694,27 @@ $("date").onchange=()=>{renderDay();renderWeek()};
 $("myEmployee").onchange=e=>{
  const chosen=e.target.value;
 
- if(chosen){
+ if(isAdminUser()){
+   // Nick en Arno mogen binnen deze sessie vrij filteren.
+   // Bij een volgende keer openen starten ze opnieuw op 'Iedereen'.
+   adminPlanningFilterChosen=true;
+ }else if(chosen){
    const locked=localStorage.getItem("cc_my_name")||"";
 
    // Een gewone medewerker kiest één keer zijn/haar naam.
    // Daarna blijft die identiteit op dit toestel vast staan.
-   if(!isAdminUser() && locked && chosen!==locked){
+   if(locked && chosen!==locked){
      e.target.value=locked;
      alert(`Dit toestel is gekoppeld aan ${locked}. Je kunt alleen ${locked} of Iedereen bekijken.`);
    }else{
      localStorage.setItem("cc_my_name",chosen);
      // Meteen na de eerste keuze de namenlijst beperken.
-     if(!isAdminUser())fillPeople();
+     fillPeople();
    }
  }
- // Bij 'Iedereen' blijft de persoonlijke identiteit bewaard.
+
+ // Bij 'Iedereen' blijft de persoonlijke identiteit bewaard,
+ // zodat meldingen voor de eigen shifts blijven werken.
  renderDay();renderWeek();updateMessageIdentity();updateNotifyUI();updateAdminLoginVisibility();
 };
 
@@ -824,6 +841,10 @@ $("logoutBtn").onclick=async()=>{await signOut(auth);await ensureAnonymousAuth()
 onAuthStateChanged(auth,u=>{
  user=u;
  const admin=isAdminUser();
+ if(admin){
+   adminPlanningFilterChosen=false;
+   if($("myEmployee"))$("myEmployee").value="";
+ }
  editMode=admin;
  $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
@@ -1120,11 +1141,33 @@ function saveReadMessageIds(set){
   localStorage.setItem("cc_read_message_ids",JSON.stringify([...set]));
 }
 function isMessageRead(id){return readMessageIds().has(id)}
+
+function hiddenMessageIds(){
+  try{return new Set(JSON.parse(localStorage.getItem("cc_hidden_message_ids")||"[]"))}catch(e){return new Set()}
+}
+function saveHiddenMessageIds(set){
+  localStorage.setItem("cc_hidden_message_ids",JSON.stringify([...set]));
+}
+function isMessageHidden(id){
+  return hiddenMessageIds().has(id);
+}
+function hideMessageForMe(id){
+  const set=hiddenMessageIds();
+  set.add(id);
+  saveHiddenMessageIds(set);
+  renderMessages();
+}
+
 function markMessageRead(id){
   const set=readMessageIds();set.add(id);saveReadMessageIds(set);renderMessages();
 }
 function markAllMessagesRead(){
-  const set=readMessageIds();crewMessages.filter(messageVisibleToCurrentUser).forEach(m=>set.add(m._id));saveReadMessageIds(set);renderMessages();
+  const set=readMessageIds();
+  crewMessages
+    .filter(m=>messageVisibleToCurrentUser(m) && !isMessageHidden(m._id))
+    .forEach(m=>set.add(m._id));
+  saveReadMessageIds(set);
+  renderMessages();
 }
 
 function newestMessageMillis(){
@@ -1145,7 +1188,11 @@ function addPendingShiftAlert(){
  setPendingShiftAlerts(pendingShiftAlerts()+1);
 }
 function unreadMessageCount(){
- return crewMessages.filter(m=>messageVisibleToCurrentUser(m) && !isMessageRead(m._id)).length;
+ return crewMessages.filter(m=>
+   messageVisibleToCurrentUser(m) &&
+   !isMessageHidden(m._id) &&
+   !isMessageRead(m._id)
+ ).length;
 }
 async function syncAppIconBadge(){
  if(!appBadgeSupported())return;
@@ -1161,7 +1208,7 @@ function acknowledgeShiftAlerts(){
 }
 
 function updateMessageBadge(){
- const unread=crewMessages.filter(m=>messageVisibleToCurrentUser(m) && !isMessageRead(m._id)).length;
+ const unread=crewMessages.filter(m=>messageVisibleToCurrentUser(m) && !isMessageHidden(m._id) && !isMessageRead(m._id)).length;
  $("msgBadge").textContent=unread;
  $("msgBadge").style.display=unread>0?"inline-flex":"none";
  $("messagesBtn").classList.toggle("has-unread",unread>0);
@@ -1182,7 +1229,7 @@ function messageVisibleToCurrentUser(m){
 
 function renderMessages(){
  const admin=isAdminUser(), uid=user?.uid||"";
- const visible=crewMessages.filter(messageVisibleToCurrentUser);
+ const visible=crewMessages.filter(m=>messageVisibleToCurrentUser(m) && !isMessageHidden(m._id));
  $("messagesList").innerHTML=visible.length?visible.map(m=>{
    const own=uid && m.authorUid===uid;
    const read=isMessageRead(m._id);
@@ -1195,12 +1242,13 @@ function renderMessages(){
         ${!read?`<button class="message-read-toggle" data-msg-read="${m._id}">Markeer gelezen</button>`:""}
       </div>
       <div class="message-body">${esc(m.text||"")}</div>
-      ${(admin||own)?`<div class="message-actions">
+      <div class="message-actions">
+        <button data-msg-hide="${m._id}">🗑️ Verwijder uit mijn Inbox</button>
         ${admin?`<button data-msg-pin="${m._id}">${m.important?"Losmaken":"📌 Vastpinnen"}</button>`:""}
-        <button class="danger" data-msg-del="${m._id}">Verwijderen</button>
-      </div>`:""}
+        ${(admin||own)?`<button class="danger" data-msg-del="${m._id}">Overal verwijderen</button>`:""}
+      </div>
     </article>`;
- }).join(""):'<div class="empty">Nog geen crewberichten.</div>';
+ }).join(""):'<div class="empty">Geen berichten in je Inbox.</div>';
  updateMessageBadge();updateMessageIdentity();
 }
 $("messagesBtn").onclick=()=>{$("messagesPanel").classList.add("show");markMessagesSeen();$("messagesPanel").scrollIntoView({behavior:"smooth",block:"start"})};
@@ -1255,6 +1303,15 @@ $("sendMessageBtn").onclick=async()=>{
 document.addEventListener("click",async e=>{
  const readBtn=e.target.closest("[data-msg-read]");
  if(readBtn){markMessageRead(readBtn.dataset.msgRead);return}
+
+ const hide=e.target.closest("[data-msg-hide]");
+ if(hide){
+   if(confirm("Dit bericht uit jouw Inbox verwijderen?")){
+     hideMessageForMe(hide.dataset.msgHide);
+   }
+   return;
+ }
+
  const del=e.target.closest("[data-msg-del]");
  if(del){
    if(confirm("Dit bericht verwijderen?")){try{await deleteDoc(doc(db,"messages",del.dataset.msgDel))}catch(err){alert("Verwijderen mislukt: "+err.message)}}
