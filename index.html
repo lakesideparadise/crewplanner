@@ -202,6 +202,93 @@ body.admin-active .shift:hover{background:#fff8e8}
  font-size:11px;font-weight:800;color:#287a52;margin-top:4px;
 }
 
+
+/* ===== V9.4 MOBIELE APP-LAYOUT ===== */
+@media(max-width:720px){
+  body{background:#f4f7f9}
+  header{padding:10px 14px;position:sticky;top:0;z-index:70}
+  .header-inner{min-height:42px}
+  .brand{font-size:20px}
+  .status{display:none}
+
+  .quickbar{display:block;margin:8px 10px 0;padding:0}
+  .quickbar .quickcard:nth-child(1),
+  .quickbar .quickcard:nth-child(2){display:none}
+  .quickbar .quickcard:nth-child(3){
+    min-height:0;padding:9px 11px;border-radius:11px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap
+  }
+  .quickbar .quickcard:nth-child(3) .quicktitle{display:none}
+  .quickbar .quickcard:nth-child(3) .quickvalue{margin:0;flex:1 1 120px}
+  #myEmployee{width:100%;padding:8px 10px;font-size:14px;font-weight:800}
+  #notifyBtn{margin:0;padding:8px 10px;font-size:11px;flex:0 0 auto}
+  #notifyStatus,#notificationIdentity{display:none!important}
+
+  .today-bar{
+    margin:8px 10px 0;padding:9px 11px;border-radius:11px;
+    min-height:0;align-items:center
+  }
+  .today-bar>div:first-child{display:block}
+  .today-label{font-size:9px;padding:3px 6px;margin-right:5px}
+  #todayFullLabel{display:inline;font-size:13px}
+  .today-actions{margin-left:auto;gap:5px}
+  .today-bar button{padding:6px 8px;font-size:11px}
+
+  main{padding:9px 10px 18px}
+
+  .toolbar{
+    display:grid;grid-template-columns:auto auto 1fr auto;
+    gap:6px;margin-bottom:9px;align-items:center
+  }
+  .toolbar button,.toolbar select{
+    padding:8px 10px;border-radius:9px;min-height:39px
+  }
+  .viewbtn{font-size:13px}
+  #date{min-width:0;width:100%;font-size:12px;padding-left:8px;padding-right:5px}
+  #messagesBtn{font-size:0;width:44px;padding:8px 6px}
+  #messagesBtn::before{content:"📥";font-size:19px}
+  #messagesBtn .msg-badge{font-size:10px;min-width:18px;height:18px;margin-left:1px}
+
+  .admin-login{grid-column:1/-1;margin:0}
+  #loginBtn{
+    width:auto;min-height:0;padding:6px 9px;font-size:11px;
+    color:#64748b;background:transparent;border-color:#d6e0e8
+  }
+
+  .adminbar{padding:8px;gap:6px;border-radius:10px;margin-bottom:9px}
+  .adminbar strong{width:100%;font-size:11px}
+  .edit-hint{display:none}
+  .adminbar button{
+    flex:1 1 30%;padding:7px 8px;font-size:10px;min-height:34px
+  }
+
+  .day-grid{grid-template-columns:1fr;gap:9px}
+  .zone{border-radius:11px}
+  .zone h2{padding:9px 12px;font-size:16px}
+  .shift{padding:9px 12px;font-size:13px}
+  .note{font-size:11px}
+
+  .week-grid{grid-template-columns:1fr;gap:8px}
+  .week-day{padding:9px;border-radius:11px}
+  .week-day h3{font-size:13px;margin-bottom:6px}
+  .mini-zone{margin-bottom:6px}
+  .mini-title{font-size:10px}
+  .mini-shift{font-size:11px;padding:3px 1px}
+
+  .messages-panel{border-radius:12px;padding:10px;margin-bottom:10px}
+  .messages-head{align-items:center}
+  .messages-head h2{font-size:17px}
+  .messages-sub{display:none}
+  .inbox-head-actions button{padding:6px 7px;font-size:10px}
+  .messages-list{max-height:52vh}
+
+  .personal-alert{margin:7px 10px 0;padding:9px 10px;border-radius:10px}
+  .personal-alert-icon{font-size:18px}
+  .personal-alert-title{font-size:13px}
+  .personal-alert-body{font-size:11px}
+  .personal-alert-close{padding:5px 7px;font-size:10px}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -454,6 +541,7 @@ function fillPeople(){
  $("myEmployee").innerHTML='<option value="">Iedereen</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
  if(p.includes(old))$("myEmployee").value=old;
  updateNotifyUI();
+ updateAdminLoginVisibility();
  $("editEmployee").innerHTML=p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+'<option value="__NEW__">+ Nieuwe medewerker…</option>';
  if($("messageRecipient")){
    const oldRecipient=$("messageRecipient").value||"ALL";
@@ -504,7 +592,7 @@ $("myEmployee").onchange=e=>{
  }
  // Bij "Iedereen" blijft de laatst gekozen persoonlijke naam bewaard
  // zodat persoonlijke meldingen blijven werken.
- renderDay();renderWeek();updateMessageIdentity();updateNotifyUI();
+ renderDay();renderWeek();updateMessageIdentity();updateNotifyUI();updateAdminLoginVisibility();
 };
 
 function findShift(id){return shifts.find(x=>x._id===id)}
@@ -633,7 +721,7 @@ onAuthStateChanged(auth,u=>{
  editMode=admin;
  $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
- $("loginBtn").style.display=admin?"none":"inline-block";
+ updateAdminLoginVisibility();
  $("adminWho").textContent=admin?`🔧 ${u.email}`:"Beheer";
  if(admin && adminCrewName()){
    localStorage.setItem("cc_my_name",adminCrewName());
@@ -829,6 +917,15 @@ function adminCrewName(){
 function currentCrewName(){
  return adminCrewName() || $("myEmployee").value || localStorage.getItem("cc_my_name") || "";
 }
+
+function updateAdminLoginVisibility(){
+ const btn=$("loginBtn");
+ if(!btn)return;
+ const selected=($("myEmployee")?.value || localStorage.getItem("cc_my_name") || "").trim();
+ const mayManage=["Nick","Arno"].includes(selected) || isAdminUser();
+ btn.style.display=mayManage && !isAdminUser() ? "inline-block" : "none";
+}
+
 function formatMessageTime(ts){
  if(!ts)return "zojuist";
  try{return ts.toDate().toLocaleString("nl-BE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(e){return ""}
@@ -1207,6 +1304,7 @@ async function loadWeather(){
 loadWeather();
 setTodayHeader();
 updateNotifyUI();
+updateAdminLoginVisibility();
 </script>
 
 <script>
