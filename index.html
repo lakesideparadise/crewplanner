@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v10.9-mobile-password-autofill-2026-07-30">
+<meta name="cablecrew-version" content="v11-notifications-reports-backups-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -377,6 +377,9 @@ body.admin-active .shift:hover{background:#fff8e8}
   .brand-logo{width:29px;height:29px}
 }
 
+
+.change-badge{display:inline-block;font-size:9px;font-weight:900;padding:2px 6px;border-radius:999px;margin-left:6px;background:#fff3cd;color:#7a5700;border:1px solid #ead58a;cursor:pointer}.change-badge.changed{background:#e8f2ff;color:#245b91;border-color:#b9d5f2}
+.admin-data-modal .modal{max-width:980px}.report-controls,.backup-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:12px 0}.report-controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:800;color:var(--muted)}.report-table{width:100%;border-collapse:collapse;font-size:13px}.report-table th,.report-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}.report-table th{background:#f6f8fa}.report-table td.num{text-align:right}.backup-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}.backup-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px}.backup-meta{font-size:12px;color:var(--muted)}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -445,6 +448,8 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button id="yearPlannerBtn">📅 Jaarplanning</button>
     <button id="archiveBtn">🗂️ Verleden</button>
     <button id="changeLogBtn">📒 Logboek</button>
+    <button id="hoursReportBtn">📊 Urenrapport</button>
+    <button id="backupsBtn">💾 Back-ups</button>
     <button id="printBtn">Week afdrukken</button>
     <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
     <button id="logoutBtn">Uitloggen</button>
@@ -521,6 +526,15 @@ body.admin-active .shift:hover{background:#fff8e8}
 
 
 
+
+<div id="hoursReportModal" class="modalback admin-data-modal"><div class="modal">
+<div class="year-head"><div><h2>📊 Urenrapport</h2><div class="year-sub">Alleen zichtbaar voor Nick en Arno.</div></div><button id="closeHoursReportBtn">Sluiten</button></div>
+<div class="report-controls"><label>Van<input id="reportFrom" type="date"></label><label>Tot en met<input id="reportTo" type="date"></label><button id="refreshReportBtn" class="primary">Berekenen</button><button id="exportReportBtn">CSV exporteren</button></div><div id="hoursReportContent"></div>
+</div></div>
+<div id="backupsModal" class="modalback admin-data-modal"><div class="modal">
+<div class="year-head"><div><h2>💾 Back-ups</h2><div class="year-sub">Alleen zichtbaar voor Nick en Arno. Dagelijkse snapshots van de planning.</div></div><button id="closeBackupsBtn">Sluiten</button></div>
+<div class="backup-actions"><button id="createBackupBtn" class="primary">Nu back-up maken</button><span id="backupStatus" class="small"></span></div><div id="backupList" class="backup-list"></div>
+</div></div>
 
 <div id="changeLogModal" class="modalback">
   <div class="modal log-modal">
@@ -723,8 +737,10 @@ function renderToday(){
  $("workingToday").textContent=names.length?names.join(", "):"Geen crew ingepland";
 }
 function shiftHtml(x){
+ const change=shiftChangeState(x._id);
+ const badge=change?`<span class="change-badge ${change==="Gewijzigd"?"changed":""}" data-ack-shift="${esc(x._id||"")}">${change}</span>`:"";
  return `<div class="shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}">
-   <div><b>${esc(x.employee)}</b></div>
+   <div><b>${esc(x.employee)}</b>${badge}</div>
    <div class="time">${esc(x.start)}–${esc(x.end)}${x.note?` <span class="note">📝 ${esc(x.note)}</span>`:""}</div></div>`;
 }
 function renderDay(){
@@ -1014,7 +1030,7 @@ onAuthStateChanged(auth,u=>{
    if($("myEmployee"))$("myEmployee").value="";
  }
  editMode=admin;
- $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
+ $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
  updateAdminLoginVisibility();
  $("adminWho").textContent=admin?`🔧 ${u?.email||"Beheer"}`:"Beheer";
@@ -1083,25 +1099,15 @@ onSnapshot(collection(db,"shifts"),snap=>{
      if(!relevantToMe(data))return;
 
      if(ch.type==="added"){
-       showLocalNotice("➕ Nieuwe shift ingepland",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
+       setShiftChangeState(data._id,"Nieuw");
+       showLocalNotice("➕ Nieuwe shift ingepland",data.zone==="VERLOF"?`${data.date} · 🏝️ verlof`:`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
      }else if(ch.type==="modified"){
        const prev=previousShiftMap.get(data._id);
-       const noteChanged=prev && (prev.note||"")!==(data.note||"");
-       const coreChanged=prev && (
-         prev.date!==data.date ||
-         prev.employee!==data.employee ||
-         prev.start!==data.start ||
-         prev.end!==data.end ||
-         prev.zone!==data.zone
-       );
-       if(noteChanged && !coreChanged){
-         const note=(data.note||"").trim();
-         showLocalNotice("📝 Nieuwe notitie bij je shift",note || `Notitie verwijderd · ${shiftDescription(data)}`,"shiftchange");
-       }else{
-         showLocalNotice("🔄 Je planning is aangepast",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
-       }
+       setShiftChangeState(data._id,"Gewijzigd");
+       showLocalNotice("🔄 Je planning is aangepast",describeShiftChange(prev,data),"shiftchange");
      }else if(ch.type==="removed"){
-       showLocalNotice("❌ Shift verwijderd",`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
+       clearShiftChangeState(data._id);
+       showLocalNotice("❌ Shift verwijderd",data.zone==="VERLOF"?`${data.date} · 🏝️ verlof`:`${data.date} · ${data.zone} · ${data.start}–${data.end}`,"shiftchange");
      }
    });
  }
@@ -1115,7 +1121,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
    $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
  }
  shiftsInitialized=true;
- updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();
+ updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();setTimeout(ensureDailyBackup,500);
 },err=>{
  firestoreReady=false;shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
  $("syncStatus").textContent="🔴 Firebase niet bereikbaar – JSON-weergave";renderAll();updateNotifyUI();
@@ -1210,11 +1216,17 @@ $("notifyBtn").onclick=async()=>{
  }
 };
 
+function pendingShiftChanges(){try{return JSON.parse(localStorage.getItem("cc_pending_shift_changes")||"{}")}catch(e){return {}}}
+function savePendingShiftChanges(v){localStorage.setItem("cc_pending_shift_changes",JSON.stringify(v||{}))}
+function setShiftChangeState(id,state){if(!id)return;const p=pendingShiftChanges();p[id]=state;savePendingShiftChanges(p)}
+function clearShiftChangeState(id){const p=pendingShiftChanges();delete p[id];savePendingShiftChanges(p);setPendingShiftAlerts(Object.keys(p).length);renderDay();renderWeek()}
+function shiftChangeState(id){return pendingShiftChanges()[id]||""}
+function describeShiftChange(a,b){const q=[];if(a?.date!==b?.date)q.push(`${a?.date||"?"} → ${b?.date||"?"}`);if(a?.zone!==b?.zone)q.push(`${a?.zone||"?"} → ${b?.zone||"?"}`);if(a?.start!==b?.start||a?.end!==b?.end)q.push(`${a?.start||""}–${a?.end||""} → ${b?.start||""}–${b?.end||""}`);if((a?.note||"")!==(b?.note||""))q.push(`opmerking: ${b?.note||"verwijderd"}`);return q.join(" · ")||shiftDescription(b)}
+document.addEventListener("click",e=>{const b=e.target.closest?.("[data-ack-shift]");if(b&&!editMode){e.stopPropagation();clearShiftChangeState(b.dataset.ackShift)}});
+
 function showLocalNotice(title,body,type=""){
  showPersonalAlert(title,body);
- if(type==="shiftchange"){
-   addPendingShiftAlert();
- }
+ if(type==="shiftchange"){setPendingShiftAlerts(Object.keys(pendingShiftChanges()).length)}
 
  const wrap=$("toastWrap");
  const el=document.createElement("div");
@@ -1263,6 +1275,21 @@ function updateAdminLoginVisibility(){
  btn.style.display=mayManage && !isAdminUser() ? "inline-block" : "none";
 }
 
+
+
+function hoursBetween(a,b){if(!a||!b)return 0;const [ah,am]=a.split(":").map(Number),[bh,bm]=b.split(":").map(Number);return Math.max(0,((bh*60+bm)-(ah*60+am))/60)}
+function defaultReportDates(){const d=new Date();$("reportFrom").value=key(new Date(d.getFullYear(),d.getMonth(),1));$("reportTo").value=key(new Date(d.getFullYear(),d.getMonth()+1,0))}
+function reportRows(){const from=$("reportFrom").value,to=$("reportTo").value,m=new Map();shifts.filter(x=>x.zone!=="VERLOF"&&x.date>=from&&x.date<=to).forEach(x=>{if(!m.has(x.employee))m.set(x.employee,{employee:x.employee,hours:0,shifts:0});const r=m.get(x.employee);r.hours+=hoursBetween(x.start,x.end);r.shifts++});return [...m.values()].sort((a,b)=>a.employee.localeCompare(b.employee,"nl"))}
+function renderHoursReport(){if(!isAdminUser())return;const rows=reportRows();$("hoursReportContent").innerHTML=rows.length?`<table class="report-table"><thead><tr><th>Medewerker</th><th>Geplande uren</th><th>Shifts</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.employee)}</b></td><td class="num">${r.hours.toFixed(2)}</td><td class="num">${r.shifts}</td></tr>`).join("")}</tbody></table>`:'<div class="empty">Geen uren in deze periode.</div>'}
+$("hoursReportBtn").onclick=()=>{if(!isAdminUser())return;defaultReportDates();renderHoursReport();$("hoursReportModal").classList.add("show")};$("closeHoursReportBtn").onclick=()=>$("hoursReportModal").classList.remove("show");$("refreshReportBtn").onclick=renderHoursReport;
+$("exportReportBtn").onclick=()=>{if(!isAdminUser())return;const rows=reportRows(),csv=["Medewerker;Uren;Shifts",...rows.map(r=>`${r.employee};${r.hours.toFixed(2)};${r.shifts}`)].join("\n"),blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`CableCrew-uren-${$("reportFrom").value}-tot-${$("reportTo").value}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+
+let backupUnsub=null;
+function backupDayKey(){return realTodayKey()}
+async function createPlanningBackup(auto=false){if(!isAdminUser())return;const payload=shifts.filter(x=>!String(x._id||"").startsWith("fallback_")).map(({_id,...x})=>x);try{await addDoc(collection(db,"planningBackups"),{createdAt:serverTimestamp(),createdBy:user.email||"",dayKey:backupDayKey(),automatic:!!auto,count:payload.length,shifts:payload});localStorage.setItem("cc_last_backup_day",backupDayKey());$("backupStatus").textContent=auto?"Automatische dagback-up gemaakt.":"Back-up gemaakt."}catch(e){$("backupStatus").textContent="Back-up mislukt: Firebase-regels moeten planningBackups toelaten.";console.warn(e)}}
+async function ensureDailyBackup(){if(!isAdminUser()||!shiftsInitialized||localStorage.getItem("cc_last_backup_day")===backupDayKey())return;await createPlanningBackup(true)}
+function startBackupListener(){if(backupUnsub){backupUnsub();backupUnsub=null}if(!isAdminUser())return;const q=query(collection(db,"planningBackups"),orderBy("createdAt","desc"),limit(30));backupUnsub=onSnapshot(q,snap=>{$("backupList").innerHTML=snap.empty?'<div class="empty">Nog geen back-ups.</div>':snap.docs.map(d=>{const x={_id:d.id,...d.data()},when=x.createdAt?.toDate?.().toLocaleString("nl-BE")||"zojuist";return `<div class="backup-item"><div><b>${esc(when)}</b><div class="backup-meta">${esc(x.createdBy||"")} · ${x.count||0} shifts${x.automatic?" · automatisch":""}</div></div><button data-restore-backup="${x._id}">Herstellen</button></div>`}).join("");$("backupList").querySelectorAll("[data-restore-backup]").forEach(btn=>btn.onclick=async()=>{const found=snap.docs.find(d=>d.id===btn.dataset.restoreBackup),data=found?.data();if(!isAdminUser()||!data?.shifts)return;if(!confirm(`Back-up met ${data.shifts.length} shifts herstellen?`))return;if(!confirm("De huidige planning wordt volledig overschreven. Zeker?"))return;try{await createPlanningBackup(false);for(let i=0;i<shifts.length;i+=400){const batch=writeBatch(db);shifts.slice(i,i+400).forEach(x=>{if(x._id&&!String(x._id).startsWith("fallback_"))batch.delete(doc(db,"shifts",x._id))});await batch.commit()}for(let i=0;i<data.shifts.length;i+=400){const batch=writeBatch(db);data.shifts.slice(i,i+400).forEach(x=>batch.set(doc(collection(db,"shifts")),x));await batch.commit()}alert("Back-up hersteld.");$("backupsModal").classList.remove("show")}catch(e){alert("Herstellen mislukt: "+e.message)}})},e=>{$("backupList").innerHTML='<div class="empty">Back-ups konden niet geladen worden. Controleer de Firebase-regels voor planningBackups.</div>';console.warn(e)})}
+$("backupsBtn").onclick=()=>{if(!isAdminUser())return;$("backupsModal").classList.add("show");startBackupListener()};$("closeBackupsBtn").onclick=()=>$("backupsModal").classList.remove("show");$("createBackupBtn").onclick=()=>createPlanningBackup(false);
 
 function icsEscape(v){
  return String(v??"")
