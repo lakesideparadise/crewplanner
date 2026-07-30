@@ -894,7 +894,7 @@ onAuthStateChanged(auth,u=>{
  $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
  updateAdminLoginVisibility();
- $("adminWho").textContent=admin?`🔧 ${u.email}`:"Beheer";
+ $("adminWho").textContent=admin?`🔧 ${u?.email||"Beheer"}`:"Beheer";
  if(admin && adminCrewName()){
    localStorage.setItem("cc_my_name",adminCrewName());
  }
@@ -924,7 +924,27 @@ $("importBtn").onclick=async()=>{
 };
 
 await loadFallback();
-await ensureAnonymousAuth();
+
+/*
+ * MOBILE/iOS HOTFIX:
+ * Toon de lokale planning onmiddellijk. We wachten NIET eerst op Firebase.
+ * Zo blijft de planner zichtbaar wanneer iOS/Safari de pagina opnieuw opent
+ * terwijl Firebase Auth/Firestore nog aan het herstellen is.
+ */
+shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
+$("syncStatus").textContent=fallbackShifts.length
+  ?"🟡 Planning geladen – live verbinding maken…"
+  :"🟡 Live verbinding maken…";
+renderAll();
+applyPastDateVisibility();
+updateNotifyUI();
+
+/*
+ * Laat Firebase-auth herstellen, maar blokkeer de zichtbare planner niet.
+ */
+ensureAnonymousAuth().catch(err=>{
+  console.warn("Anonymous auth kon niet onmiddellijk herstellen:",err);
+});
 
 onSnapshot(collection(db,"shifts"),snap=>{
  firestoreReady=true;
@@ -980,10 +1000,29 @@ function closeMessagesPanel(){
   $("messagesPanel")?.classList.remove("show");
 }
 
-// Altijd gesloten bij openen/heropenen van de website,
-// ook wanneer de browser de pagina uit de back-forward cache herstelt.
-window.addEventListener("pageshow", closeMessagesPanel);
-window.addEventListener("load", closeMessagesPanel);
+// Bij openen/heropenen op iPhone/Safari/PWA tekenen we de planner opnieuw.
+// iOS kan de pagina uit de back-forward cache herstellen zonder de module
+// volledig opnieuw uit te voeren.
+function restorePlannerAfterResume(){
+  closeMessagesPanel();
+
+  try{
+    setTodayHeader();
+
+    if(!shifts.length && fallbackShifts.length){
+      shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
+    }
+
+    renderAll();
+    applyPastDateVisibility();
+    updateNotifyUI();
+  }catch(err){
+    console.warn("Planner opnieuw tekenen na hervatten:",err);
+  }
+}
+
+window.addEventListener("pageshow", restorePlannerAfterResume);
+window.addEventListener("load", restorePlannerAfterResume);
 
 // Als de gebruiker de site verlaat, zorgen we dat het paneel
 // niet open blijft staan wanneer hij/zij terugkomt.
