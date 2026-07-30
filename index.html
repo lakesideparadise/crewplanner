@@ -609,18 +609,40 @@ function initDateOptions(){
 }
 function people(){return [...new Set(shifts.map(x=>x.employee))].filter(Boolean).sort()}
 function fillPeople(){
- const p=people(), old=$("myEmployee").value||localStorage.getItem("cc_my_name")||"";
- $("myEmployee").innerHTML='<option value="">Iedereen</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
- if(p.includes(old))$("myEmployee").value=old;
- updateNotifyUI();
- updateAdminLoginVisibility();
- $("editEmployee").innerHTML=p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+'<option value="__NEW__">+ Nieuwe medewerker…</option>';
- if($("messageRecipient")){
-   const oldRecipient=$("messageRecipient").value||"ALL";
-   $("messageRecipient").innerHTML='<option value="ALL">Iedereen</option>'+p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
-   if(oldRecipient==="ALL" || p.includes(oldRecipient))$("messageRecipient").value=oldRecipient;
+ const p=people();
+ const locked=localStorage.getItem("cc_my_name")||"";
+ const current=$("myEmployee").value||"";
+
+ // Nick en Arno behouden als beheerder de volledige personenlijst.
+ // Andere medewerkers zien na hun eerste persoonlijke keuze alleen
+ // nog 'Iedereen' en hun eigen naam.
+ let visiblePeople=p;
+ if(!isAdminUser() && locked && p.includes(locked)){
+   visiblePeople=[locked];
  }
 
+ $("myEmployee").innerHTML=
+   '<option value="">Iedereen</option>'+
+   visiblePeople.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+
+ const preferred=current || locked;
+ if(preferred && visiblePeople.includes(preferred))$("myEmployee").value=preferred;
+ else $("myEmployee").value="";
+
+ updateNotifyUI();
+ updateAdminLoginVisibility();
+
+ $("editEmployee").innerHTML=
+   p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+
+   '<option value="__NEW__">+ Nieuwe medewerker…</option>';
+
+ if($("messageRecipient")){
+   const oldRecipient=$("messageRecipient").value||"ALL";
+   $("messageRecipient").innerHTML=
+     '<option value="ALL">Iedereen</option>'+
+     p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+   if(oldRecipient==="ALL" || p.includes(oldRecipient))$("messageRecipient").value=oldRecipient;
+ }
 }
 function renderToday(){
  const rows=shifts.filter(x=>x.date===key(new Date())), names=[...new Set(rows.map(x=>x.employee))].sort();
@@ -659,11 +681,23 @@ document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
 });
 $("date").onchange=()=>{renderDay();renderWeek()};
 $("myEmployee").onchange=e=>{
- if(e.target.value){
-   localStorage.setItem("cc_my_name",e.target.value);
+ const chosen=e.target.value;
+
+ if(chosen){
+   const locked=localStorage.getItem("cc_my_name")||"";
+
+   // Een gewone medewerker kiest één keer zijn/haar naam.
+   // Daarna blijft die identiteit op dit toestel vast staan.
+   if(!isAdminUser() && locked && chosen!==locked){
+     e.target.value=locked;
+     alert(`Dit toestel is gekoppeld aan ${locked}. Je kunt alleen ${locked} of Iedereen bekijken.`);
+   }else{
+     localStorage.setItem("cc_my_name",chosen);
+     // Meteen na de eerste keuze de namenlijst beperken.
+     if(!isAdminUser())fillPeople();
+   }
  }
- // Bij "Iedereen" blijft de laatst gekozen persoonlijke naam bewaard
- // zodat persoonlijke meldingen blijven werken.
+ // Bij 'Iedereen' blijft de persoonlijke identiteit bewaard.
  renderDay();renderWeek();updateMessageIdentity();updateNotifyUI();updateAdminLoginVisibility();
 };
 
@@ -799,7 +833,7 @@ onAuthStateChanged(auth,u=>{
    localStorage.setItem("cc_my_name",adminCrewName());
  }
 
- updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();renderDay();renderWeek();renderMessages();
+ fillPeople();updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();renderDay();renderWeek();renderMessages();
 });
 
 function updateImportButton(){
@@ -916,10 +950,13 @@ function updateNotifyUI(){
  }
  $("notifyBtn").style.display="inline-block";
  if(notificationsEnabled()){
+   // Na activeren hoeft de knop niet meer voortdurend zichtbaar te blijven.
+   $("notifyBtn").style.display="none";
    $("notifyBtn").classList.add("enabled");
    $("notifyBtn").textContent="🔔 Meldingen aan";
-   $("notifyStatus").textContent=name?`Persoonlijke meldingen actief voor ${name}. Wijzigingen tellen ook mee op het app-icoon als je toestel badges ondersteunt.`:"Kies één keer je naam om persoonlijke shiftmeldingen te ontvangen.";
+   $("notifyStatus").textContent=name?`Persoonlijke meldingen actief voor ${name}. Wijzigingen tellen ook mee op het app-icoon als je toestel badges ondersteunt.`:"";
  }else{
+   $("notifyBtn").style.display="inline-block";
    $("notifyBtn").classList.remove("enabled");
    $("notifyBtn").textContent="🔔 Meldingen aanzetten";
    $("notifyStatus").textContent=name?`Zet meldingen aan voor wijzigingen aan de shifts van ${name}.`:"Kies eerst één keer je naam.";
@@ -1172,20 +1209,48 @@ $("closeMessagesBtn").onclick=()=>$("messagesPanel").classList.remove("show");
 $("markAllReadBtn").onclick=markAllMessagesRead;
 
 $("sendMessageBtn").onclick=async()=>{
- const name=currentCrewName(),txt=$("messageText").value.trim();
+ const name=currentCrewName();
+ const txt=$("messageText").value.trim();
  if(!name)return alert("Kies eerst je naam bij ‘Mijn planning’.");
- if(!txt)return;
+ if(!txt)return alert("Schrijf eerst een bericht.");
+
+ const btn=$("sendMessageBtn");
+ const oldText=btn.textContent;
+ btn.disabled=true;
+ btn.textContent="Versturen…";
+
  try{
+   // Zorg dat Firebase-authenticatie klaar is vóór we het bericht schrijven.
+   if(!auth.currentUser){
+     await ensureAnonymousAuth();
+   }
+   const sender=auth.currentUser;
+   if(!sender)throw new Error("Firebase-aanmelding is nog niet klaar. Probeer over enkele seconden opnieuw.");
+
    await addDoc(collection(db,"messages"),{
      text:txt,
      author:name,
-     authorUid:user.uid,
+     authorUid:sender.uid||"",
      recipient:$("messageRecipient").value||"ALL",
      important:isAdminUser()&&$("messageImportant").checked,
      createdAt:serverTimestamp()
    });
-   $("messageText").value="";$("messageImportant").checked=false;
- }catch(e){alert("Bericht plaatsen mislukt: "+e.message)}
+
+   $("messageText").value="";
+   $("messageImportant").checked=false;
+   showLocalNotice("✅ Bericht verzonden",
+     ($("messageRecipient").value||"ALL")==="ALL"
+       ? "Je bericht is naar iedereen verstuurd."
+       : `Je bericht is naar ${$("messageRecipient").value} verstuurd.`,
+     ""
+   );
+ }catch(e){
+   console.error("Bericht verzenden:",e);
+   alert("Bericht plaatsen mislukt: "+(e?.message||"onbekende fout"));
+ }finally{
+   btn.disabled=!currentCrewName();
+   btn.textContent=oldText;
+ }
 };
 document.addEventListener("click",async e=>{
  const readBtn=e.target.closest("[data-msg-read]");
@@ -1223,8 +1288,14 @@ onSnapshot(messagesQuery,snap=>{
  $("messagesList").innerHTML='<div class="empty">Crewberichten konden niet worden geladen.</div>';
 });
 async function ensureAnonymousAuth(){
- if(auth.currentUser)return;
- try{await signInAnonymously(auth)}catch(e){console.warn("Anonymous auth nog niet actief:",e)}
+ if(auth.currentUser)return auth.currentUser;
+ try{
+   const result=await signInAnonymously(auth);
+   return result.user;
+ }catch(e){
+   console.warn("Anonymous auth nog niet actief:",e);
+   return null;
+ }
 }
 
 
