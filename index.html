@@ -612,12 +612,13 @@ function fillPeople(){
  const p=people();
  const locked=localStorage.getItem("cc_my_name")||"";
  const current=$("myEmployee").value||"";
+ const adminIdentity=["Nick","Arno"].includes(locked) || isAdminUser();
 
  let visiblePeople=p;
 
  // Gewone medewerkers zien na hun eerste keuze alleen
  // 'Iedereen' en hun eigen naam.
- if(!isAdminUser() && locked && p.includes(locked)){
+ if(!adminIdentity && locked && p.includes(locked)){
    visiblePeople=[locked];
  }
 
@@ -625,10 +626,9 @@ function fillPeople(){
    '<option value="">Iedereen</option>'+
    visiblePeople.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
 
- if(isAdminUser()){
-   // Nick en Arno starten bij elk openen op 'Iedereen'
-   // voor meteen een volledig overzicht.
-   // Pas nadat ze zelf een filter kiezen, bewaren we die keuze binnen deze sessie.
+ if(adminIdentity){
+   // Toestellen van Nick en Arno starten bij elk openen op 'Iedereen',
+   // ook vóór Firebase de beheerlogin volledig heeft hersteld.
    if(adminPlanningFilterChosen){
      $("myEmployee").value=(current && visiblePeople.includes(current))?current:"";
    }else{
@@ -655,6 +655,15 @@ function fillPeople(){
    if(oldRecipient==="ALL" || p.includes(oldRecipient))$("messageRecipient").value=oldRecipient;
  }
 }
+
+function forceAdminDeviceOverview(){
+ const locked=localStorage.getItem("cc_my_name")||"";
+ if(["Nick","Arno"].includes(locked) && $("myEmployee")){
+   adminPlanningFilterChosen=false;
+   $("myEmployee").value="";
+ }
+}
+
 function renderToday(){
  const rows=shifts.filter(x=>x.date===key(new Date())), names=[...new Set(rows.map(x=>x.employee))].sort();
  $("workingToday").textContent=names.length?names.join(", "):"Geen crew ingepland";
@@ -684,7 +693,12 @@ function renderWeek(){
  }
  $("weekGrid").innerHTML=html;
 }
-function renderAll(){initDateOptions();fillPeople();renderToday();renderDay();renderWeek()}
+function renderAll(){
+ initDateOptions();
+ fillPeople();
+ forceAdminDeviceOverview();
+ renderToday();renderDay();renderWeek();
+}
 
 document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
  currentView=b.dataset.view;document.querySelectorAll(".viewbtn").forEach(x=>x.classList.toggle("active",x===b));
