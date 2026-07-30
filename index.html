@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v11.1-unique-hours-2026-07-30">
+<meta name="cablecrew-version" content="v11.2-auto-safety-backups-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1049,6 +1049,11 @@ function updateImportButton(){
 $("importBtn").onclick=async()=>{
  if(!user||!fallbackShifts.length)return;
  if(!confirm(`${fallbackShifts.length} bestaande shifts éénmalig naar Firebase kopiëren?`))return;
+ const backedUp=await createPlanningBackup(false,"Automatisch vóór planning importeren");
+ if(!backedUp){
+   alert("Import geannuleerd omdat de veiligheidsback-up niet kon worden gemaakt.");
+   return;
+ }
  try{
    for(let i=0;i<fallbackShifts.length;i+=450){
      const batch=writeBatch(db);
@@ -1325,10 +1330,39 @@ $("exportReportBtn").onclick=()=>{if(!isAdminUser())return;const rows=reportRows
 
 let backupUnsub=null;
 function backupDayKey(){return realTodayKey()}
-async function createPlanningBackup(auto=false){if(!isAdminUser())return;const payload=shifts.filter(x=>!String(x._id||"").startsWith("fallback_")).map(({_id,...x})=>x);try{await addDoc(collection(db,"planningBackups"),{createdAt:serverTimestamp(),createdBy:user.email||"",dayKey:backupDayKey(),automatic:!!auto,count:payload.length,shifts:payload});localStorage.setItem("cc_last_backup_day",backupDayKey());$("backupStatus").textContent=auto?"Automatische dagback-up gemaakt.":"Back-up gemaakt."}catch(e){$("backupStatus").textContent="Back-up mislukt: Firebase-regels moeten planningBackups toelaten.";console.warn(e)}}
+async function createPlanningBackup(auto=false,reason=""){
+ if(!isAdminUser())return false;
+ const payload=shifts
+   .filter(x=>!String(x._id||"").startsWith("fallback_"))
+   .map(({_id,...x})=>x);
+ try{
+   await addDoc(collection(db,"planningBackups"),{
+     createdAt:serverTimestamp(),
+     createdBy:user.email||"",
+     dayKey:backupDayKey(),
+     automatic:!!auto,
+     reason:reason|| (auto?"Dagelijkse automatische back-up":"Handmatige back-up"),
+     count:payload.length,
+     shifts:payload
+   });
+   localStorage.setItem("cc_last_backup_day",backupDayKey());
+   if($("backupStatus"))$("backupStatus").textContent=auto?"Automatische dagback-up gemaakt.":"Back-up gemaakt.";
+   return true;
+ }catch(e){
+   if($("backupStatus"))$("backupStatus").textContent="Back-up mislukt: Firebase-regels moeten planningBackups toelaten.";
+   console.warn(e);
+   return false;
+ }
+}
 async function ensureDailyBackup(){if(!isAdminUser()||!shiftsInitialized||localStorage.getItem("cc_last_backup_day")===backupDayKey())return;await createPlanningBackup(true)}
-function startBackupListener(){if(backupUnsub){backupUnsub();backupUnsub=null}if(!isAdminUser())return;const q=query(collection(db,"planningBackups"),orderBy("createdAt","desc"),limit(30));backupUnsub=onSnapshot(q,snap=>{$("backupList").innerHTML=snap.empty?'<div class="empty">Nog geen back-ups.</div>':snap.docs.map(d=>{const x={_id:d.id,...d.data()},when=x.createdAt?.toDate?.().toLocaleString("nl-BE")||"zojuist";return `<div class="backup-item"><div><b>${esc(when)}</b><div class="backup-meta">${esc(x.createdBy||"")} · ${x.count||0} shifts${x.automatic?" · automatisch":""}</div></div><button data-restore-backup="${x._id}">Herstellen</button></div>`}).join("");$("backupList").querySelectorAll("[data-restore-backup]").forEach(btn=>btn.onclick=async()=>{const found=snap.docs.find(d=>d.id===btn.dataset.restoreBackup),data=found?.data();if(!isAdminUser()||!data?.shifts)return;if(!confirm(`Back-up met ${data.shifts.length} shifts herstellen?`))return;if(!confirm("De huidige planning wordt volledig overschreven. Zeker?"))return;try{await createPlanningBackup(false);for(let i=0;i<shifts.length;i+=400){const batch=writeBatch(db);shifts.slice(i,i+400).forEach(x=>{if(x._id&&!String(x._id).startsWith("fallback_"))batch.delete(doc(db,"shifts",x._id))});await batch.commit()}for(let i=0;i<data.shifts.length;i+=400){const batch=writeBatch(db);data.shifts.slice(i,i+400).forEach(x=>batch.set(doc(collection(db,"shifts")),x));await batch.commit()}alert("Back-up hersteld.");$("backupsModal").classList.remove("show")}catch(e){alert("Herstellen mislukt: "+e.message)}})},e=>{$("backupList").innerHTML='<div class="empty">Back-ups konden niet geladen worden. Controleer de Firebase-regels voor planningBackups.</div>';console.warn(e)})}
-$("backupsBtn").onclick=()=>{if(!isAdminUser())return;$("backupsModal").classList.add("show");startBackupListener()};$("closeBackupsBtn").onclick=()=>$("backupsModal").classList.remove("show");$("createBackupBtn").onclick=()=>createPlanningBackup(false);
+function startBackupListener(){if(backupUnsub){backupUnsub();backupUnsub=null}if(!isAdminUser())return;const q=query(collection(db,"planningBackups"),orderBy("createdAt","desc"),limit(30));backupUnsub=onSnapshot(q,snap=>{$("backupList").innerHTML=snap.empty?'<div class="empty">Nog geen back-ups.</div>':snap.docs.map(d=>{const x={_id:d.id,...d.data()},when=x.createdAt?.toDate?.().toLocaleString("nl-BE")||"zojuist";return `<div class="backup-item"><div><b>${esc(when)}</b><div class="backup-meta">${esc(x.createdBy||"")} · ${x.count||0} shifts${x.automatic?" · automatisch":""}${x.reason?` · ${esc(x.reason)}`:""}</div></div><button data-restore-backup="${x._id}">Herstellen</button></div>`}).join("");$("backupList").querySelectorAll("[data-restore-backup]").forEach(btn=>btn.onclick=async()=>{const found=snap.docs.find(d=>d.id===btn.dataset.restoreBackup),data=found?.data();if(!isAdminUser()||!data?.shifts)return;if(!confirm(`Back-up met ${data.shifts.length} shifts herstellen?`))return;if(!confirm("De huidige planning wordt volledig overschreven. Zeker?"))return;try{
+       const safetyBackup=await createPlanningBackup(false,"Automatisch vóór herstel");
+       if(!safetyBackup){
+         alert("Herstel geannuleerd omdat de veiligheidsback-up niet kon worden gemaakt.");
+         return;
+       }
+       for(let i=0;i<shifts.length;i+=400){const batch=writeBatch(db);shifts.slice(i,i+400).forEach(x=>{if(x._id&&!String(x._id).startsWith("fallback_"))batch.delete(doc(db,"shifts",x._id))});await batch.commit()}for(let i=0;i<data.shifts.length;i+=400){const batch=writeBatch(db);data.shifts.slice(i,i+400).forEach(x=>batch.set(doc(collection(db,"shifts")),x));await batch.commit()}alert("Back-up hersteld.");$("backupsModal").classList.remove("show")}catch(e){alert("Herstellen mislukt: "+e.message)}})},e=>{$("backupList").innerHTML='<div class="empty">Back-ups konden niet geladen worden. Controleer de Firebase-regels voor planningBackups.</div>';console.warn(e)})}
+$("backupsBtn").onclick=()=>{if(!isAdminUser())return;$("backupsModal").classList.add("show");startBackupListener()};$("closeBackupsBtn").onclick=()=>$("backupsModal").classList.remove("show");$("createBackupBtn").onclick=()=>createPlanningBackup(false,"Handmatige back-up");
 
 function icsEscape(v){
  return String(v??"")
