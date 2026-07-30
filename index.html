@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v10-mobile-hotfix-2026-07-30">
+<meta name="cablecrew-version" content="v10.1-mobile-render-fix-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -926,18 +926,24 @@ $("importBtn").onclick=async()=>{
 
 await loadFallback();
 
-/* V10 MOBILE/iOS HOTFIX:
-   Teken de planning meteen vanuit planning.json.
-   Firebase mag de eerste zichtbare render niet blokkeren. */
+/* V10.1 MOBILE/iOS HOTFIX */
 shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
 $("syncStatus").textContent=fallbackShifts.length
   ?"🟡 Planning geladen – live verbinding maken…"
   :"🟡 Live verbinding maken…";
-renderAll();
-applyPastDateVisibility();
-updateNotifyUI();
 
-/* Auth op de achtergrond herstellen. */
+/* Wacht één event-loop zodat alle const-waarden in deze module
+   (o.a. ADMIN_EMAILS) geïnitialiseerd zijn vóór renderAll(). */
+setTimeout(()=>{
+  try{
+    renderAll();
+    applyPastDateVisibility();
+    updateNotifyUI();
+  }catch(err){
+    console.error("Eerste planner-render mislukt:",err);
+  }
+},0);
+
 ensureAnonymousAuth().catch(err=>{
   console.warn("Anonymous auth kon niet onmiddellijk herstellen:",err);
 });
@@ -1012,7 +1018,6 @@ function restorePlannerAfterResume(){
     console.warn("Planner opnieuw tekenen na hervatten:",err);
   }
 }
-
 window.addEventListener("pageshow", restorePlannerAfterResume);
 window.addEventListener("load", restorePlannerAfterResume);
 
