@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v11-notifications-reports-backups-2026-07-30">
+<meta name="cablecrew-version" content="v11.1-unique-hours-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1279,7 +1279,46 @@ function updateAdminLoginVisibility(){
 
 function hoursBetween(a,b){if(!a||!b)return 0;const [ah,am]=a.split(":").map(Number),[bh,bm]=b.split(":").map(Number);return Math.max(0,((bh*60+bm)-(ah*60+am))/60)}
 function defaultReportDates(){const d=new Date();$("reportFrom").value=key(new Date(d.getFullYear(),d.getMonth(),1));$("reportTo").value=key(new Date(d.getFullYear(),d.getMonth()+1,0))}
-function reportRows(){const from=$("reportFrom").value,to=$("reportTo").value,m=new Map();shifts.filter(x=>x.zone!=="VERLOF"&&x.date>=from&&x.date<=to).forEach(x=>{if(!m.has(x.employee))m.set(x.employee,{employee:x.employee,hours:0,shifts:0});const r=m.get(x.employee);r.hours+=hoursBetween(x.start,x.end);r.shifts++});return [...m.values()].sort((a,b)=>a.employee.localeCompare(b.employee,"nl"))}
+function reportRows(){
+ const from=$("reportFrom").value,to=$("reportTo").value;
+ const byEmployeeDay=new Map();
+
+ shifts
+   .filter(x=>x.zone!=="VERLOF"&&x.date>=from&&x.date<=to&&x.start&&x.end)
+   .forEach(x=>{
+     const k=x.employee+"|"+x.date;
+     if(!byEmployeeDay.has(k))byEmployeeDay.set(k,{employee:x.employee,date:x.date,intervals:[],shifts:0});
+     const d=byEmployeeDay.get(k);
+     const toMin=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
+     d.intervals.push([toMin(x.start),toMin(x.end)]);
+     d.shifts++;
+   });
+
+ const totals=new Map();
+ byEmployeeDay.forEach(d=>{
+   const intervals=d.intervals
+     .filter(([a,b])=>Number.isFinite(a)&&Number.isFinite(b)&&b>a)
+     .sort((a,b)=>a[0]-b[0]);
+
+   let uniqueMinutes=0;
+   if(intervals.length){
+     let [start,end]=intervals[0];
+     for(let i=1;i<intervals.length;i++){
+       const [s,e]=intervals[i];
+       if(s<=end)end=Math.max(end,e);
+       else{uniqueMinutes+=end-start;start=s;end=e}
+     }
+     uniqueMinutes+=end-start;
+   }
+
+   if(!totals.has(d.employee))totals.set(d.employee,{employee:d.employee,hours:0,shifts:0});
+   const r=totals.get(d.employee);
+   r.hours+=uniqueMinutes/60;
+   r.shifts+=d.shifts;
+ });
+
+ return [...totals.values()].sort((a,b)=>a.employee.localeCompare(b.employee,"nl"));
+}
 function renderHoursReport(){if(!isAdminUser())return;const rows=reportRows();$("hoursReportContent").innerHTML=rows.length?`<table class="report-table"><thead><tr><th>Medewerker</th><th>Geplande uren</th><th>Shifts</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.employee)}</b></td><td class="num">${r.hours.toFixed(2)}</td><td class="num">${r.shifts}</td></tr>`).join("")}</tbody></table>`:'<div class="empty">Geen uren in deze periode.</div>'}
 $("hoursReportBtn").onclick=()=>{if(!isAdminUser())return;defaultReportDates();renderHoursReport();$("hoursReportModal").classList.add("show")};$("closeHoursReportBtn").onclick=()=>$("hoursReportModal").classList.remove("show");$("refreshReportBtn").onclick=renderHoursReport;
 $("exportReportBtn").onclick=()=>{if(!isAdminUser())return;const rows=reportRows(),csv=["Medewerker;Uren;Shifts",...rows.map(r=>`${r.employee};${r.hours.toFixed(2)};${r.shifts}`)].join("\n"),blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`CableCrew-uren-${$("reportFrom").value}-tot-${$("reportTo").value}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
