@@ -289,6 +289,57 @@ body.admin-active .shift:hover{background:#fff8e8}
   .personal-alert-close{padding:5px 7px;font-size:10px}
 }
 
+
+.mobile-header-weather{display:none}
+@media(max-width:720px){
+  .header-inner{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    align-items:center;
+  }
+  .brand{min-width:0}
+  .mobile-header-weather{
+    display:block;
+    font-size:11px;
+    font-weight:800;
+    color:#51606b;
+    white-space:nowrap;
+    text-align:right;
+  }
+}
+
+
+.mobile-header-actions{display:none}
+.calendar-header-btn{display:none}
+.calendar-modal{width:min(460px,94vw)}
+.calendar-identity{font-weight:900;margin-bottom:8px}
+.calendar-help{font-size:13px;line-height:1.45;color:#51606b}
+.calendar-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.calendar-note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.35}
+
+@media(max-width:720px){
+  .mobile-header-actions{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    justify-content:flex-end;
+  }
+  .calendar-header-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:34px;
+    height:34px;
+    min-height:0;
+    padding:0;
+    border-radius:9px;
+    font-size:17px;
+    background:#f4f7f9;
+    border-color:#d6e0e8;
+  }
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -304,6 +355,7 @@ body.admin-active .shift:hover{background:#fff8e8}
 <div id="toastWrap" class="toast-wrap"></div>
 <header><div class="header-inner">
   <div class="brand">CableCrew Lakeside</div>
+  <div class="mobile-header-actions"><div id="mobileHeaderWeather" class="mobile-header-weather"></div><button id="calendarHeaderBtn" class="calendar-header-btn" aria-label="Mijn agenda" title="Mijn agenda">📅</button></div>
   <div id="syncStatus" class="status">Verbinden…</div>
 </div></header>
 
@@ -388,6 +440,26 @@ body.admin-active .shift:hover{background:#fff8e8}
   <section id="day" class="panel active"><div id="dayGrid" class="day-grid"></div></section>
   <section id="week" class="panel"><div id="weekGrid" class="week-grid"></div></section>
 </main>
+
+
+<div id="calendarModal" class="modalback">
+  <div class="modal calendar-modal">
+    <h2>📅 Mijn agenda</h2>
+    <div id="calendarIdentity" class="calendar-identity"></div>
+    <p class="calendar-help">
+      Voeg je toekomstige CableCrew-shifts toe aan de agenda op je telefoon.
+      Daarna kun je de gewone Agenda-widget van je telefoon gebruiken.
+    </p>
+    <div class="calendar-actions">
+      <button id="downloadCalendarBtn" class="primary">📅 Mijn shifts toevoegen</button>
+      <button id="closeCalendarBtn">Sluiten</button>
+    </div>
+    <div class="calendar-note">
+      Testversie: dit maakt een agenda-bestand van je huidige toekomstige shifts.
+      Latere wijzigingen synchroniseren nog niet automatisch.
+    </div>
+  </div>
+</div>
 
 <div id="loginModal" class="modalback"><div class="modal">
   <h2>Beheer login</h2>
@@ -926,6 +998,73 @@ function updateAdminLoginVisibility(){
  btn.style.display=mayManage && !isAdminUser() ? "inline-block" : "none";
 }
 
+
+function icsEscape(v){
+ return String(v??"")
+   .replace(/\\/g,"\\\\")
+   .replace(/\n/g,"\\n")
+   .replace(/,/g,"\\,")
+   .replace(/;/g,"\\;");
+}
+function icsDateTime(date,time){
+ return date.replaceAll("-","")+"T"+(time||"00:00").replace(":","")+"00";
+}
+function buildPersonalIcs(){
+ const name=currentCrewName();
+ if(!name)return "";
+ const today=realTodayKey();
+ const mine=shifts
+   .filter(x=>x.employee===name && x.date>=today)
+   .sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
+
+ const lines=[
+   "BEGIN:VCALENDAR",
+   "VERSION:2.0",
+   "PRODID:-//CableCrew Lakeside//Planning//NL",
+   "CALSCALE:GREGORIAN",
+   "METHOD:PUBLISH"
+ ];
+
+ mine.forEach((x,i)=>{
+   const uid=`${x._id||i}-${x.date}-${x.start}@cablecrew`;
+   const summary=`CableCrew – ${x.zone}`;
+   const description=x.note?`Opmerking: ${x.note}`:"";
+   lines.push(
+     "BEGIN:VEVENT",
+     `UID:${icsEscape(uid)}`,
+     `DTSTART;TZID=Europe/Brussels:${icsDateTime(x.date,x.start)}`,
+     `DTEND;TZID=Europe/Brussels:${icsDateTime(x.date,x.end)}`,
+     `SUMMARY:${icsEscape(summary)}`,
+     `DESCRIPTION:${icsEscape(description)}`,
+     "END:VEVENT"
+   );
+ });
+ lines.push("END:VCALENDAR");
+ return lines.join("\r\n");
+}
+function openCalendarModal(){
+ const name=currentCrewName();
+ $("calendarIdentity").textContent=name?`Agenda voor: ${name}`:"Kies eerst één keer je naam bij Mijn planning.";
+ $("downloadCalendarBtn").disabled=!name;
+ $("calendarModal").classList.add("show");
+}
+$("calendarHeaderBtn").onclick=openCalendarModal;
+$("closeCalendarBtn").onclick=()=>$("calendarModal").classList.remove("show");
+$("downloadCalendarBtn").onclick=()=>{
+ const name=currentCrewName();
+ if(!name)return alert("Kies eerst één keer je naam bij Mijn planning.");
+ const ics=buildPersonalIcs();
+ const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download=`CableCrew-${name}.ics`;
+ document.body.appendChild(a);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+
 function formatMessageTime(ts){
  if(!ts)return "zojuist";
  try{return ts.toDate().toLocaleString("nl-BE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(e){return ""}
@@ -1299,7 +1438,8 @@ async function loadWeather(){
    const d=await r.json(),c=d.current||{};let rain="";
    if(d.hourly?.time?.length){let bi=0,bd=Infinity,now=new Date();d.hourly.time.forEach((t,i)=>{const z=Math.abs(new Date(t)-now);if(z<bd){bd=z;bi=i}});const ch=d.hourly.precipitation_probability?.[bi];if(ch!=null)rain=` · regen ${Math.round(ch)}%`}
    $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${Math.round(c.wind_speed_10m)} km/u${rain}</span>`;
- }catch(e){$("weather").textContent="Weer tijdelijk niet beschikbaar"}
+   if($("mobileHeaderWeather"))$("mobileHeaderWeather").textContent=`${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°C · ${Math.round(c.wind_speed_10m)} km/u`;
+ }catch(e){$("weather").textContent="Weer tijdelijk niet beschikbaar"; if($("mobileHeaderWeather"))$("mobileHeaderWeather").textContent="Weer n/b"}
 }
 loadWeather();
 setTodayHeader();
