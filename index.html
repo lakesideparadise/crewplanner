@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v10.2-name-lock-fix-2026-07-30">
+<meta name="cablecrew-version" content="v10.3-everyone-default-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -667,9 +667,15 @@ function fillPeople(){
      $("myEmployee").value="";
    }
  }else{
-   const preferred=current || locked;
-   if(preferred && visiblePeople.includes(preferred))$("myEmployee").value=preferred;
-   else $("myEmployee").value="";
+   // Gewone gebruikers openen de app altijd op 'Iedereen' voor een
+   // onmiddellijk totaaloverzicht. De opgeslagen naam blijft wel bewaard
+   // in localStorage voor meldingen en om de keuzelijst te beperken tot
+   // 'Iedereen' + de eigen naam.
+   if(current && visiblePeople.includes(current)){
+     $("myEmployee").value=current;
+   }else{
+     $("myEmployee").value="";
+   }
  }
 
  updateNotifyUI();
@@ -926,7 +932,11 @@ $("importBtn").onclick=async()=>{
 
 await loadFallback();
 
-/* V10.1 MOBILE/iOS HOTFIX */
+// Elke nieuwe app/page-load start visueel op 'Iedereen'.
+// De persoonlijke naam in localStorage blijft onaangeroerd voor meldingen.
+if($("myEmployee"))$("myEmployee").value="";
+
+/* V10.3 MOBILE/iOS HOTFIX */
 shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
 $("syncStatus").textContent=fallbackShifts.length
   ?"🟡 Planning geladen – live verbinding maken…"
