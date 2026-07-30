@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v11.2-auto-safety-backups-2026-07-30">
+<meta name="cablecrew-version" content="v11.3-copy-day-week-fix-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -619,6 +619,19 @@ body.admin-active .shift:hover{background:#fff8e8}
   </div>
 </div></div>
 
+<div id="weekCopyModal" class="modalback"><div class="modal">
+  <h2>Week kopiëren</h2>
+  <p>Kopieer alle shifts van de gekozen week naar een andere week. De dagen blijven op dezelfde weekdag staan.</p>
+  <div class="formgrid">
+    <label>Van week<input id="weekCopySource" type="date"></label>
+    <label>Naar week<input id="weekCopyTarget" type="date"></label>
+  </div>
+  <div class="modalactions">
+    <button id="cancelWeekCopy">Annuleren</button>
+    <button id="doWeekCopy" class="success">Week kopiëren</button>
+  </div>
+</div></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -997,6 +1010,147 @@ $("duplicateShift").onclick=async()=>{
 };
 
 
+
+function addDaysToKey(k,n){
+ const d=new Date(k+"T12:00:00");
+ d.setDate(d.getDate()+n);
+ return key(d);
+}
+function mondayKey(k){
+ return key(mondayOf(k));
+}
+async function addShiftCopies(rows, transform){
+ for(let i=0;i<rows.length;i+=400){
+   const batch=writeBatch(db);
+   rows.slice(i,i+400).forEach(x=>{
+     const ref=doc(collection(db,"shifts"));
+     const copy=transform(x);
+     batch.set(ref,{
+       date:copy.date,
+       employee:copy.employee,
+       start:copy.start||"",
+       end:copy.end||"",
+       zone:copy.zone,
+       note:copy.note||""
+     });
+   });
+   await batch.commit();
+ }
+}
+
+$("duplicateDayBtn").onclick=()=>{
+ if(!isAdminUser())return;
+ const source=$("date").value||realTodayKey();
+ $("dayCopySource").value=source;
+ $("dayCopyTarget").value=addDaysToKey(source,1);
+ $("dayCopyModal").classList.add("show");
+};
+$("cancelDayCopy").onclick=()=>$("dayCopyModal").classList.remove("show");
+
+$("doDayCopy").onclick=async()=>{
+ if(!isAdminUser())return;
+ const source=$("dayCopySource").value;
+ const target=$("dayCopyTarget").value;
+ if(!source||!target)return alert("Kies een bron- en doeldatum.");
+ if(source===target)return alert("Bron- en doeldatum mogen niet dezelfde zijn.");
+
+ const rows=shifts.filter(x=>x.date===source && !String(x._id||"").startsWith("fallback_"));
+ if(!rows.length)return alert("Er staan geen shifts op de gekozen brondag.");
+
+ if(!confirm(`${rows.length} shift${rows.length===1?"":"s"} van ${label(source)} kopiëren naar ${label(target)}?`))return;
+
+ const backedUp=await createPlanningBackup(false,"Automatisch vóór dag kopiëren");
+ if(!backedUp){
+   alert("Dag kopiëren geannuleerd omdat de veiligheidsback-up niet kon worden gemaakt.");
+   return;
+ }
+
+ try{
+   await addShiftCopies(rows,x=>({...x,date:target}));
+   await addDoc(collection(db,"auditLog"),{
+     action:"Dag gekopieerd",
+     by:user?.email||"",
+     at:serverTimestamp(),
+     employee:"",
+     date:target,
+     before:{source},
+     after:{target,count:rows.length}
+   });
+   $("dayCopyModal").classList.remove("show");
+   $("date").value=target;
+   renderAll();
+   alert("Dag gekopieerd.");
+ }catch(e){
+   alert("Dag kopiëren mislukt: "+e.message);
+ }
+};
+
+$("copyWeekBtn").onclick=()=>{
+ if(!isAdminUser())return;
+ const selected=$("date").value||realTodayKey();
+ const sourceMonday=mondayKey(selected);
+ $("weekCopySource").value=sourceMonday;
+ $("weekCopyTarget").value=addDaysToKey(sourceMonday,7);
+ $("weekCopyModal").classList.add("show");
+};
+$("cancelWeekCopy").onclick=()=>$("weekCopyModal").classList.remove("show");
+
+$("doWeekCopy").onclick=async()=>{
+ if(!isAdminUser())return;
+ const sourceInput=$("weekCopySource").value;
+ const targetInput=$("weekCopyTarget").value;
+ if(!sourceInput||!targetInput)return alert("Kies een bron- en doelweek.");
+
+ const sourceMonday=mondayKey(sourceInput);
+ const targetMonday=mondayKey(targetInput);
+ if(sourceMonday===targetMonday)return alert("Bron- en doelweek mogen niet dezelfde zijn.");
+
+ const sourceEnd=addDaysToKey(sourceMonday,6);
+ const rows=shifts.filter(x=>
+   x.date>=sourceMonday &&
+   x.date<=sourceEnd &&
+   !String(x._id||"").startsWith("fallback_")
+ );
+ if(!rows.length)return alert("Er staan geen shifts in de gekozen bronweek.");
+
+ const sourceLabel=`${label(sourceMonday)} t/m ${label(sourceEnd)}`;
+ const targetEnd=addDaysToKey(targetMonday,6);
+ if(!confirm(`${rows.length} shifts kopiëren?\n\nVan: ${sourceLabel}\nNaar: ${label(targetMonday)} t/m ${label(targetEnd)}`))return;
+
+ const backedUp=await createPlanningBackup(false,"Automatisch vóór week kopiëren");
+ if(!backedUp){
+   alert("Week kopiëren geannuleerd omdat de veiligheidsback-up niet kon worden gemaakt.");
+   return;
+ }
+
+ try{
+   await addShiftCopies(rows,x=>{
+     const src=new Date(x.date+"T12:00:00");
+     const srcMon=new Date(sourceMonday+"T12:00:00");
+     const offset=Math.round((src-srcMon)/86400000);
+     return {...x,date:addDaysToKey(targetMonday,offset)};
+   });
+
+   await addDoc(collection(db,"auditLog"),{
+     action:"Week gekopieerd",
+     by:user?.email||"",
+     at:serverTimestamp(),
+     employee:"",
+     date:targetMonday,
+     before:{sourceMonday},
+     after:{targetMonday,count:rows.length}
+   });
+
+   $("weekCopyModal").classList.remove("show");
+   ensureDateOption(targetMonday);
+   $("date").value=targetMonday;
+   renderAll();
+   alert("Week gekopieerd.");
+ }catch(e){
+   alert("Week kopiëren mislukt: "+e.message);
+ }
+};
+
 $("printBtn").onclick=()=>window.print();
 
 $("loginBtn").onclick=()=>{
@@ -1030,7 +1184,7 @@ onAuthStateChanged(auth,u=>{
    if($("myEmployee"))$("myEmployee").value="";
  }
  editMode=admin;
- $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
+ $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");$("dayCopyModal").classList.remove("show");$("weekCopyModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
  updateAdminLoginVisibility();
  $("adminWho").textContent=admin?`🔧 ${u?.email||"Beheer"}`:"Beheer";
