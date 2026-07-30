@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v10.6-opmerking-naast-uur-2026-07-30">
+<meta name="cablecrew-version" content="v10.7-verlof-shift-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -27,7 +27,7 @@ button{cursor:pointer;font-weight:800}.primary{background:var(--navy);color:#fff
 .admin-login{margin-left:auto}.adminbar{display:none;background:#fff4d8;border:1px solid #ead39b;border-radius:12px;padding:10px 12px;margin-bottom:12px;gap:8px;align-items:center;flex-wrap:wrap}
 .adminbar.show{display:flex}.adminbar strong{margin-right:auto}.editToggle.on{background:#ef8f00;color:#fff;border-color:#ef8f00;font-size:16px}
 .panel{display:none}.panel.active{display:block}
-.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.zone{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.zone h2{font-size:20px;margin:0;padding:12px 16px}.pro h2{background:var(--pro)}.rookie h2{background:var(--rookie)}.two h2{background:var(--two)}.standby h2{background:var(--standby)}.foil h2{background:var(--foil)}.tt h2{background:var(--tt)}
+.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.zone{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.zone h2{font-size:20px;margin:0;padding:12px 16px}.pro h2{background:var(--pro)}.rookie h2{background:var(--rookie)}.two h2{background:var(--two)}.standby h2{background:var(--standby)}.foil h2{background:var(--foil)}.tt h2{background:var(--tt)}.verlof h2{background:#eef7f1}.vacation-top{font-size:11px;font-weight:800;color:#52606d;min-height:18px;margin:0 0 6px;padding:0 2px}.vacation-top:empty{display:none}.vacation-name{display:inline-block;margin-right:8px;white-space:nowrap}
 .shift{padding:11px 16px;border-top:1px solid #edf1f4;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.shift:first-of-type{border-top:0}
 .shift.editable{cursor:pointer}.shift.editable:hover{background:#fff8e8;outline:2px solid #f0b95d}.time{white-space:nowrap;color:#41505c}.note{font-size:12px;color:#64748b;font-style:italic;margin-left:5px;line-height:1.35}
 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}.week-day{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px;min-width:0}.week-day h3{margin:0 0 8px;font-size:14px}.mini-zone{margin-bottom:8px}.mini-title{font-size:11px;font-weight:900;padding:4px 6px;border-radius:6px}.mini-shift{font-size:11px;padding:4px 1px;cursor:default}.mini-note{font-size:10px;color:#64748b;font-style:italic;margin-left:4px;line-height:1.3}.mini-shift.editable{cursor:pointer}.mini-shift.editable:hover{text-decoration:underline}
@@ -563,7 +563,7 @@ body.admin-active .shift:hover{background:#fff8e8}
       <button type="button" data-time="15:00,19:30">15:00–19:30</button>
     </div>
     <label class="wide">Zone<select id="editZone">
-      <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option>
+      <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option><option>VERLOF</option>
     </select></label>
     <label class="wide">Opmerking<textarea id="editNote" rows="2"></textarea></label>
   </div>
@@ -605,8 +605,8 @@ const firebaseConfig = {
 
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 const $=id=>document.getElementById(id);
-const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION"];
-const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt"};
+const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","VERLOF"];
+const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","VERLOF":"verlof"};
 let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false;
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
@@ -713,7 +713,12 @@ function shiftHtml(x){
 }
 function renderDay(){
  const d=$("date").value, list=visibleShifts();
- $("dayGrid").innerHTML=zones.map(z=>{
+ const normalZones=zones.filter(z=>z!=="VERLOF");
+ const vacationRows=list.filter(x=>x.date===d&&x.zone==="VERLOF");
+ const vacationBanner=vacationRows.length
+   ?`<section class="zone verlof"><h2>🏝️ Verlof</h2>${vacationRows.map(x=>`<div class="shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><div><b>${esc(x.employee)}</b></div></div>`).join("")}</section>`
+   :"";
+ $("dayGrid").innerHTML=vacationBanner+normalZones.map(z=>{
    const rows=list.filter(x=>x.date===d&&x.zone===z);
    return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${rows.length?rows.map(shiftHtml).join(""):'<div class="empty" style="padding:12px 16px">Geen planning</div>'}</section>`;
  }).join("");
@@ -722,8 +727,12 @@ function renderWeek(){
  const start=mondayOf($("date").value),list=visibleShifts();let html="";
  for(let i=0;i<7;i++){
    const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);
-   html+=`<section class="week-day"><h3>${d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"numeric"})}</h3>`;
-   zones.forEach(z=>{
+   const vacationRows=list.filter(x=>x.date===dk&&x.zone==="VERLOF");
+   const vacationTop=vacationRows.length
+     ?`<div class="vacation-top">${vacationRows.map(x=>`<span class="vacation-name ${editMode?'editable':''}" data-id="${esc(x._id||'')}">🏝️ ${esc(x.employee)}</span>`).join("")}</div>`
+     :"";
+   html+=`<section class="week-day">${vacationTop}<h3>${d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"numeric"})}</h3>`;
+   zones.filter(z=>z!=="VERLOF").forEach(z=>{
      const rows=list.filter(x=>x.date===dk&&x.zone===z);
      if(rows.length)html+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${rows.map(x=>`<div class="mini-shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("")}</div>`;
    });
@@ -782,12 +791,26 @@ function openShift(x=null){
  $("editDate").value=x?.date||$("date").value;
  $("editEmployee").value=x?.employee||people()[0]||"";
  $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
- $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";
+ $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";updateLeaveFields();
  $("deleteShift").style.display=x?"inline-block":"none";$("duplicateShift").style.display=x?"inline-block":"none";
  $("keepAdding").checked=false;$("shiftModal").classList.add("show");
 }
 $("addShiftBtn").onclick=()=>openShift();
 $("cancelShift").onclick=()=>$("shiftModal").classList.remove("show");
+function updateLeaveFields(){
+ const leave=$("editZone").value==="VERLOF";
+ $("editStart").disabled=leave;
+ $("editEnd").disabled=leave;
+ if(leave){
+   $("editStart").value="";
+   $("editEnd").value="";
+ }else{
+   if(!$("editStart").value)$("editStart").value=editing?.start||"09:00";
+   if(!$("editEnd").value)$("editEnd").value=editing?.end||"17:00";
+ }
+}
+$("editZone").addEventListener("change",updateLeaveFields);
+
 $("editEmployee").onchange=()=>{
  if($("editEmployee").value==="__NEW__"){
   const n=prompt("Naam nieuwe medewerker:");
@@ -804,7 +827,7 @@ document.querySelectorAll(".quicktimes button").forEach(b=>b.onclick=()=>{
 
 function mins(t){const [h,m]=(t||"00:00").split(":").map(Number);return h*60+m}
 function overlapMatches(v){
- if(!v.date||!v.employee||!v.start||!v.end)return [];
+ if(v.zone==="VERLOF"||!v.date||!v.employee||!v.start||!v.end)return [];
  const a=mins(v.start),b=mins(v.end);
  return shifts.filter(x=>x._id!==editing?._id && x.date===v.date && x.employee===v.employee &&
    a<mins(x.end) && b>mins(x.start));
@@ -821,7 +844,17 @@ function updateOverlapWarning(){
  $(id).addEventListener("change",updateOverlapWarning);
 });
 
-function formObj(){return {date:$("editDate").value,employee:$("editEmployee").value,start:$("editStart").value,end:$("editEnd").value,zone:$("editZone").value,note:$("editNote").value.trim()}}
+function formObj(){
+ const zone=$("editZone").value;
+ return {
+   date:$("editDate").value,
+   employee:$("editEmployee").value,
+   start:zone==="VERLOF"?"":$("editStart").value,
+   end:zone==="VERLOF"?"":$("editEnd").value,
+   zone,
+   note:$("editNote").value.trim()
+ };
+}
 
 async function writeAudit(action,before,after){
  if(!isAdminUser())return;
@@ -840,7 +873,7 @@ async function writeAudit(action,before,after){
 
 $("saveShift").onclick=async()=>{
  const v=formObj();
- if(!v.date||!v.employee||!v.start||!v.end){alert("Vul datum, medewerker en uren in.");return}
+ if(!v.date||!v.employee||(v.zone!=="VERLOF"&&(!v.start||!v.end))){alert(v.zone==="VERLOF"?"Vul datum en medewerker in.":"Vul datum, medewerker en uren in.");return}
  const overlaps=overlapMatches(v);
  if(overlaps.length && !confirm(`⚠️ ${v.employee} heeft al een overlappende shift. Toch opslaan?`))return;
  const before=editing?{...editing}:null;
