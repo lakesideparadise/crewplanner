@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v10.7-verlof-shift-2026-07-30">
+<meta name="cablecrew-version" content="v10.8-verlof-periode-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -27,7 +27,13 @@ button{cursor:pointer;font-weight:800}.primary{background:var(--navy);color:#fff
 .admin-login{margin-left:auto}.adminbar{display:none;background:#fff4d8;border:1px solid #ead39b;border-radius:12px;padding:10px 12px;margin-bottom:12px;gap:8px;align-items:center;flex-wrap:wrap}
 .adminbar.show{display:flex}.adminbar strong{margin-right:auto}.editToggle.on{background:#ef8f00;color:#fff;border-color:#ef8f00;font-size:16px}
 .panel{display:none}.panel.active{display:block}
-.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.zone{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.zone h2{font-size:20px;margin:0;padding:12px 16px}.pro h2{background:var(--pro)}.rookie h2{background:var(--rookie)}.two h2{background:var(--two)}.standby h2{background:var(--standby)}.foil h2{background:var(--foil)}.tt h2{background:var(--tt)}.verlof h2{background:#eef7f1}.vacation-top{font-size:11px;font-weight:800;color:#52606d;min-height:18px;margin:0 0 6px;padding:0 2px}.vacation-top:empty{display:none}.vacation-name{display:inline-block;margin-right:8px;white-space:nowrap}
+.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.zone{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.zone h2{font-size:20px;margin:0;padding:12px 16px}.pro h2{background:var(--pro)}.rookie h2{background:var(--rookie)}.two h2{background:var(--two)}.standby h2{background:var(--standby)}.foil h2{background:var(--foil)}.tt h2{background:var(--tt)}.verlof h2{background:#eef7f1}.vacation-name{display:inline-block;margin-right:6px;white-space:nowrap;font-size:11px;font-weight:800;color:#52606d}
+.vacation-week-row{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;margin:0 0 5px}
+.vacation-week-cell{min-height:20px;padding:0 9px;overflow:hidden}
+.vacation-week-cell .vacation-name{cursor:default}
+.vacation-week-cell .vacation-name.editable{cursor:pointer}
+@media(max-width:900px){.vacation-week-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.vacation-week-row{grid-template-columns:1fr;gap:8px}.vacation-week-cell{min-height:0;padding:0 9px}}
 .shift{padding:11px 16px;border-top:1px solid #edf1f4;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.shift:first-of-type{border-top:0}
 .shift.editable{cursor:pointer}.shift.editable:hover{background:#fff8e8;outline:2px solid #f0b95d}.time{white-space:nowrap;color:#41505c}.note{font-size:12px;color:#64748b;font-style:italic;margin-left:5px;line-height:1.35}
 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}.week-day{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px;min-width:0}.week-day h3{margin:0 0 8px;font-size:14px}.mini-zone{margin-bottom:8px}.mini-title{font-size:11px;font-weight:900;padding:4px 6px;border-radius:6px}.mini-shift{font-size:11px;padding:4px 1px;cursor:default}.mini-note{font-size:10px;color:#64748b;font-style:italic;margin-left:4px;line-height:1.3}.mini-shift.editable{cursor:pointer}.mini-shift.editable:hover{text-decoration:underline}
@@ -470,7 +476,7 @@ body.admin-active .shift:hover{background:#fff8e8}
   </section>
 
   <section id="day" class="panel active"><div id="dayGrid" class="day-grid"></div></section>
-  <section id="week" class="panel"><div id="weekGrid" class="week-grid"></div></section>
+  <section id="week" class="panel"><div id="weekGrid"></div></section>
 </main>
 
 
@@ -552,6 +558,7 @@ body.admin-active .shift:hover{background:#fff8e8}
   <h2 id="shiftTitle">Shift</h2>
   <div class="formgrid">
     <label>Datum<input id="editDate" type="date"></label>
+    <label id="leaveEndLabel" style="display:none">Verlof t/m<input id="leaveEndDate" type="date"></label>
     <label>Medewerker<select id="editEmployee"></select></label>
     <label>Startuur<input id="editStart" type="time"></label>
     <label>Einduur<input id="editEnd" type="time"></label>
@@ -724,21 +731,28 @@ function renderDay(){
  }).join("");
 }
 function renderWeek(){
- const start=mondayOf($("date").value),list=visibleShifts();let html="";
+ const start=mondayOf($("date").value),list=visibleShifts();let leaveHtml="",daysHtml="";
+
+ leaveHtml='<div class="vacation-week-row">';
  for(let i=0;i<7;i++){
    const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);
    const vacationRows=list.filter(x=>x.date===dk&&x.zone==="VERLOF");
-   const vacationTop=vacationRows.length
-     ?`<div class="vacation-top">${vacationRows.map(x=>`<span class="vacation-name ${editMode?'editable':''}" data-id="${esc(x._id||'')}">🏝️ ${esc(x.employee)}</span>`).join("")}</div>`
-     :"";
-   html+=`<section class="week-day">${vacationTop}<h3>${d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"numeric"})}</h3>`;
+   leaveHtml+=`<div class="vacation-week-cell">${vacationRows.map(x=>`<span class="vacation-name ${editMode?'editable':''}" data-id="${esc(x._id||'')}">🏝️ ${esc(x.employee)}</span>`).join("")}</div>`;
+ }
+ leaveHtml+='</div>';
+
+ daysHtml='<div class="week-grid">';
+ for(let i=0;i<7;i++){
+   const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);
+   daysHtml+=`<section class="week-day"><h3>${d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"numeric"})}</h3>`;
    zones.filter(z=>z!=="VERLOF").forEach(z=>{
      const rows=list.filter(x=>x.date===dk&&x.zone===z);
-     if(rows.length)html+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${rows.map(x=>`<div class="mini-shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("")}</div>`;
+     if(rows.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${rows.map(x=>`<div class="mini-shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("")}</div>`;
    });
-   html+=`</section>`;
+   daysHtml+=`</section>`;
  }
- $("weekGrid").innerHTML=html;
+ daysHtml+='</div>';
+ $("weekGrid").innerHTML=leaveHtml+daysHtml;
 }
 function renderAll(){
  initDateOptions();
@@ -789,6 +803,7 @@ function openShift(x=null){
  editing=x;
  $("shiftTitle").textContent=x?"Shift aanpassen":"Nieuwe shift";
  $("editDate").value=x?.date||$("date").value;
+ $("leaveEndDate").value=x?.date||$("editDate").value;
  $("editEmployee").value=x?.employee||people()[0]||"";
  $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
  $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";updateLeaveFields();
@@ -801,15 +816,23 @@ function updateLeaveFields(){
  const leave=$("editZone").value==="VERLOF";
  $("editStart").disabled=leave;
  $("editEnd").disabled=leave;
+ $("leaveEndLabel").style.display=leave?"flex":"none";
  if(leave){
    $("editStart").value="";
    $("editEnd").value="";
+   if(!$("leaveEndDate").value)$("leaveEndDate").value=$("editDate").value;
  }else{
+   $("leaveEndDate").value="";
    if(!$("editStart").value)$("editStart").value=editing?.start||"09:00";
    if(!$("editEnd").value)$("editEnd").value=editing?.end||"17:00";
  }
 }
 $("editZone").addEventListener("change",updateLeaveFields);
+$("editDate").addEventListener("change",()=>{
+ if($("editZone").value==="VERLOF" && (!$("leaveEndDate").value || $("leaveEndDate").value<$("editDate").value)){
+   $("leaveEndDate").value=$("editDate").value;
+ }
+});
 
 $("editEmployee").onchange=()=>{
  if($("editEmployee").value==="__NEW__"){
@@ -856,6 +879,15 @@ function formObj(){
  };
 }
 
+function dateRangeKeys(start,end){
+ const out=[];
+ const a=new Date(start+"T12:00:00");
+ const b=new Date((end||start)+"T12:00:00");
+ if(Number.isNaN(a.getTime())||Number.isNaN(b.getTime())||b<a)return out;
+ for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1))out.push(key(d));
+ return out;
+}
+
 async function writeAudit(action,before,after){
  if(!isAdminUser())return;
  try{
@@ -873,14 +905,42 @@ async function writeAudit(action,before,after){
 
 $("saveShift").onclick=async()=>{
  const v=formObj();
- if(!v.date||!v.employee||(v.zone!=="VERLOF"&&(!v.start||!v.end))){alert(v.zone==="VERLOF"?"Vul datum en medewerker in.":"Vul datum, medewerker en uren in.");return}
- const overlaps=overlapMatches(v);
- if(overlaps.length && !confirm(`⚠️ ${v.employee} heeft al een overlappende shift. Toch opslaan?`))return;
- const before=editing?{...editing}:null;
+ if(!v.date||!v.employee||(v.zone!=="VERLOF"&&(!v.start||!v.end))){
+   alert(v.zone==="VERLOF"?"Vul datum en medewerker in.":"Vul datum, medewerker en uren in.");
+   return;
+ }
+
  try{
+   if(v.zone==="VERLOF" && !editing){
+     const endDate=$("leaveEndDate").value||v.date;
+     const dates=dateRangeKeys(v.date,endDate);
+     if(!dates.length){
+       alert("Kies een geldige verlofperiode: de einddatum moet op of na de begindatum liggen.");
+       return;
+     }
+
+     const existing=new Set(
+       shifts.filter(x=>x.zone==="VERLOF"&&x.employee===v.employee).map(x=>x.date)
+     );
+     const toAdd=dates.filter(d=>!existing.has(d));
+
+     await Promise.all(toAdd.map(async date=>{
+       const leave={...v,date,start:"",end:""};
+       await addDoc(collection(db,"shifts"),leave);
+       await writeAudit("Verlof toegevoegd",null,leave);
+     }));
+
+     $("shiftModal").classList.remove("show");
+     return;
+   }
+
+   const overlaps=overlapMatches(v);
+   if(overlaps.length && !confirm(`⚠️ ${v.employee} heeft al een overlappende shift. Toch opslaan?`))return;
+   const before=editing?{...editing}:null;
+
    if(editing){
      await updateDoc(doc(db,"shifts",editing._id),v);
-     await writeAudit("Shift gewijzigd",before,v);
+     await writeAudit(v.zone==="VERLOF"?"Verlof gewijzigd":"Shift gewijzigd",before,v);
      $("shiftModal").classList.remove("show");
    }else{
      await addDoc(collection(db,"shifts"),v);
