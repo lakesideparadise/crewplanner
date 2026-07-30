@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v10.1-mobile-render-fix-2026-07-30">
+<meta name="cablecrew-version" content="v10.2-name-lock-fix-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -644,12 +644,13 @@ function fillPeople(){
  const p=people();
  const locked=localStorage.getItem("cc_my_name")||"";
  const current=$("myEmployee").value||"";
- const adminIdentity=["Nick","Arno"].includes(locked) || isAdminUser();
+ const adminIdentity=isAdminUser();
 
  let visiblePeople=p;
 
- // Gewone medewerkers zien na hun eerste keuze alleen
- // 'Iedereen' en hun eigen naam.
+ // Zodra een gewone medewerker één keer zijn/haar naam gekozen heeft,
+ // ziet dit toestel voortaan alleen 'Iedereen' en die eigen naam.
+ // Dit geldt óók voor Nick en Arno zolang ze niet als beheerder ingelogd zijn.
  if(!adminIdentity && locked && p.includes(locked)){
    visiblePeople=[locked];
  }
@@ -659,8 +660,7 @@ function fillPeople(){
    visiblePeople.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
 
  if(adminIdentity){
-   // Toestellen van Nick en Arno starten bij elk openen op 'Iedereen',
-   // ook vóór Firebase de beheerlogin volledig heeft hersteld.
+   // Alleen een écht ingelogde beheerder mag alle medewerkers zien.
    if(adminPlanningFilterChosen){
      $("myEmployee").value=(current && visiblePeople.includes(current))?current:"";
    }else{
@@ -689,10 +689,10 @@ function fillPeople(){
 }
 
 function forceAdminDeviceOverview(){
- const locked=localStorage.getItem("cc_my_name")||"";
- if(["Nick","Arno"].includes(locked) && $("myEmployee")){
-   adminPlanningFilterChosen=false;
-   $("myEmployee").value="";
+ // Niet langer op basis van een opgeslagen naam resetten.
+ // Alleen een daadwerkelijk ingelogde beheerder start op 'Iedereen'.
+ if(isAdminUser() && $("myEmployee")){
+   if(!adminPlanningFilterChosen)$("myEmployee").value="";
  }
 }
 
