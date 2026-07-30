@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v10.8-verlof-periode-2026-07-30">
+<meta name="cablecrew-version" content="v10.9-mobile-password-autofill-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -501,13 +501,22 @@ body.admin-active .shift:hover{background:#fff8e8}
 
 <div id="loginModal" class="modalback"><div class="modal">
   <h2>Beheer login</h2>
-  <div class="loginbox">
-    <input id="loginEmail" type="email" placeholder="E-mailadres">
-    <input id="loginPassword" type="password" placeholder="Wachtwoord">
-    <div id="loginError" style="color:#a33;font-size:13px"></div>
-  </div>
-  <div id="overlapWarning" class="overlap-warning" style="display:none"></div>
-  <div class="modalactions"><button id="cancelLogin">Annuleren</button><button id="doLogin" class="primary">Inloggen</button></div>
+  <form id="loginForm" autocomplete="on">
+    <div class="loginbox">
+      <input id="loginEmail" name="username" type="email" inputmode="email"
+             autocomplete="username" autocapitalize="none" spellcheck="false"
+             placeholder="E-mailadres">
+      <input id="loginPassword" name="password" type="password"
+             autocomplete="current-password"
+             placeholder="Wachtwoord">
+      <div id="loginError" style="color:#a33;font-size:13px"></div>
+    </div>
+    <div id="overlapWarning" class="overlap-warning" style="display:none"></div>
+    <div class="modalactions">
+      <button id="cancelLogin" type="button">Annuleren</button>
+      <button id="doLogin" type="submit" class="primary">Inloggen</button>
+    </div>
+  </form>
 </div></div>
 
 
@@ -974,13 +983,27 @@ $("duplicateShift").onclick=async()=>{
 
 $("printBtn").onclick=()=>window.print();
 
-$("loginBtn").onclick=()=>$("loginModal").classList.add("show");
-$("cancelLogin").onclick=()=>$("loginModal").classList.remove("show");
-$("doLogin").onclick=async()=>{
- $("loginError").textContent="";
- try{await signInWithEmailAndPassword(auth,$("loginEmail").value.trim(),$("loginPassword").value);$("loginModal").classList.remove("show");$("loginPassword").value=""}
- catch(e){$("loginError").textContent="Inloggen mislukt. Controleer e-mail en wachtwoord."}
+$("loginBtn").onclick=()=>{
+ $("loginModal").classList.add("show");
+ setTimeout(()=>$("loginEmail").focus(),50);
 };
+$("cancelLogin").onclick=()=>$("loginModal").classList.remove("show");
+
+$("loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ $("loginError").textContent="";
+ try{
+   await signInWithEmailAndPassword(
+     auth,
+     $("loginEmail").value.trim(),
+     $("loginPassword").value
+   );
+   $("loginModal").classList.remove("show");
+   setTimeout(()=>$("loginPassword").value="",300);
+ }catch(e){
+   $("loginError").textContent="Inloggen mislukt. Controleer e-mail en wachtwoord.";
+ }
+});
 $("logoutBtn").onclick=async()=>{await signOut(auth);await ensureAnonymousAuth()};
 
 onAuthStateChanged(auth,u=>{
