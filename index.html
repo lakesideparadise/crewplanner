@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.10-desktop-layout-parity-2026-07-31">
+<meta name="cablecrew-version" content="v12.11-desktop-header-info-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1294,6 +1294,71 @@ body.admin-active .shift:hover{background:#fff8e8}
   #studentAdminActionTop{display:none!important}
 }
 
+
+/* ===== V12.11 DESKTOP INFO IN HEADER ===== */
+.desktop-header-info{display:none}
+
+@media(min-width:721px){
+  header{padding:10px 18px}
+  .header-inner{max-width:1560px;gap:18px}
+  .brand-wrap{flex:0 0 auto}
+  .brand{font-size:21px}
+  .brand-logo{width:40px;height:40px}
+
+  .desktop-header-info{
+    display:grid;
+    grid-template-columns:minmax(190px,.8fr) minmax(280px,1.25fr) minmax(180px,.7fr);
+    gap:8px;
+    align-items:stretch;
+    flex:1;
+    min-width:0;
+  }
+  .desktop-header-chip{
+    display:flex;align-items:center;gap:9px;
+    min-width:0;padding:7px 10px;
+    background:#f7fafc;border:1px solid #e1e8ee;border-radius:11px;
+    color:#173149;
+  }
+  .desktop-chip-icon{font-size:18px;flex:0 0 auto}
+  .desktop-header-chip>div{min-width:0;width:100%}
+  .desktop-header-chip small{
+    display:block;font-size:9px;font-weight:900;text-transform:uppercase;
+    letter-spacing:.05em;color:#6b7d8e;margin-bottom:2px
+  }
+  #desktopHeaderWeather,#desktopHeaderWorking{
+    font-size:12px;font-weight:850;line-height:1.2;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+  #desktopHeaderPerson{
+    width:100%;height:30px;padding:3px 28px 3px 8px;
+    border-radius:8px;font-size:12px;font-weight:800;background:#fff
+  }
+  #syncStatus{font-size:10px;flex:0 0 auto}
+
+  /* De drie oude grote infokaarten verdwijnen op desktop. */
+  body:not(.student-mode) > .quickbar{display:none!important}
+  #studentMain > .student-quickbar{display:none!important}
+
+  /* Minder witruimte: bediening en blauwe actiebalk direct boven planning. */
+  main{padding-top:10px}
+  main > .toolbar{margin-bottom:8px}
+  main > #adminActionTop{margin-bottom:10px!important}
+  #studentMain{padding-top:10px}
+  #studentMain > .student-toolbar{margin-bottom:8px}
+  #studentMain > #studentAdminActionTop{margin-bottom:10px!important}
+}
+@media(max-width:1180px) and (min-width:721px){
+  .desktop-header-info{grid-template-columns:minmax(170px,.8fr) minmax(220px,1fr) minmax(160px,.7fr)}
+  .desktop-working-chip{max-width:330px}
+}
+@media(max-width:900px) and (min-width:721px){
+  .desktop-working-chip{display:none}
+  .desktop-header-info{grid-template-columns:1fr 1fr}
+}
+@media(max-width:720px){
+  .desktop-header-info{display:none!important}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1311,6 +1376,20 @@ body.admin-active .shift:hover{background:#fff8e8}
 <header><div class="header-inner">
   <div class="brand-wrap"><img class="brand-logo" src="./icon-192.png" alt=""><div class="brand">CableCrew Lakeside</div></div>
   <div class="mobile-header-actions"><div id="mobileHeaderWeather" class="mobile-header-weather"></div></div>
+  <div id="desktopHeaderInfo" class="desktop-header-info">
+    <div class="desktop-header-chip desktop-weather-chip">
+      <span class="desktop-chip-icon">🌤️</span>
+      <div><small>Knokke-Heist</small><div id="desktopHeaderWeather">Weer laden…</div></div>
+    </div>
+    <div class="desktop-header-chip desktop-working-chip">
+      <span class="desktop-chip-icon">👥</span>
+      <div><small id="desktopWorkingTitle">Wie werkt vandaag?</small><div id="desktopHeaderWorking">Planning laden…</div></div>
+    </div>
+    <div class="desktop-header-chip desktop-planning-chip">
+      <span class="desktop-chip-icon">👤</span>
+      <div><small id="desktopPlanningTitle">Mijn planning</small><select id="desktopHeaderPerson"><option value="">Iedereen</option></select></div>
+    </div>
+  </div>
   <div id="syncStatus" class="status">Verbinden…</div>
 </div></header>
 <div class="planner-tabs">
@@ -3880,5 +3959,79 @@ if ("serviceWorker" in navigator) {
   </button>
 </nav>
 
+<script>
+
+/* ===== V12.11 desktop header bridge ===== */
+(function(){
+  function isStudentDesktop(){
+    return document.getElementById("studentMain")?.classList.contains("active");
+  }
+
+  function copyOptions(source, target){
+    if(!source || !target) return;
+    const current = target.value;
+    const html = Array.from(source.options).map(o =>
+      `<option value="${String(o.value).replace(/"/g,"&quot;")}">${o.textContent}</option>`
+    ).join("");
+    if(target.innerHTML !== html) target.innerHTML = html;
+    target.value = source.value || current || "";
+  }
+
+  function syncDesktopHeader(){
+    if(window.innerWidth <= 720) return;
+    const student = isStudentDesktop();
+    document.body.classList.toggle("student-mode", student);
+
+    const weatherSource = document.getElementById(student ? "studentWeather" : "weather");
+    const workingSource = document.getElementById(student ? "studentWorkingToday" : "workingToday");
+    const personSource = document.getElementById(student ? "studentPerson" : "myEmployee");
+
+    const weatherTarget = document.getElementById("desktopHeaderWeather");
+    const workingTarget = document.getElementById("desktopHeaderWorking");
+    const personTarget = document.getElementById("desktopHeaderPerson");
+
+    if(weatherSource && weatherTarget) weatherTarget.textContent = weatherSource.textContent.trim();
+    if(workingSource && workingTarget) workingTarget.textContent = workingSource.textContent.trim();
+    copyOptions(personSource, personTarget);
+
+    const wt = document.getElementById("desktopWorkingTitle");
+    const pt = document.getElementById("desktopPlanningTitle");
+    if(wt) wt.textContent = student ? "Jobstudenten vandaag" : "Wie werkt vandaag?";
+    if(pt) pt.textContent = student ? "Planning filter" : "Mijn planning";
+  }
+
+  document.addEventListener("change", e=>{
+    if(e.target?.id === "desktopHeaderPerson"){
+      const source = document.getElementById(isStudentDesktop() ? "studentPerson" : "myEmployee");
+      if(source){
+        source.value = e.target.value;
+        source.dispatchEvent(new Event("change",{bubbles:true}));
+      }
+    }
+    if(e.target?.id === "myEmployee" || e.target?.id === "studentPerson"){
+      setTimeout(syncDesktopHeader,0);
+    }
+  });
+
+  const observer = new MutationObserver(syncDesktopHeader);
+  window.addEventListener("load", ()=>{
+    ["weather","workingToday","studentWeather","studentWorkingToday","studentMain","myEmployee","studentPerson"]
+      .map(id=>document.getElementById(id))
+      .filter(Boolean)
+      .forEach(el=>observer.observe(el,{childList:true,subtree:true,characterData:true,attributes:true}));
+    syncDesktopHeader();
+    setTimeout(syncDesktopHeader,500);
+    setTimeout(syncDesktopHeader,1500);
+  });
+  window.addEventListener("resize",syncDesktopHeader);
+  document.addEventListener("click",e=>{
+    if(e.target.closest("#crewPlannerTab,#studentPlannerTab,#studentDashboardBtn")){
+      setTimeout(syncDesktopHeader,50);
+      setTimeout(syncDesktopHeader,250);
+    }
+  });
+})();
+
+</script>
 </body>
 </html>
