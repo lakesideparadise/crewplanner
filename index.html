@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.7-five-day-picker-my-planning-2026-07-31">
+<meta name="cablecrew-version" content="v12.8-desktop-planning-first-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1084,6 +1084,38 @@ body.admin-active .shift:hover{background:#fff8e8}
   .mobile-day-pill{min-height:44px!important;padding:2px!important}
   .mobile-day-pill .mobile-month{display:none!important}
   .mobile-calendar-btn{min-height:44px!important;width:42px!important}
+}
+
+
+/* ===== V12.8 DESKTOP: PLANNING EERST, BEHEER ONDERAAN ===== */
+@media(min-width:721px){
+  main{
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Bovenaan blijft enkel de gewone plannerbediening staan */
+  main > .toolbar{
+    order:1;
+  }
+
+  /* De planning komt onmiddellijk daarna */
+  main > #day,
+  main > #week{
+    order:2;
+  }
+
+  /* Het volledige beheerdersdashboard komt onder de planning */
+  main > #adminBar{
+    order:3;
+    margin-top:24px;
+    margin-bottom:8px;
+  }
+
+  /* Oude verborgen inbox blijft helemaal onderaan en onzichtbaar */
+  main > #messagesPanel{
+    order:4;
+  }
 }
 
 </style>
