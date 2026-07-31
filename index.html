@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.13.8-planning-first-ui-2026-07-31">
+<meta name="cablecrew-version" content="v12.14.1-multishift-winterzones-leave-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1946,6 +1946,98 @@ body.admin-active .shift:hover{background:#fff8e8}
 }
 </style>
 
+
+<style id="v12-14-multishift-winterzones">
+:root{
+  --school:#dceef8;
+  --schoolsot:#e7e0f6;
+  --klus:#e8eadf;
+}
+.school h2{background:var(--school)}
+.schoolsot h2{background:var(--schoolsot)}
+.klus h2{background:var(--klus)}
+
+.multi-shift-toggle{
+  margin-top:4px;padding:10px 12px;border:1px solid #dce5ec;border-radius:11px;background:#f8fafc
+}
+.multi-shift-toggle label{display:flex!important;align-items:center;gap:8px;color:#18344c!important;font-size:13px!important}
+.multi-shift-toggle input{width:auto!important;margin:0!important}
+.multi-shift-toggle small{display:block;margin-top:4px;color:#71808e;font-size:11px;line-height:1.35}
+
+.multi-shift-editor{
+  margin-top:2px;padding:12px;border:1px solid #d6e2ea;border-radius:12px;background:#fbfdfe
+}
+.multi-shift-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.multi-shift-head b{font-size:14px}
+.multi-shift-head small{display:block;color:#71808e;font-size:11px;margin-top:3px;line-height:1.35}
+.multi-shift-head button{padding:7px 10px;font-size:12px}
+.multi-shift-rows{display:grid;gap:8px}
+.multi-shift-row{
+  display:grid;grid-template-columns:minmax(125px,1fr) 100px 100px minmax(150px,1.15fr) minmax(150px,1.1fr) 34px;
+  gap:7px;align-items:end;padding:9px;border:1px solid #e1e8ee;border-radius:10px;background:#fff
+}
+.multi-shift-field{display:grid;gap:4px}
+.multi-shift-field span{font-size:9px;font-weight:900;color:#738291;text-transform:uppercase;letter-spacing:.03em}
+.multi-shift-field input,.multi-shift-field select{
+  width:100%;min-width:0;padding:8px 7px;border-radius:8px
+}
+.multi-shift-remove{width:34px;height:36px;padding:0!important;color:#a33;font-size:16px}
+.multi-shift-summary{
+  margin-top:9px;padding:8px 10px;border-radius:9px;background:#eef5f9;
+  color:#365267;font-size:11px;font-weight:750;line-height:1.4
+}
+.multi-shift-summary:empty{display:none}
+
+@media(max-width:720px){
+  .multi-shift-editor{padding:9px}
+  .multi-shift-head{align-items:stretch;flex-direction:column}
+  .multi-shift-head button{width:100%}
+  .multi-shift-row{
+    grid-template-columns:1fr 1fr;
+    gap:6px;padding:8px
+  }
+  .multi-shift-row .multi-date,.multi-shift-row .multi-zone,.multi-shift-row .multi-note{grid-column:1/-1}
+  .multi-shift-remove{grid-column:2;justify-self:end}
+}
+
+/* Verlof: nog steeds compact, maar net iets beter leesbaar. */
+#dayGrid > .zone.verlof{
+  padding:5px 8px!important;
+  margin:1px 0 4px!important;
+  border:1px solid #dce8df!important;
+  border-left:3px solid #92b99d!important;
+  border-radius:9px!important;
+  background:#f7faf8!important;
+  gap:7px!important;
+}
+#dayGrid > .zone.verlof h2{
+  color:#587264!important;
+  font-size:10px!important;
+  font-weight:850!important;
+}
+#dayGrid > .zone.verlof .shift{
+  padding:3px 8px!important;
+  border-color:#d9e5dc!important;
+  background:#fff!important;
+  color:#50675a!important;
+  font-size:10px!important;
+}
+#dayGrid > .zone.verlof .shift b{
+  color:#50675a!important;
+  font-size:10px!important;
+  font-weight:800!important;
+}
+.vacation-week-cell .vacation-name{
+  display:inline-block!important;
+  padding:2px 5px!important;
+  border-radius:6px!important;
+  background:#f3f8f4!important;
+  color:#61776a!important;
+  font-size:9px!important;
+  font-weight:750!important;
+}
+</style>
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -2402,9 +2494,24 @@ body.admin-active .shift:hover{background:#fff8e8}
       <button type="button" data-time="15:00,19:30">15:00–19:30</button>
     </div>
     <label class="wide">Zone<select id="editZone">
-      <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option><option>VERLOF</option>
+      <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option><option>SCHOOL</option><option>SCHOOL / SOT</option><option>KLUS</option><option>VERLOF</option>
     </select></label>
     <label class="wide">Opmerking<textarea id="editNote" rows="2"></textarea></label>
+    <div id="multiShiftToggleWrap" class="wide multi-shift-toggle">
+      <label><input id="multiShiftMode" type="checkbox"> Meerdere shifts ineens voor deze medewerker</label>
+      <small>Handig als één persoon op dezelfde of verschillende dagen meerdere shifts heeft.</small>
+    </div>
+    <div id="multiShiftEditor" class="wide multi-shift-editor" style="display:none">
+      <div class="multi-shift-head">
+        <div>
+          <b>Shifts in deze reeks</b>
+          <small>Medewerker wordt bovenaan gekozen. Elke regel kan een eigen datum, uur, zone en opmerking hebben.</small>
+        </div>
+        <button id="addMultiShiftRow" type="button">+ Shiftregel</button>
+      </div>
+      <div id="multiShiftRows" class="multi-shift-rows"></div>
+      <div id="multiShiftSummary" class="multi-shift-summary"></div>
+    </div>
   </div>
   <div class="modalactions">
     <button id="deleteShift" class="danger">Verwijderen</button>
@@ -2477,8 +2584,8 @@ const firebaseConfig = {
 
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 const $=id=>document.getElementById(id);
-const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","VERLOF"];
-const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","VERLOF":"verlof"};
+const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SOT","KLUS","VERLOF"];
+const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SOT":"schoolsot","KLUS":"klus","VERLOF":"verlof"};
 let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewDirectory=new Map(), crewContactsUnsub=null,
 studentShifts=[], studentDirectory=new Map(), studentShiftUnsub=null, studentDirectoryUnsub=null,
 studentEditing=null, studentView="day";
@@ -2655,7 +2762,9 @@ function renderDay(){
  $("dayGrid").innerHTML=vacationBanner+zoneHtml;
 }
 function renderWeek(){
- const start=mondayOf($("date").value),list=visibleShifts();let leaveHtml="",daysHtml="";
+ const start=mondayOf($("date").value),list=visibleShifts();
+ const mineMode=document.body.classList.contains("mobile-mine-mode");
+ let leaveHtml="",daysHtml="";
 
  leaveHtml='<div class="vacation-week-row">';
  for(let i=0;i<7;i++){
@@ -2863,8 +2972,111 @@ function updateWhatsAppShiftButton(){
  btn.style.display=isAdminUser() && !!crewPhone(emp) ? "inline-block" : "none";
 }
 
+
+const MULTI_SHIFT_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SOT","KLUS"];
+
+function multiShiftZoneOptions(selected="PRO"){
+ return MULTI_SHIFT_ZONES.map(z=>`<option value="${esc(z)}"${z===selected?' selected':''}>${esc(z)}</option>`).join("");
+}
+function addMultiShiftRow(data={}){
+ const wrap=$("multiShiftRows");
+ if(!wrap)return;
+ const row=document.createElement("div");
+ row.className="multi-shift-row";
+ row.innerHTML=`
+   <label class="multi-shift-field multi-date"><span>Datum</span><input type="date" data-multi="date" value="${esc(data.date||$("editDate").value||$("date").value)}"></label>
+   <label class="multi-shift-field"><span>Start</span><input type="time" data-multi="start" value="${esc(data.start||"09:00")}"></label>
+   <label class="multi-shift-field"><span>Einde</span><input type="time" data-multi="end" value="${esc(data.end||"17:00")}"></label>
+   <label class="multi-shift-field multi-zone"><span>Zone</span><select data-multi="zone">${multiShiftZoneOptions(data.zone||$("editZone").value||"PRO")}</select></label>
+   <label class="multi-shift-field multi-note"><span>Opmerking</span><input type="text" data-multi="note" value="${esc(data.note||"")}" placeholder="optioneel"></label>
+   <button type="button" class="multi-shift-remove" title="Regel verwijderen">×</button>`;
+ row.querySelector(".multi-shift-remove").onclick=()=>{row.remove();updateMultiShiftSummary()};
+ row.querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",updateMultiShiftSummary);el.addEventListener("change",updateMultiShiftSummary)});
+ wrap.appendChild(row);
+ updateMultiShiftSummary();
+}
+function multiShiftValues(){
+ return [...document.querySelectorAll("#multiShiftRows .multi-shift-row")].map(row=>({
+   date:row.querySelector('[data-multi="date"]').value,
+   start:row.querySelector('[data-multi="start"]').value,
+   end:row.querySelector('[data-multi="end"]').value,
+   zone:row.querySelector('[data-multi="zone"]').value,
+   note:row.querySelector('[data-multi="note"]').value.trim()
+ }));
+}
+function updateMultiShiftSummary(){
+ const box=$("multiShiftSummary");
+ if(!box)return;
+ const rows=multiShiftValues();
+ if(!rows.length){box.textContent="Voeg minstens één shiftregel toe.";return}
+ const valid=rows.filter(r=>r.date&&r.start&&r.end&&r.zone);
+ const dates=[...new Set(valid.map(r=>r.date))];
+ box.textContent=`${valid.length} shift${valid.length===1?"":"s"} klaar · ${dates.length} dag${dates.length===1?"":"en"} · medewerker: ${$("editEmployee")?.value||"—"}`;
+}
+function setMultiShiftMode(on){
+ const check=$("multiShiftMode");
+ const editor=$("multiShiftEditor");
+ if(check)check.checked=!!on;
+ if(editor)editor.style.display=on?"block":"none";
+ ["editDate","editStart","editEnd","editZone","editNote"].forEach(id=>{
+   const el=$(id); if(el)el.closest("label")?.classList.toggle("multi-base-hidden",!!on);
+ });
+ const qt=document.querySelector(".quicktimes");
+ if(qt)qt.style.display=on?"none":"flex";
+ if(on && $("multiShiftRows") && !$("multiShiftRows").children.length){
+   addMultiShiftRow({
+     date:$("editDate").value||$("date").value,
+     start:$("editStart").value||"09:00",
+     end:$("editEnd").value||"17:00",
+     zone:$("editZone").value||"PRO",
+     note:$("editNote").value||""
+   });
+ }
+ updateMultiShiftSummary();
+}
+async function saveMultiShifts(){
+ const employee=$("editEmployee").value;
+ const rows=multiShiftValues();
+ if(!employee)return alert("Kies eerst een medewerker.");
+ if(!rows.length)return alert("Voeg minstens één shiftregel toe.");
+ if(rows.some(r=>!r.date||!r.start||!r.end||!r.zone))return alert("Vul bij elke shift datum, startuur, einduur en zone in.");
+ if(rows.some(r=>mins(r.end)<=mins(r.start)))return alert("Bij elke shift moet het einduur na het startuur liggen.");
+
+ // Controleer overlap met bestaande planning én onderling in deze reeks.
+ const conflicts=[];
+ rows.forEach((r,i)=>{
+   const v={...r,employee};
+   const existing=shifts.filter(x=>x.date===r.date&&x.employee===employee&&mins(r.start)<mins(x.end)&&mins(r.end)>mins(x.start));
+   existing.forEach(x=>conflicts.push(`${label(r.date)} ${r.start}–${r.end} (${r.zone}) overlapt met ${x.start}–${x.end} (${x.zone})`));
+   rows.forEach((q,j)=>{
+     if(j<=i||q.date!==r.date)return;
+     if(mins(r.start)<mins(q.end)&&mins(r.end)>mins(q.start)){
+       conflicts.push(`${label(r.date)}: ${r.start}–${r.end} en ${q.start}–${q.end} overlappen in deze reeks`);
+     }
+   });
+ });
+ if(conflicts.length && !confirm(`⚠️ Er zijn overlappingen:\n\n${conflicts.slice(0,6).join("\n")}${conflicts.length>6?`\n… en nog ${conflicts.length-6}`:""}\n\nToch alles opslaan?`))return;
+
+ try{
+   const created=[];
+   for(const r of rows){
+     const v={...r,employee};
+     const ref=await addDoc(collection(db,"shifts"),v);
+     created.push({...v,_id:ref.id});
+     await writeAudit("Shift toegevoegd",null,v);
+   }
+   $("shiftModal").classList.remove("show");
+   setMultiShiftMode(false);
+   $("multiShiftRows").innerHTML="";
+   alert(`${created.length} shifts voor ${employee} zijn opgeslagen.`);
+ }catch(e){alert("Opslaan mislukt: "+e.message)}
+}
+
 function openShift(x=null){
  editing=x;
+ if($("multiShiftRows"))$("multiShiftRows").innerHTML="";
+ if($("multiShiftToggleWrap"))$("multiShiftToggleWrap").style.display=x?"none":"block";
+ setMultiShiftMode(false);
  $("shiftTitle").textContent=x?"Shift aanpassen":"Nieuwe shift";
  $("editDate").value=x?.date||$("date").value;
  $("leaveEndDate").value=x?.date||$("editDate").value;
@@ -2875,7 +3087,10 @@ function openShift(x=null){
  $("keepAdding").checked=false;updateWhatsAppShiftButton();$("shiftModal").classList.add("show");
 }
 $("addShiftBtn").onclick=()=>openShift();
-$("cancelShift").onclick=()=>$("shiftModal").classList.remove("show");
+$("cancelShift").onclick=()=>{$("shiftModal").classList.remove("show");setMultiShiftMode(false)};
+$("multiShiftMode").addEventListener("change",e=>setMultiShiftMode(e.target.checked));
+$("addMultiShiftRow").onclick=()=>addMultiShiftRow();
+$("editEmployee").addEventListener("change",updateMultiShiftSummary);
 function updateLeaveFields(){
  const leave=$("editZone").value==="VERLOF";
  $("editStart").disabled=leave;
@@ -2977,6 +3192,7 @@ $("whatsappShiftBtn").onclick=()=>{
 };
 
 $("saveShift").onclick=async()=>{
+ if(!editing && $("multiShiftMode")?.checked){await saveMultiShifts();return}
  const v=formObj();
  if(!v.date||!v.employee||(v.zone!=="VERLOF"&&(!v.start||!v.end))){
    alert(v.zone==="VERLOF"?"Vul datum en medewerker in.":"Vul datum, medewerker en uren in.");
