@@ -830,7 +830,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     color:#526577!important;padding:4px 8px!important
   }
   .planner-tab.active{color:#0b4870!important}
-  .planner-tab.active::before{content:"👥 ";}
+  .planner-tab.active::before{content:"👤 ";}
 
   /* Horizontale dagkiezer */
   .mobile-day-scroller{
@@ -1741,8 +1741,8 @@ body.admin-active .shift:hover{background:#fff8e8}
     box-shadow:none!important;
   }
   /* Crew toont exact één icoon. */
-  #crewPlannerTab::before{content:"👥 "!important;}
-  #crewPlannerTab.active::before{content:"👥 "!important;}
+  #crewPlannerTab::before{content:"👤 "!important;}
+  #crewPlannerTab.active::before{content:"👤 "!important;}
 
   /* Ook op mobiel: eerst planning, daarna beheerhulpmiddelen. */
   main{display:flex!important;flex-direction:column!important;}
@@ -1759,6 +1759,64 @@ body.admin-active .shift:hover{background:#fff8e8}
   main > #day,main > #week{order:3!important;}
   main > #adminBar{order:4!important;margin-top:24px!important;}
   main > #messagesPanel{order:5!important;}
+}
+
+
+/* ===== V12.13.9 VANDAAG + 3-DAAGS WEER IN HEADER ===== */
+.schedule-overview-header{
+  max-width:1280px;margin:12px auto 0;border-radius:18px;overflow:hidden;
+  background:linear-gradient(135deg,#0a334e,#0a4569 58%,#073857);
+  color:#fff;box-shadow:0 9px 26px rgba(8,54,84,.16)
+}
+.schedule-overview-top{
+  min-height:72px;padding:13px 18px;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;border-bottom:1px solid rgba(255,255,255,.14)
+}
+.schedule-overview-date{display:flex;align-items:center;gap:13px;min-width:0;font-size:18px}
+.schedule-overview-date strong{font-size:21px}
+.schedule-cal-icon{font-size:25px}
+.schedule-date-divider{width:1px;height:30px;background:rgba(255,255,255,.42)}
+#scheduleTodayDate{font-weight:750;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.schedule-today-btn{
+  flex:0 0 auto;min-height:48px;padding:0 16px;border:0;border-radius:13px;
+  background:#fff;color:#0b3859;font-weight:900;box-shadow:0 4px 12px rgba(0,0,0,.12)
+}
+.schedule-weather-forecast{display:grid;grid-template-columns:repeat(3,1fr);padding:10px 14px 13px}
+.schedule-weather-day{display:flex;align-items:center;justify-content:center;gap:13px;min-height:86px;padding:10px 20px}
+.schedule-weather-day+ .schedule-weather-day{border-left:1px solid rgba(255,255,255,.16)}
+.schedule-weather-icon{font-size:36px;line-height:1}
+.schedule-weather-copy{display:grid;gap:1px;min-width:0}
+.schedule-weather-copy strong{font-size:14px}
+.schedule-weather-temp{font-size:24px;font-weight:900;line-height:1.1}
+.schedule-weather-copy small{font-size:11px;color:rgba(255,255,255,.78);white-space:nowrap}
+.schedule-weather-loading{grid-column:1/-1;padding:20px;text-align:center;color:rgba(255,255,255,.8);font-weight:800}
+
+/* De oude dubbele Vandaag/Morgen-balk is vervangen door de header hierboven. */
+#todayBar{display:none!important}
+
+/* Bewerkhint subtieler dan de planning zelf. */
+.edit-hint{font-size:11px!important;min-height:0!important;padding:6px 9px!important;font-weight:750!important}
+
+@media(max-width:720px){
+  .schedule-overview-header{margin:8px 10px 0;border-radius:16px}
+  .schedule-overview-top{min-height:54px;padding:8px 10px;gap:8px}
+  .schedule-overview-date{gap:7px;font-size:11px;min-width:0}
+  .schedule-overview-date strong{font-size:14px}
+  .schedule-cal-icon{font-size:17px}
+  .schedule-date-divider{height:22px}
+  #scheduleTodayDate{font-size:11px}
+  .schedule-today-btn{min-height:36px;padding:0 10px;border-radius:10px;font-size:11px}
+  .schedule-today-btn span{display:none}
+  .schedule-weather-forecast{grid-template-columns:repeat(3,minmax(0,1fr));padding:5px 5px 7px}
+  .schedule-weather-day{min-height:66px;padding:6px 4px;gap:5px;justify-content:center}
+  .schedule-weather-icon{font-size:22px}
+  .schedule-weather-copy{gap:0}
+  .schedule-weather-copy strong{font-size:9px}
+  .schedule-weather-temp{font-size:16px}
+  .schedule-weather-copy small{font-size:8px;overflow:hidden;text-overflow:ellipsis;max-width:72px}
+  .edit-hint{font-size:10px!important;padding:5px 7px!important}
+  /* Crew: één persoonssymbool, geen groepsicoon. */
+  #crewPlannerTab::before,#crewPlannerTab.active::before{content:"👤 "!important}
 }
 </style>
 
@@ -1796,6 +1854,22 @@ body.admin-active .shift:hover{background:#fff8e8}
   </div>
   <div id="syncStatus" class="status">Verbinden…</div>
 </div></header>
+
+<section id="scheduleOverviewHeader" class="schedule-overview-header" aria-label="Vandaag en weersverwachting">
+  <div class="schedule-overview-top">
+    <div class="schedule-overview-date">
+      <span class="schedule-cal-icon">📅</span>
+      <strong>Vandaag</strong>
+      <span class="schedule-date-divider"></span>
+      <span id="scheduleTodayDate"></span>
+    </div>
+    <button id="scheduleGoTodayBtn" class="schedule-today-btn" type="button">📅 <span>Vandaag</span></button>
+  </div>
+  <div id="scheduleWeatherForecast" class="schedule-weather-forecast">
+    <div class="schedule-weather-loading">Weer laden…</div>
+  </div>
+</section>
+
 <div class="planner-tabs">
   <button id="crewPlannerTab" class="planner-tab active" type="button">Crew</button>
   <button id="studentPlannerTab" class="planner-tab" type="button" style="display:none">🎓 Jobstudenten</button>
@@ -1826,7 +1900,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <span class="today-label">VANDAAG</span>
     <strong id="todayFullLabel"></strong>
   </div>
-  <div class="today-actions"><button id="goTodayBtn">Vandaag</button><button id="goTomorrowBtn">Morgen →</button></div>
+  <div class="today-actions"><button id="goTodayBtn">Vandaag</button></div>
 </div>
 
 <div id="personalAlert" class="personal-alert" style="display:none">
@@ -1857,7 +1931,7 @@ body.admin-active .shift:hover{background:#fff8e8}
         </div>
       </div>
 
-      <span class="edit-hint">✏️ Klik op een shift om te bewerken</span>
+      <span class="edit-hint">Klik op een shift om te bewerken</span>
 
       <div class="admin-main-actions">
         <button id="addShiftBtn" class="admin-action add-action">＋ <span>Shift toevoegen</span></button>
@@ -1956,7 +2030,7 @@ body.admin-active .shift:hover{background:#fff8e8}
         <span class="admin-avatar">🎓</span>
         <div><strong id="studentAdminWho">Jobstudenten</strong><small>Beheerder</small></div>
       </div>
-      <span class="edit-hint">✏️ Klik op een shift om te bewerken</span>
+      <span class="edit-hint">Klik op een shift om te bewerken</span>
       <div class="admin-main-actions">
         <button id="studentAddShiftBtn" class="admin-action add-action" type="button">＋ <span>Shift toevoegen</span></button>
         <button id="studentCopyDayBtn" class="admin-action" type="button">📄 <span>Dag kopiëren</span></button>
@@ -4399,7 +4473,9 @@ $("closeChangeLogBtn").onclick=()=>$("changeLogModal").classList.remove("show");
 function realTodayKey(){return key(new Date())}
 function setTodayHeader(){
  const d=new Date(realTodayKey()+"T12:00:00");
- $("todayFullLabel").textContent=d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ const full=d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ $("todayFullLabel").textContent=full;
+ if($("scheduleTodayDate")) $("scheduleTodayDate").textContent=full.charAt(0).toUpperCase()+full.slice(1);
 }
 function ensureDateOption(target){
  if(![...$("date").options].some(o=>o.value===target)){
@@ -4413,9 +4489,7 @@ function goToDate(target){
  renderDay();renderWeek();
 }
 $("goTodayBtn").onclick=()=>goToDate(realTodayKey());
-$("goTomorrowBtn").onclick=()=>{
- const d=new Date(realTodayKey()+"T12:00:00");d.setDate(d.getDate()+1);goToDate(key(d));
-};
+if($("scheduleGoTodayBtn")) $("scheduleGoTodayBtn").onclick=()=>goToDate(realTodayKey());
 
 function visibleDatesForUser(){
  const today=realTodayKey();
@@ -4518,14 +4592,50 @@ document.addEventListener("click",e=>{
 });
 
 function weatherIcon(c){if(c===0)return"☀️";if([1,2].includes(c))return"🌤️";if(c===3)return"☁️";if([45,48].includes(c))return"🌫️";if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(c))return"🌧️";if([71,73,75,77,85,86].includes(c))return"🌨️";if([95,96,99].includes(c))return"⛈️";return"🌤️"}
+function weatherText(c){
+ if(c===0)return"Zonnig";
+ if([1,2].includes(c))return"Licht bewolkt";
+ if(c===3)return"Bewolkt";
+ if([45,48].includes(c))return"Mist";
+ if([51,53,55,56,57].includes(c))return"Motregen";
+ if([61,63,65,66,67,80,81,82].includes(c))return"Regen";
+ if([71,73,75,77,85,86].includes(c))return"Sneeuw";
+ if([95,96,99].includes(c))return"Onweer";
+ return"Wisselvallig";
+}
+function renderThreeDayWeather(d){
+ const box=$("scheduleWeatherForecast");
+ if(!box)return;
+ const daily=d.daily||{};
+ const days=daily.time||[];
+ const labels=["Vandaag","Morgen","Overmorgen"];
+ box.innerHTML=days.slice(0,3).map((date,i)=>{
+   const code=daily.weather_code?.[i];
+   const hi=daily.temperature_2m_max?.[i];
+   const lo=daily.temperature_2m_min?.[i];
+   return `<div class="schedule-weather-day">
+     <span class="schedule-weather-icon">${weatherIcon(code)}</span>
+     <div class="schedule-weather-copy">
+       <strong>${labels[i]||new Date(date+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"short"})}</strong>
+       <span class="schedule-weather-temp">${hi==null?"–":Math.round(hi)+"°C"}</span>
+       <small>${weatherText(code)}${lo==null?"":" · min "+Math.round(lo)+"°"}</small>
+     </div>
+   </div>`;
+ }).join("") || '<div class="schedule-weather-loading">Weer tijdelijk niet beschikbaar</div>';
+}
 async function loadWeather(){
  try{
-   const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&timezone=Europe%2FBrussels&forecast_days=1",{cache:"no-store"});
+   const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBrussels&forecast_days=3",{cache:"no-store"});
    const d=await r.json(),c=d.current||{};let rain="";
    if(d.hourly?.time?.length){let bi=0,bd=Infinity,now=new Date();d.hourly.time.forEach((t,i)=>{const z=Math.abs(new Date(t)-now);if(z<bd){bd=z;bi=i}});const ch=d.hourly.precipitation_probability?.[bi];if(ch!=null)rain=` · regen ${Math.round(ch)}%`}
    $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${Math.round(c.wind_speed_10m)} km/u${rain}</span>`;
-   if($("mobileHeaderWeather"))$("mobileHeaderWeather").textContent=`${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°C · ${Math.round(c.wind_speed_10m)} km/u`;
- }catch(e){$("weather").textContent="Weer tijdelijk niet beschikbaar"; if($("mobileHeaderWeather"))$("mobileHeaderWeather").textContent="Weer n/b"}
+   if($("mobileHeaderWeather"))$("mobileHeaderWeather").textContent=`${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°C`;
+   renderThreeDayWeather(d);
+ }catch(e){
+   $("weather").textContent="Weer tijdelijk niet beschikbaar";
+   if($("mobileHeaderWeather"))$("mobileHeaderWeather").textContent="Weer n/b";
+   if($("scheduleWeatherForecast"))$("scheduleWeatherForecast").innerHTML='<div class="schedule-weather-loading">Weer tijdelijk niet beschikbaar</div>';
+ }
 }
 loadWeather();
 setTodayHeader();
