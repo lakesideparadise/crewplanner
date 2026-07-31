@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v11.4-free-whatsapp-crew-2026-07-30">
+<meta name="cablecrew-version" content="v11.5.1-active-crew-management-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -381,6 +381,16 @@ body.admin-active .shift:hover{background:#fff8e8}
 .change-badge{display:inline-block;font-size:9px;font-weight:900;padding:2px 6px;border-radius:999px;margin-left:6px;background:#fff3cd;color:#7a5700;border:1px solid #ead58a;cursor:pointer}.change-badge.changed{background:#e8f2ff;color:#245b91;border-color:#b9d5f2}
 .admin-data-modal .modal{max-width:980px}.report-controls,.backup-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:12px 0}.report-controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:800;color:var(--muted)}.report-table{width:100%;border-collapse:collapse;font-size:13px}.report-table th,.report-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}.report-table th{background:#f6f8fa}.report-table td.num{text-align:right}.backup-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}.backup-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px}.backup-meta{font-size:12px;color:var(--muted)}
 
+.crew-contacts-modal{max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.crew-contacts-modal .year-head{flex:0 0 auto;padding-bottom:10px}
+.crew-contacts-list{display:grid;gap:8px;overflow-y:auto;min-height:0;padding:2px 4px 10px 0;overscroll-behavior:contain}
+.crew-contacts-footer{flex:0 0 auto;padding-top:12px;border-top:1px solid var(--line);background:#fff}
+.crew-contacts-tools{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:4px 0 10px;flex:0 0 auto}
+.crew-contact-row{position:relative}
+.crew-contact-actions{display:flex;gap:6px;align-items:center}
+.crew-contact-remove{padding:7px 9px;font-size:11px}
+@media(max-width:720px){.crew-contacts-tools{grid-template-columns:1fr}.crew-contact-actions{width:100%}}
+.crew-contacts-footer button{width:100%}
 .crew-contact-row{display:grid;grid-template-columns:1fr 1.2fr;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
 .crew-contact-row b{font-size:13px}.crew-contact-row input{width:100%}
 @media(max-width:620px){.crew-contact-row{grid-template-columns:1fr}}
@@ -612,7 +622,7 @@ body.admin-active .shift:hover{background:#fff8e8}
 </div></div>
 
 
-<div id="crewContactsModal" class="modalback"><div class="modal">
+<div id="crewContactsModal" class="modalback"><div class="modal crew-contacts-modal">
   <div class="year-head">
     <div>
       <h2>📱 WhatsApp nummers</h2>
@@ -620,9 +630,14 @@ body.admin-active .shift:hover{background:#fff8e8}
     </div>
     <button id="closeCrewContactsBtn">Sluiten</button>
   </div>
-  <div id="crewContactsList" style="display:grid;gap:8px;margin-top:10px"></div>
-  <div style="margin-top:12px">
-    <button id="saveCrewContactsBtn" class="success">Nummers opslaan</button>
+  <div class="crew-contacts-tools">
+    <input id="newCrewName" type="text" placeholder="Nieuwe medewerker naam">
+    <input id="newCrewPhone" type="tel" placeholder="Gsm-nummer (optioneel)">
+    <button id="addCrewContactBtn" class="primary" type="button">+ Medewerker toevoegen</button>
+  </div>
+  <div id="crewContactsList" class="crew-contacts-list"></div>
+  <div class="crew-contacts-footer">
+    <button id="saveCrewContactsBtn" class="success">Wijzigingen opslaan</button>
   </div>
 </div></div>
 
@@ -655,7 +670,7 @@ body.admin-active .shift:hover{background:#fff8e8}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, query, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBdeGM27e5xNRGipmEeQzmTW4aNMrKtc3A",
@@ -670,7 +685,7 @@ const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app)
 const $=id=>document.getElementById(id);
 const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","VERLOF"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","VERLOF":"verlof"};
-let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewContactsUnsub=null;
+let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewDirectory=new Map(), crewContactsUnsub=null;
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -702,7 +717,21 @@ function initDateOptions(){
  let chosen=old&&dates.includes(old)?old:(dates.includes(today)?today:dates[0]);
  $("date").value=chosen;
 }
-function people(){return [...new Set(shifts.map(x=>x.employee))].filter(Boolean).sort()}
+function people(){
+ const shiftNames=[...new Set(shifts.map(x=>x.employee).filter(Boolean))];
+ const activeDirectory=[...crewDirectory.entries()]
+   .filter(([name,data])=>data?.active!==false)
+   .map(([name])=>name);
+
+ const names=new Set(activeDirectory);
+ shiftNames.forEach(name=>{
+   // Bestaande/historische naam zonder directory-record blijft zichtbaar
+   // totdat beheer hem expliciet verwijdert/deactiveert.
+   if(!crewDirectory.has(name) || crewDirectory.get(name)?.active!==false)names.add(name);
+ });
+
+ return [...names].sort((a,b)=>a.localeCompare(b,"nl"));
+}
 function fillPeople(){
  const p=people();
  const locked=localStorage.getItem("cc_my_name")||"";
@@ -865,7 +894,7 @@ function normalizeBelgianPhone(v){
  return s;
 }
 function whatsappDigits(v){return normalizeBelgianPhone(v).replace(/\D/g,"")}
-function crewPhone(name){return crewContacts.get(name)||""}
+function crewPhone(name){return crewDirectory.get(name)?.phone||crewContacts.get(name)||""}
 function buildWhatsAppText(v,kind="gewijzigd"){
  const when=v.date?label(v.date):"";
  if(v.zone==="VERLOF")return `🏝️ CableCrew – verlof ${kind}\n${v.employee}, je verlof op ${when} is ${kind}.\nBekijk je planning in CableCrew.`;
@@ -1503,18 +1532,44 @@ function updateAdminLoginVisibility(){
 
 function renderCrewContacts(){
  if(!isAdminUser())return;
- const names=people();
+
+ const shiftNames=[...new Set(shifts.map(x=>x.employee).filter(Boolean))];
+ const activeNames=[...crewDirectory.entries()]
+   .filter(([name,data])=>data?.active!==false)
+   .map(([name])=>name);
+
+ const names=[...new Set([
+   ...activeNames,
+   ...shiftNames.filter(n=>!crewDirectory.has(n) || crewDirectory.get(n)?.active!==false)
+ ])].sort((a,b)=>a.localeCompare(b,"nl"));
+
  $("crewContactsList").innerHTML=names.length?names.map(n=>`
-   <div class="crew-contact-row">
-     <b>${esc(n)}</b>
+   <div class="crew-contact-row" data-crew-row="${esc(n)}">
+     <div class="crew-contact-actions">
+       <input type="text" data-crew-name="${esc(n)}" value="${esc(n)}" aria-label="Naam">
+       <button type="button" class="danger crew-contact-remove" data-remove-crew="${esc(n)}">Verwijderen</button>
+     </div>
      <input type="tel" data-crew-contact="${esc(n)}" value="${esc(crewPhone(n))}" placeholder="bv. 0471 12 34 56" autocomplete="tel">
    </div>`).join(""):'<div class="empty">Nog geen medewerkers gevonden.</div>';
+
+ $("crewContactsList").querySelectorAll("[data-remove-crew]").forEach(btn=>{
+   btn.onclick=()=>{
+     const name=btn.dataset.removeCrew;
+     if(!confirm(`${name} verwijderen uit de actieve medewerkerslijst?\n\nBestaande historische shifts blijven behouden.`))return;
+     const row=btn.closest("[data-crew-row]");
+     row?.setAttribute("data-pending-delete","1");
+     row?.style.setProperty("display","none");
+   };
+ });
 }
+
 function startCrewContactsListener(){
  if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null}
  if(!isAdminUser())return;
  crewContactsUnsub=onSnapshot(collection(db,"crewContacts"),snap=>{
-   crewContacts=new Map(snap.docs.map(d=>[d.id,d.data().phone||""]));
+   crewDirectory=new Map(snap.docs.map(d=>[d.id,{name:d.data().name||d.id,phone:d.data().phone||"",active:d.data().active!==false}]));
+   crewContacts=new Map([...crewDirectory.entries()].filter(([n,d])=>d.active!==false).map(([n,d])=>[n,d.phone||""]));
+   fillPeople();
    if($("crewContactsModal").classList.contains("show"))renderCrewContacts();
    updateWhatsAppShiftButton();
  },e=>console.warn("Crew contacts:",e));
@@ -1525,22 +1580,79 @@ $("crewContactsBtn").onclick=()=>{
  $("crewContactsModal").classList.add("show");
 };
 $("closeCrewContactsBtn").onclick=()=>$("crewContactsModal").classList.remove("show");
+
+$("addCrewContactBtn").onclick=async()=>{
+ if(!isAdminUser())return;
+ const name=$("newCrewName").value.trim();
+ const phone=normalizeBelgianPhone($("newCrewPhone").value.trim());
+ if(!name)return alert("Vul eerst een naam in.");
+ if(people().includes(name))return alert("Deze medewerker bestaat al.");
+ try{
+   await setDoc(doc(db,"crewContacts",name),{
+     name,
+     phone,
+     active:true,
+     updatedAt:serverTimestamp(),
+     updatedBy:user.email||""
+   });
+   $("newCrewName").value="";
+   $("newCrewPhone").value="";
+ }catch(e){alert("Medewerker toevoegen mislukt: "+e.message)}
+};
+
+
 $("saveCrewContactsBtn").onclick=async()=>{
  if(!isAdminUser())return;
- const inputs=[...document.querySelectorAll("[data-crew-contact]")];
+ const rows=[...document.querySelectorAll("[data-crew-row]")];
  try{
    const batch=writeBatch(db);
-   inputs.forEach(inp=>{
-     const name=inp.dataset.crewContact;
-     const phone=normalizeBelgianPhone(inp.value.trim());
-     const ref=doc(db,"crewContacts",name);
-     if(phone)batch.set(ref,{phone,name,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true});
-     else batch.delete(ref);
+
+   rows.forEach(row=>{
+     const oldName=row.dataset.crewRow;
+     const pendingDelete=row.dataset.pendingDelete==="1";
+     const nameInput=row.querySelector("[data-crew-name]");
+     const phoneInput=row.querySelector("[data-crew-contact]");
+     const newName=(nameInput?.value||oldName).trim();
+     const phone=normalizeBelgianPhone(phoneInput?.value.trim()||"");
+
+     if(pendingDelete){
+       // Niet fysiek wissen: inactive bewaren zodat historische shifts
+       // niet opnieuw in de actieve namenlijst verschijnen.
+       batch.set(doc(db,"crewContacts",oldName),{
+         name:oldName,
+         phone:crewPhone(oldName),
+         active:false,
+         updatedAt:serverTimestamp(),
+         updatedBy:user.email||""
+       },{merge:true});
+       return;
+     }
+
+     if(!newName)return;
+
+     if(newName!==oldName){
+       // Oude naam deactiveren; historische shifts blijven ongewijzigd.
+       batch.set(doc(db,"crewContacts",oldName),{
+         name:oldName,
+         active:false,
+         updatedAt:serverTimestamp(),
+         updatedBy:user.email||""
+       },{merge:true});
+     }
+
+     batch.set(doc(db,"crewContacts",newName),{
+       name:newName,
+       phone,
+       active:true,
+       updatedAt:serverTimestamp(),
+       updatedBy:user.email||""
+     },{merge:true});
    });
+
    await batch.commit();
-   alert("WhatsApp-nummers opgeslagen.");
+   alert("Medewerkers en nummers opgeslagen.");
    $("crewContactsModal").classList.remove("show");
- }catch(e){alert("Nummers opslaan mislukt: "+e.message)}
+ }catch(e){alert("Opslaan mislukt: "+e.message)}
 };
 
 function hoursBetween(a,b){if(!a||!b)return 0;const [ah,am]=a.split(":").map(Number),[bh,bm]=b.split(":").map(Number);return Math.max(0,((bh*60+bm)-(ah*60+am))/60)}
