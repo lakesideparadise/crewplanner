@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.8-desktop-planning-first-2026-07-31">
+<meta name="cablecrew-version" content="v12.9-mobile-calendar-modal-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1118,6 +1118,43 @@ body.admin-active .shift:hover{background:#fff8e8}
   }
 }
 
+
+/* ===== V12.9 MOBIELE DATUMKALENDER ===== */
+.mobile-date-calendar-modal{width:min(430px,96vw)}
+.mobile-date-calendar-nav{
+  display:grid;grid-template-columns:48px 1fr 48px;
+  gap:8px;align-items:center;margin:8px 0 12px
+}
+.mobile-date-calendar-nav strong{text-align:center;text-transform:capitalize;font-size:18px}
+.mobile-date-calendar-nav button{min-height:44px}
+.mobile-date-calendar-weekdays,.mobile-date-calendar-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:5px
+}
+.mobile-date-calendar-weekdays span{
+  text-align:center;font-size:11px;font-weight:900;color:var(--muted);padding:4px 0
+}
+.mobile-date-calendar-day{
+  aspect-ratio:1/1;border:1px solid transparent;border-radius:11px;
+  display:grid;place-items:center;padding:0;background:#fff;
+  font-size:14px;font-weight:800;color:#24394d
+}
+.mobile-date-calendar-day:hover{background:#eef5f9}
+.mobile-date-calendar-day.other{visibility:hidden}
+.mobile-date-calendar-day.today{
+  border-color:#0b5683;box-shadow:inset 0 0 0 1px #0b5683
+}
+.mobile-date-calendar-day.selected{
+  color:#fff;background:linear-gradient(135deg,#082d59,#0a4e82);
+  border-color:#0a4e82
+}
+@media(max-width:720px){
+  .mobile-date-calendar-modal{
+    border-radius:22px 22px 10px 10px!important;
+    padding:18px 16px 20px!important
+  }
+  .mobile-date-calendar-day{font-size:15px}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1146,7 +1183,6 @@ body.admin-active .shift:hover{background:#fff8e8}
 <div id="mobileDayScroller" class="mobile-day-scroller" aria-label="Dagen">
   <div id="mobileDayScrollerInner" class="mobile-day-scroller-inner"></div>
   <button id="mobileCalendarBtn" class="mobile-calendar-btn" type="button" aria-label="Ga naar datum">📅</button>
-  <input id="mobileDatePicker" class="mobile-date-picker" type="date" aria-label="Kies datum">
 </div>
 
 
@@ -1357,6 +1393,28 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button id="studentWeekCopyDo" class="success" type="button">Week kopiëren</button>
   </div>
 </div></div>
+
+
+<div id="mobileDateCalendarModal" class="modalback">
+  <div class="modal mobile-date-calendar-modal">
+    <div class="year-head">
+      <div>
+        <h2>📅 Ga naar datum</h2>
+        <div class="year-sub">Kies de dag die je wilt bekijken.</div>
+      </div>
+      <button id="closeMobileDateCalendarBtn" type="button">Sluiten</button>
+    </div>
+    <div class="mobile-date-calendar-nav">
+      <button id="mobileCalPrevMonth" type="button">←</button>
+      <strong id="mobileCalMonthLabel"></strong>
+      <button id="mobileCalNextMonth" type="button">→</button>
+    </div>
+    <div class="mobile-date-calendar-weekdays">
+      <span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span>
+    </div>
+    <div id="mobileDateCalendarGrid" class="mobile-date-calendar-grid"></div>
+  </div>
+</div>
 
 <div id="loginModal" class="modalback"><div class="modal">
   <h2>Beheer login</h2>
@@ -3019,17 +3077,55 @@ function renderMobileDayScroller(selectedKey=mobileSelectedDate()){
  renderMobileTodayText();
 }
 
+let mobileCalendarCursor=new Date(realTodayKey()+"T12:00:00");
+
+function renderMobileDateCalendar(){
+ const selected=mobileSelectedDate()||realTodayKey();
+ const y=mobileCalendarCursor.getFullYear();
+ const m=mobileCalendarCursor.getMonth();
+ $("mobileCalMonthLabel").textContent=new Date(y,m,1).toLocaleDateString("nl-BE",{month:"long",year:"numeric"});
+
+ const first=new Date(y,m,1);
+ const daysInMonth=new Date(y,m+1,0).getDate();
+ const offset=(first.getDay()+6)%7;
+ let html="";
+ for(let i=0;i<offset;i++)html+='<button type="button" class="mobile-date-calendar-day other" tabindex="-1"></button>';
+
+ for(let d=1;d<=daysInMonth;d++){
+   const dt=new Date(y,m,d,12,0,0);
+   const k=key(dt);
+   const cls=["mobile-date-calendar-day"];
+   if(k===realTodayKey())cls.push("today");
+   if(k===selected)cls.push("selected");
+   html+=`<button type="button" class="${cls.join(" ")}" data-mobile-calendar-date="${k}">${d}</button>`;
+ }
+ $("mobileDateCalendarGrid").innerHTML=html;
+
+ $("mobileDateCalendarGrid").querySelectorAll("[data-mobile-calendar-date]").forEach(btn=>{
+   btn.onclick=()=>{
+     const target=btn.dataset.mobileCalendarDate;
+     document.body.classList.remove("mobile-mine-mode");
+     mobileSetDate(target);
+     mobileSetActive(target===realTodayKey()?"mobileNavToday":"");
+     $("mobileDateCalendarModal").classList.remove("show");
+   };
+ });
+}
+
 $("mobileCalendarBtn").onclick=()=>{
- const picker=$("mobileDatePicker");
- picker.value=mobileSelectedDate()||realTodayKey();
- if(typeof picker.showPicker==="function")picker.showPicker();
- else picker.click();
+ const current=mobileSelectedDate()||realTodayKey();
+ mobileCalendarCursor=new Date(current+"T12:00:00");
+ renderMobileDateCalendar();
+ $("mobileDateCalendarModal").classList.add("show");
 };
-$("mobileDatePicker").onchange=e=>{
- if(!e.target.value)return;
- document.body.classList.remove("mobile-mine-mode");
- mobileSetDate(e.target.value);
- mobileSetActive(e.target.value===realTodayKey()?"mobileNavToday":"");
+$("closeMobileDateCalendarBtn").onclick=()=>$("mobileDateCalendarModal").classList.remove("show");
+$("mobileCalPrevMonth").onclick=()=>{
+ mobileCalendarCursor=new Date(mobileCalendarCursor.getFullYear(),mobileCalendarCursor.getMonth()-1,1,12,0,0);
+ renderMobileDateCalendar();
+};
+$("mobileCalNextMonth").onclick=()=>{
+ mobileCalendarCursor=new Date(mobileCalendarCursor.getFullYear(),mobileCalendarCursor.getMonth()+1,1,12,0,0);
+ renderMobileDateCalendar();
 };
 
 function ensurePersonalCrewIdentity(){
