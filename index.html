@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.13.5-my-planning-chronological-zones-2026-07-31">
+<meta name="cablecrew-version" content="v12.13.6-mobile-modal-visibility-fix-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1560,6 +1560,123 @@ body.admin-active .shift:hover{background:#fff8e8}
 .my-planning-empty-icon{font-size:34px;margin-bottom:3px}
 .my-planning-empty strong{font-size:17px}
 .my-planning-empty span{font-size:12px;color:#71808d;max-width:280px}
+
+
+/* ===== V12.13.6 FIX: ALLE MOBIELE POP-UPS VOLLEDIG BEREIKBAAR ===== */
+@media(max-width:720px){
+  /* De overlay krijgt onderaan ruimte voor de vaste app-navigatie + iPhone safe area. */
+  .modalback{
+    z-index:500!important;
+    align-items:flex-end!important;
+    padding:
+      10px
+      10px
+      calc(82px + env(safe-area-inset-bottom))
+      10px!important;
+    overflow:hidden!important;
+  }
+
+  /* Wanneer een popup open is, mag de onderste navigatie nooit boven de popup liggen. */
+  body:has(.modalback.show) .mobile-app-nav{
+    z-index:110!important;
+  }
+
+  /* Elke popup wordt een flex-kolom die binnen het zichtbare scherm blijft. */
+  .modalback .modal{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    max-width:none!important;
+    max-height:calc(100dvh - 104px - env(safe-area-inset-bottom))!important;
+    min-height:0!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom))!important;
+    border-radius:22px!important;
+    box-shadow:0 -12px 34px rgba(13,40,63,.24)!important;
+  }
+
+  /* Specifieke grote beheer-popups mogen dezelfde beschikbare hoogte gebruiken. */
+  .year-modal,
+  .archive-modal,
+  .log-modal,
+  .crew-contacts-modal,
+  .student-manage-modal,
+  .student-copy-modal,
+  .calendar-modal,
+  .mobile-date-calendar-modal,
+  .admin-data-modal .modal{
+    max-height:calc(100dvh - 104px - env(safe-area-inset-bottom))!important;
+  }
+
+  /* Scrollbare lijsten mogen krimpen zodat footer/knoppen niet uit beeld verdwijnen. */
+  .crew-contacts-list,
+  .student-manage-list,
+  .backup-list,
+  .messages-list{
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  /* Actieknoppen blijven onderaan de popup bereikbaar. */
+  .modalactions,
+  .crew-contacts-footer,
+  .student-manage-footer{
+    position:sticky!important;
+    bottom:0!important;
+    z-index:4!important;
+    flex:0 0 auto!important;
+    background:#fff!important;
+    margin-top:12px!important;
+    padding-top:12px!important;
+    padding-bottom:2px!important;
+    border-top:1px solid #edf1f4!important;
+  }
+
+  .modalactions{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  .modalactions button{
+    width:100%!important;
+    min-height:46px!important;
+  }
+
+  /* Loginvelden en formulieren blijven comfortabel bruikbaar op kleine schermen. */
+  .loginbox,
+  .formgrid{
+    min-height:0!important;
+  }
+  .loginbox input,
+  .formgrid input,
+  .formgrid select,
+  .formgrid textarea{
+    font-size:16px!important; /* voorkomt iOS auto-zoom */
+  }
+
+  /* Ook de datumkalender blijft volledig boven de navigatie. */
+  #mobileDateCalendarModal{
+    align-items:flex-end!important;
+    padding:
+      10px
+      10px
+      calc(82px + env(safe-area-inset-bottom))
+      10px!important;
+  }
+  #mobileDateCalendarModal .mobile-date-calendar-modal{
+    max-height:calc(100dvh - 104px - env(safe-area-inset-bottom))!important;
+    overflow-y:auto!important;
+  }
+}
+
+/* Fallback voor browsers zonder :has(): overlay zelf blijft altijd boven de navigatie. */
+.modalback.show{z-index:500!important}
 
 </style>
 
