@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.13.7-mobile-auth-header-2026-07-31">
+<meta name="cablecrew-version" content="v12.13.8-planning-first-ui-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1723,6 +1723,43 @@ body.admin-active .shift:hover{background:#fff8e8}
   .mobile-auth-btn{display:none!important}
 }
 
+
+
+/* ===== V12.13.8 UI FINISH: LOGIN, CREW-ICOON, PLANNING EERST ===== */
+@media(max-width:720px){
+  /* Login duidelijk zichtbaar in de header. */
+  .mobile-auth-btn{
+    background:#0b5683!important;
+    border-color:#0b5683!important;
+    color:#fff!important;
+    box-shadow:0 4px 12px rgba(11,86,131,.22)!important;
+  }
+  .mobile-auth-btn.is-logout{
+    background:#fff4f2!important;
+    border-color:#efc7c0!important;
+    color:#9c3126!important;
+    box-shadow:none!important;
+  }
+  /* Crew toont exact één icoon. */
+  #crewPlannerTab::before{content:"👥 "!important;}
+  #crewPlannerTab.active::before{content:"👥 "!important;}
+
+  /* Ook op mobiel: eerst planning, daarna beheerhulpmiddelen. */
+  main{display:flex!important;flex-direction:column!important;}
+  main > .toolbar{order:1!important;}
+  main > #adminActionTop{order:2!important;}
+  main > #day,main > #week{order:3!important;}
+  main > #adminBar{order:4!important;margin-top:22px!important;}
+  main > #messagesPanel{order:5!important;}
+}
+@media(min-width:721px){
+  /* Desktop: planning vóór jaarplanning/verleden en overige beheerkaarten. */
+  main > .toolbar{order:1!important;}
+  main > #adminActionTop{order:2!important;}
+  main > #day,main > #week{order:3!important;}
+  main > #adminBar{order:4!important;margin-top:24px!important;}
+  main > #messagesPanel{order:5!important;}
+}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1760,7 +1797,7 @@ body.admin-active .shift:hover{background:#fff8e8}
   <div id="syncStatus" class="status">Verbinden…</div>
 </div></header>
 <div class="planner-tabs">
-  <button id="crewPlannerTab" class="planner-tab active" type="button">👥 Crew</button>
+  <button id="crewPlannerTab" class="planner-tab active" type="button">Crew</button>
   <button id="studentPlannerTab" class="planner-tab" type="button" style="display:none">🎓 Jobstudenten</button>
 </div>
 
