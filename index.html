@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.13-mobile-first-use-onboarding-2026-07-31">
+<meta name="cablecrew-version" content="v12.13.1-mobile-onboarding-first-open-fix-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -4172,10 +4172,9 @@ function cableCrewPlatform(){
  return "other";
 }
 function mobileOnboardingRecognized(){
- // Bestaande toestellen met reeds opgeslagen identiteit krijgen de onboarding
- // niet plots opnieuw na deze update.
- return localStorage.getItem(MOBILE_ONBOARDING_KEY)==="1" ||
-        !!localStorage.getItem("cc_my_name");
+ // Alleen de expliciet voltooide onboarding telt als "klaar".
+ // Een oude/verdwaalde cc_my_name mag de eerste-uitleg niet overslaan.
+ return localStorage.getItem(MOBILE_ONBOARDING_KEY)==="1";
 }
 function fillMobileOnboardingNames(){
  const select=$("mobileOnboardingName");
@@ -4195,7 +4194,12 @@ function updateMobileOnboardingButton(){
 }
 function showMobileOnboarding(){
  if(!isMobileCableCrew() || mobileOnboardingRecognized())return;
- if(!fillMobileOnboardingNames())return;
+ const count=fillMobileOnboardingNames();
+ const nameSelect=$("mobileOnboardingName");
+ if(nameSelect){
+   nameSelect.disabled=count===0;
+   if(count===0)nameSelect.innerHTML='<option value="">Namen laden…</option>';
+ }
 
  const platform=cableCrewPlatform();
  const hint=$("mobileOnboardingDeviceHint");
@@ -4220,7 +4224,8 @@ function showMobileOnboarding(){
 }
 function maybeShowMobileOnboarding(){
  if(!isMobileCableCrew() || mobileOnboardingRecognized())return;
- if(fillMobileOnboardingNames()>0)showMobileOnboarding();
+ // Toon de uitleg meteen. De namenlijst mag daarna live binnenkomen.
+ showMobileOnboarding();
 }
 
 $("mobileOnboardingName").onchange=()=>{
@@ -4258,9 +4263,24 @@ $("mobileOnboardingDone").onclick=()=>{
 // Firestore/namenlijst kan iets later geladen zijn. Probeer daarom enkele keren,
 // maar toon de onboarding nooit opnieuw zodra dit toestel voltooid is.
 window.addEventListener("load",()=>{
- setTimeout(maybeShowMobileOnboarding,300);
- setTimeout(maybeShowMobileOnboarding,1200);
- setTimeout(maybeShowMobileOnboarding,2500);
+ // Eerste mobiele opening: popup meteen tonen, planning niet eerst laten "winnen".
+ maybeShowMobileOnboarding();
+ setTimeout(maybeShowMobileOnboarding,250);
+ setTimeout(maybeShowMobileOnboarding,800);
+ setTimeout(maybeShowMobileOnboarding,1600);
+
+ // Firestore kan de namen pas na de popup laden. Vul de select dan automatisch bij.
+ let tries=0;
+ const nameTimer=setInterval(()=>{
+   tries++;
+   if(mobileOnboardingRecognized() || !$("mobileOnboardingModal")?.classList.contains("show")){
+     clearInterval(nameTimer);return;
+   }
+   const count=fillMobileOnboardingNames();
+   if($("mobileOnboardingName"))$("mobileOnboardingName").disabled=count===0;
+   updateMobileOnboardingButton();
+   if(count>0 || tries>20)clearInterval(nameTimer);
+ },300);
 });
 document.addEventListener("visibilitychange",()=>{
  if(document.visibilityState==="visible")setTimeout(maybeShowMobileOnboarding,250);
