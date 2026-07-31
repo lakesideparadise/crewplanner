@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.4-modern-admin-dashboard-2026-07-31">
+<meta name="cablecrew-version" content="v12.5-mobile-app-experience-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -604,6 +604,200 @@ body.admin-active .shift:hover{background:#fff8e8}
 }
 @media print{
   .admin-dashboard{display:none!important}
+}
+
+
+/* ===== V12.5 MOBILE APP EXPERIENCE ===== */
+.mobile-app-nav{display:none}
+
+@media(max-width:720px){
+  html{background:#eef3f7}
+  body{
+    background:linear-gradient(180deg,#f8fbfd 0,#eef3f7 100%);
+    padding-bottom:86px;
+  }
+
+  header{
+    position:sticky;top:0;z-index:90;
+    background:rgba(255,255,255,.94);
+    backdrop-filter:saturate(160%) blur(14px);
+    -webkit-backdrop-filter:saturate(160%) blur(14px);
+    border-bottom:1px solid rgba(15,75,109,.08);
+    box-shadow:0 3px 16px rgba(17,48,72,.06)
+  }
+  .header-inner{min-height:64px;padding:8px 14px}
+  .brand-logo{width:42px;height:42px;border-radius:12px}
+  .brand{font-size:19px;line-height:1.05}
+  #syncStatus{display:none}
+  .mobile-header-weather{font-size:12px}
+  .calendar-header-btn{
+    width:42px;height:42px;border-radius:13px;background:#f2f7fa;border:1px solid #dce7ee
+  }
+
+  .planner-tabs{
+    position:sticky;top:64px;z-index:80;
+    margin:0;padding:8px 10px;
+    background:rgba(248,251,253,.94);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(15,75,109,.07)
+  }
+  .planner-tab{
+    min-height:42px;border-radius:13px;font-size:13px;font-weight:900;
+    box-shadow:0 2px 8px rgba(17,48,72,.05)
+  }
+
+  .quickbar{
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+    gap:9px;margin:10px 10px 8px;padding:0;
+  }
+  .quickcard{
+    border:0;border-radius:16px;padding:13px;
+    box-shadow:0 5px 16px rgba(28,63,91,.08);
+    background:#fff;min-height:92px
+  }
+  .quickcard:nth-child(3){grid-column:1/-1;min-height:auto}
+  .quicktitle{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#6a7b8b}
+  .quickvalue{font-size:13px;margin-top:5px}
+  #myEmployee{min-height:46px;border-radius:12px;background:#f7fafc}
+  .notify-btn{width:100%;margin-top:7px;border-radius:12px}
+
+  #todayBar{
+    margin:8px 10px;border-radius:18px;padding:14px 15px;
+    box-shadow:0 7px 20px rgba(10,54,84,.13);
+    background:linear-gradient(135deg,#0a3f62,#0e587c);
+  }
+  #todayBar .today-label{font-size:10px}
+  #todayBar strong{font-size:17px}
+  #todayBar button{min-height:40px;border-radius:12px}
+
+  main{padding:0 10px 18px!important}
+  .toolbar{
+    position:sticky;top:122px;z-index:70;
+    display:grid!important;grid-template-columns:auto auto 1fr;
+    gap:7px;padding:8px 0 9px;margin:0;
+    background:linear-gradient(180deg,rgba(238,243,247,.98),rgba(238,243,247,.90));
+  }
+  .toolbar .viewbtn{
+    min-width:66px;min-height:44px;border-radius:13px;font-size:13px
+  }
+  .toolbar select{
+    min-width:0;width:100%;min-height:44px;border-radius:13px;
+    background:#fff;border:1px solid #d7e2e9;
+    box-shadow:0 3px 10px rgba(20,52,78,.06)
+  }
+  .admin-login{grid-column:1/-1}
+  .admin-login button{width:100%;min-height:44px;border-radius:13px}
+
+  .day-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  .zone{
+    border:0!important;border-radius:18px!important;overflow:hidden;
+    box-shadow:0 6px 18px rgba(29,61,87,.09);
+    background:#fff
+  }
+  .zone h2{padding:12px 15px!important;font-size:17px!important}
+  .shift{
+    min-height:54px;padding:12px 15px!important;
+    align-items:center;border-top:1px solid #eef2f5!important
+  }
+  .shift b{font-size:15px}
+  .shift .time{font-size:14px}
+  .note{display:inline-block;margin-top:3px}
+
+  #weekGrid{
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scroll-snap-type:x mandatory;padding-bottom:6px
+  }
+  #weekGrid .week-grid{
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(82vw,82vw))!important;
+    gap:10px!important;min-width:max-content!important
+  }
+  .week-day{
+    scroll-snap-align:center;border:0!important;border-radius:18px!important;
+    box-shadow:0 6px 18px rgba(29,61,87,.09);padding:13px!important;background:#fff
+  }
+  .week-day h3{font-size:16px!important;margin-bottom:10px!important}
+  .vacation-week-row{
+    grid-template-columns:repeat(7,minmax(82vw,82vw))!important;
+    min-width:max-content!important;gap:10px!important
+  }
+  .vacation-week-cell{padding:0 7px!important}
+
+  .personal-alert{
+    margin:8px 10px;border-radius:16px;box-shadow:0 6px 18px rgba(29,61,87,.10)
+  }
+
+  #studentMain{
+    padding:0 10px 18px!important;background:transparent
+  }
+  .student-toolbar{
+    position:sticky;top:122px;z-index:70;
+    background:rgba(238,243,247,.96);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    padding:8px 0 10px;margin:0 0 8px
+  }
+  .student-toolbar button,.student-toolbar select{
+    min-height:44px;border-radius:13px
+  }
+  .student-day-grid{display:grid!important;grid-template-columns:1fr!important;gap:12px}
+  .student-zone{
+    border:0!important;border-radius:18px!important;
+    box-shadow:0 6px 18px rgba(29,61,87,.09);overflow:hidden;background:#fff
+  }
+  .student-shift{min-height:54px;padding:12px 14px!important}
+  .student-week-grid{
+    display:grid!important;grid-template-columns:repeat(7,minmax(82vw,82vw))!important;
+    gap:10px!important;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px
+  }
+  .student-week-day{
+    scroll-snap-align:center;border:0!important;border-radius:18px!important;
+    box-shadow:0 6px 18px rgba(29,61,87,.09);padding:13px!important;background:#fff
+  }
+
+  .modalback{padding:10px;align-items:flex-end}
+  .modal{
+    width:100%!important;max-width:none!important;max-height:92vh!important;
+    border-radius:22px 22px 10px 10px!important;
+    box-shadow:0 -12px 34px rgba(13,40,63,.18)!important
+  }
+  .modalactions{position:sticky;bottom:0;background:#fff;padding-top:10px}
+
+  .admin-dashboard{margin:8px 0 16px}
+  .admin-actionbar{border-radius:18px}
+  .admin-tools-grid{border:0;background:transparent;box-shadow:none;padding:0;margin-top:10px}
+  .admin-tool-card{
+    border:0;box-shadow:0 6px 18px rgba(29,61,87,.09);
+    background:#fff;border-radius:18px
+  }
+
+  .mobile-app-nav{
+    position:fixed;left:8px;right:8px;bottom:8px;z-index:120;
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:4px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+    border:1px solid rgba(15,75,109,.09);
+    border-radius:21px;
+    background:rgba(255,255,255,.94);
+    backdrop-filter:saturate(170%) blur(16px);
+    -webkit-backdrop-filter:saturate(170%) blur(16px);
+    box-shadow:0 9px 28px rgba(17,48,72,.16)
+  }
+  .mobile-nav-item{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    min-height:52px;padding:4px;border:0;background:transparent;color:#6b7c8c;
+    font-size:10px;font-weight:850;border-radius:14px
+  }
+  .mobile-nav-item.active{color:#084875;background:#edf6fb}
+  .mobile-nav-icon{font-size:18px;line-height:1}
+  .mobile-nav-plus{
+    width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+    color:#fff;background:linear-gradient(135deg,#083d68,#0c5d8b);
+    font-size:24px;box-shadow:0 4px 12px rgba(7,64,101,.24)
+  }
+  .mobile-nav-admin{display:none!important}
+  body.admin-mobile .mobile-app-nav{grid-template-columns:repeat(5,1fr)}
+  body.admin-mobile .mobile-nav-admin{display:flex!important}
 }
 
 </style>
@@ -1689,7 +1883,7 @@ onAuthStateChanged(auth,u=>{
    localStorage.setItem("cc_my_name",adminCrewName());
  }
 
- fillPeople();updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();startCrewContactsListener();startStudentShiftListener();startStudentDirectoryListener();renderDay();renderWeek();renderMessages();renderStudentAll();
+ fillPeople();updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();startCrewContactsListener();startStudentShiftListener();startStudentDirectoryListener();renderDay();renderWeek();renderMessages();renderStudentAll();syncMobileAdminState();
 });
 
 function updateImportButton(){
@@ -2456,6 +2650,59 @@ function startStudentDirectoryListener(){
 }
 
 
+
+// =========================
+// MOBIELE APP NAVIGATIE
+// =========================
+function mobileSetActive(id){
+ document.querySelectorAll(".mobile-nav-item").forEach(b=>b.classList.toggle("active",b.id===id));
+}
+function mobileCrewView(view){
+ setPlannerTab("crew");
+ const btn=[...document.querySelectorAll("main .viewbtn")].find(b=>b.dataset.view===view);
+ if(btn)btn.click();
+ mobileSetActive(view==="day"?"mobileNavDay":"mobileNavWeek");
+ setTimeout(()=>document.querySelector("main")?.scrollIntoView({behavior:"smooth",block:"start"}),40);
+}
+$("mobileNavToday").onclick=()=>{
+ if($("studentMain").classList.contains("active")){
+   studentEnsureDate(realTodayKey());$("studentDate").value=realTodayKey();
+   renderStudentAll();
+   $("studentDayBtn").click();
+ }else{
+   $("goTodayBtn")?.click();
+   mobileCrewView("day");
+ }
+ mobileSetActive("mobileNavToday");
+};
+$("mobileNavDay").onclick=()=>{
+ if($("studentMain").classList.contains("active")){
+   $("studentDayBtn").click();mobileSetActive("mobileNavDay");
+ }else mobileCrewView("day");
+};
+$("mobileNavWeek").onclick=()=>{
+ if($("studentMain").classList.contains("active")){
+   $("studentWeekBtn").click();mobileSetActive("mobileNavWeek");
+ }else mobileCrewView("week");
+};
+$("mobileNavMine").onclick=()=>{
+ if($("studentMain").classList.contains("active")){
+   $("studentPerson")?.focus();
+   $("studentPerson")?.scrollIntoView({behavior:"smooth",block:"center"});
+ }else{
+   $("myEmployee")?.focus();
+   $("myEmployee")?.scrollIntoView({behavior:"smooth",block:"center"});
+ }
+ mobileSetActive("mobileNavMine");
+};
+$("mobileNavAdminAdd").onclick=()=>{
+ if(!isAdminUser())return;
+ if($("studentMain").classList.contains("active"))$("studentAddShiftBtn")?.click();
+ else $("addShiftBtn")?.click();
+};
+function syncMobileAdminState(){
+ document.body.classList.toggle("admin-mobile",isAdminUser());
+}
 function icsEscape(v){
  return String(v??"")
    .replace(/\\/g,"\\\\")
@@ -2985,6 +3232,25 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+
+
+<nav id="mobileAppNav" class="mobile-app-nav" aria-label="Mobiele navigatie">
+  <button id="mobileNavToday" type="button" class="mobile-nav-item">
+    <span class="mobile-nav-icon">⌂</span><span>Vandaag</span>
+  </button>
+  <button id="mobileNavDay" type="button" class="mobile-nav-item active">
+    <span class="mobile-nav-icon">☀️</span><span>Dag</span>
+  </button>
+  <button id="mobileNavWeek" type="button" class="mobile-nav-item">
+    <span class="mobile-nav-icon">🗓️</span><span>Week</span>
+  </button>
+  <button id="mobileNavMine" type="button" class="mobile-nav-item">
+    <span class="mobile-nav-icon">👤</span><span>Mijn planning</span>
+  </button>
+  <button id="mobileNavAdminAdd" type="button" class="mobile-nav-item mobile-nav-admin" style="display:none">
+    <span class="mobile-nav-plus">＋</span><span>Shift</span>
+  </button>
+</nav>
 
 </body>
 </html>
