@@ -1849,6 +1849,103 @@ body.admin-active .shift:hover{background:#fff8e8}
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 
+
+<style id="v12-compact-leave-indicator">
+/* ===== Compacte verlofweergave: zichtbaar, maar ondergeschikt aan de planning ===== */
+#dayGrid > .zone.verlof{
+  grid-column:1/-1;
+  display:flex !important;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+  width:fit-content;
+  max-width:100%;
+  min-height:0 !important;
+  padding:2px 0 !important;
+  margin:0 0 2px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  overflow:visible !important;
+}
+
+#dayGrid > .zone.verlof h2{
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:transparent !important;
+  color:#7b8792 !important;
+  font-size:10px !important;
+  line-height:1.2 !important;
+  font-weight:700 !important;
+  letter-spacing:0 !important;
+}
+
+#dayGrid > .zone.verlof .shift{
+  width:auto !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:3px 7px !important;
+  border:1px solid #e5ebe7 !important;
+  border-radius:999px !important;
+  background:#f7f9f8 !important;
+  box-shadow:none !important;
+  color:#68746d !important;
+  font-size:10px !important;
+  line-height:1.15 !important;
+  align-items:center !important;
+}
+
+#dayGrid > .zone.verlof .shift b{
+  font-size:10px !important;
+  font-weight:700 !important;
+  color:#68746d !important;
+}
+
+#dayGrid > .zone.verlof .shift.editable:hover{
+  background:#f2f6f3 !important;
+  outline:1px solid #d6e1d9 !important;
+}
+
+/* Weekweergave: verlof blijft een klein tekstlabel boven de dagkolommen. */
+.vacation-week-row{
+  margin-bottom:3px !important;
+}
+.vacation-week-cell{
+  min-height:14px !important;
+  padding:0 5px !important;
+  line-height:1.1 !important;
+}
+.vacation-week-cell .vacation-name{
+  margin-right:4px !important;
+  font-size:9px !important;
+  font-weight:650 !important;
+  color:#7b8792 !important;
+  opacity:.88;
+}
+
+@media(max-width:720px){
+  #dayGrid > .zone.verlof{
+    gap:5px;
+    margin:0 0 1px !important;
+  }
+  #dayGrid > .zone.verlof h2{
+    font-size:9px !important;
+  }
+  #dayGrid > .zone.verlof .shift{
+    padding:2px 6px !important;
+    font-size:9px !important;
+  }
+  #dayGrid > .zone.verlof .shift b{
+    font-size:9px !important;
+  }
+  .vacation-week-cell .vacation-name{
+    font-size:8px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
