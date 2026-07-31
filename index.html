@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.13.4-my-planning-persistent-filter-2026-07-31">
+<meta name="cablecrew-version" content="v12.13.5-my-planning-chronological-zones-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -2215,9 +2215,26 @@ function renderDay(){
    ?`<section class="zone verlof"><h2>🏝️ Verlof</h2>${vacationRows.map(x=>`<div class="shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><div><b>${esc(x.employee)}</b></div></div>`).join("")}</section>`
    :"";
 
- const zoneHtml=normalZones.map(z=>{
-   const rows=list.filter(x=>x.date===d&&x.zone===z);
-   // In "Mijn planning" tonen we uitsluitend zones waarin deze persoon die dag effectief staat.
+ let zonesForDay=[...normalZones];
+
+ // In "Mijn planning" rangschikken we de zones op het vroegste startuur
+ // van de eigen shift die dag. Zo komt bv. ROOKIE 09:00–12:00
+ // automatisch boven PRO 15:00–18:00.
+ if(mineMode){
+   zonesForDay=zonesForDay
+     .filter(z=>list.some(x=>x.date===d&&x.zone===z))
+     .sort((a,b)=>{
+       const aStarts=list.filter(x=>x.date===d&&x.zone===a).map(x=>x.start||"99:99").sort();
+       const bStarts=list.filter(x=>x.date===d&&x.zone===b).map(x=>x.start||"99:99").sort();
+       return (aStarts[0]||"99:99").localeCompare(bStarts[0]||"99:99");
+     });
+ }
+
+ const zoneHtml=zonesForDay.map(z=>{
+   const rows=list
+     .filter(x=>x.date===d&&x.zone===z)
+     .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.end||"").localeCompare(b.end||""));
+   // Buiten "Mijn planning" blijven lege zones zichtbaar zoals vroeger.
    if(mineMode && !rows.length)return "";
    return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${rows.length?rows.map(shiftHtml).join(""):'<div class="empty" style="padding:12px 16px">Geen planning</div>'}</section>`;
  }).join("");
