@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.20.0-landscape-week-swipe-fix-2026-07-31">
+<meta name="cablecrew-version" content="v12.23.0-school-zones-plus-blocks-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -2135,6 +2135,106 @@ body.contract-manager #contractsBtn{grid-column:1}
 }
 </style>
 
+
+<style id="v12-21-school-splash-blocks">
+.activity-modal{width:min(620px,96vw)}
+.activity-zones-label{font-size:12px;font-weight:850;color:#51606b;margin-bottom:7px}
+.activity-zone-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.activity-zone-choices label{
+  display:flex;align-items:center;gap:7px;padding:9px 10px;
+  border:1px solid #dce5ec;border-radius:9px;background:#f8fafc;
+  font-size:12px;font-weight:800;color:#405468
+}
+.activity-zone-choices input{width:auto;margin:0}
+.activity-preview{
+  margin-top:12px;padding:9px 11px;border-radius:10px;background:#f4f7f9;
+  color:#526577;font-size:12px;line-height:1.4
+}
+.activity-preview:empty{display:none}
+
+.activity-block{
+  margin:8px 12px 4px;padding:9px 11px;
+  border-radius:10px;border:1px solid #d9e4ec;
+  background:#f7fafc;color:#263d52;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:12px;line-height:1.3
+}
+.activity-block.school{background:#eef7ff;border-color:#cfe4f5}
+.activity-block.splash{background:#edf9fb;border-color:#c6e8ec}
+.activity-block.editable{cursor:pointer}
+.activity-block.editable:hover{outline:2px solid #efb340}
+.activity-main{min-width:0}
+.activity-main b{font-size:12px}
+.activity-meta{font-size:11px;color:#607487;margin-top:2px}
+.activity-count{
+  flex:0 0 auto;padding:4px 7px;border-radius:999px;
+  background:#fff;font-size:11px;font-weight:900;color:#29465d;
+  border:1px solid rgba(70,100,125,.13)
+}
+
+.mini-activity{
+  margin:4px 0;padding:5px 6px;border-radius:7px;
+  background:#f3f8fb;border:1px solid #dce8ef;
+  font-size:9px;line-height:1.25;color:#3b566c
+}
+.mini-activity.school{background:#eef7ff}
+.mini-activity.splash{background:#edf9fb}
+.mini-activity.editable{cursor:pointer}
+.mini-activity b{font-size:9px}
+
+@media(max-width:720px){
+  .activity-zone-choices{grid-template-columns:1fr}
+  .activity-block{margin:7px 10px 3px;padding:8px 9px}
+}
+@media(max-height:520px) and (orientation:landscape){
+  .mini-activity{font-size:7px!important;padding:3px 4px!important;margin:2px 0!important}
+  .mini-activity b{font-size:7px!important}
+}
+</style>
+
+
+<style id="v12-22-activity-employee-assignment">
+.activity-employee-choices{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.activity-employee-choices label{
+  display:flex;align-items:center;gap:7px;padding:9px 10px;
+  border:1px solid #dce5ec;border-radius:9px;background:#fff;
+  font-size:12px;font-weight:800;color:#405468
+}
+.activity-employee-choices input{width:auto;margin:0}
+.activity-assignees{
+  margin-top:4px;
+  font-size:11px;
+  color:#425b70;
+  font-weight:750
+}
+.activity-assignee-chip{
+  display:inline-block;
+  margin:2px 4px 0 0;
+  padding:3px 6px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid rgba(70,100,125,.13);
+  font-size:10px;
+}
+@media(max-width:720px){
+  .activity-employee-choices{grid-template-columns:1fr}
+}
+</style>
+
+
+<style id="v12-23-school-zone-fallback">
+:root{
+  --school:#dceef8;
+  --schoolsplash:#e6e3f6;
+}
+.school h2{background:var(--school)}
+.schoolsplash h2{background:var(--schoolsplash)}
+</style>
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -2247,6 +2347,7 @@ body.contract-manager #contractsBtn{grid-column:1}
 
       <div class="admin-main-actions">
         <button id="addShiftBtn" class="admin-action add-action">＋ <span>Shift toevoegen</span></button>
+        <button id="addActivityBtn" class="admin-action">🏫 <span>School / Splash</span></button>
         <button id="duplicateDayBtn" class="admin-action">📄 <span>Dag kopiëren</span></button>
         <button id="copyWeekBtn" class="admin-action">🗓️ <span>Week kopiëren</span></button>
       </div>
@@ -2598,7 +2699,7 @@ body.contract-manager #contractsBtn{grid-column:1}
       <button type="button" data-time="15:00,19:30">15:00–19:30</button>
     </div>
     <label class="wide">Zone<select id="editZone">
-      <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option><option>SCHOOL</option><option>SCHOOL / SOT</option><option>KLUS</option><option>VERLOF</option>
+      <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option><option>SCHOOL</option><option>SCHOOL / SPLASH</option><option>KLUS</option><option>VERLOF</option>
     </select></label>
     <label class="wide">Opmerking<textarea id="editNote" rows="2"></textarea></label>
     <div id="multiShiftToggleWrap" class="wide multi-shift-toggle">
@@ -2626,6 +2727,50 @@ body.contract-manager #contractsBtn{grid-column:1}
   </div>
 </div></div>
 
+
+
+<div id="activityModal" class="modalback">
+  <div class="modal activity-modal">
+    <h2 id="activityTitle">School / Splash toevoegen</h2>
+    <div class="formgrid">
+      <label>Datum<input id="activityDate" type="date"></label>
+      <label>Type
+        <select id="activityType">
+          <option value="SCHOOL">🏫 School</option>
+          <option value="SPLASH">💦 Splash</option>
+        </select>
+      </label>
+      <label>Startuur<input id="activityStart" type="time"></label>
+      <label>Einduur<input id="activityEnd" type="time"></label>
+      <label class="wide">Aantal personen<input id="activityParticipants" type="number" min="1" step="1" placeholder="bv. 45"></label>
+      <div class="wide">
+        <div class="activity-zones-label">Medewerkers toewijzen aan deze groep</div>
+        <div id="activityEmployeeChoices" class="activity-employee-choices"></div>
+      </div>
+      <div class="wide">
+        <div class="activity-zones-label">Plaats dit blok in één of meerdere zones</div>
+        <div id="activityZoneChoices" class="activity-zone-choices">
+          <label><input type="checkbox" value="PRO"> PRO</label>
+          <label><input type="checkbox" value="ROOKIE"> ROOKIE</label>
+          <label><input type="checkbox" value="2.0"> 2.0</label>
+          <label><input type="checkbox" value="STANDBY"> STANDBY</label>
+          <label><input type="checkbox" value="FOIL"> FOIL</label>
+          <label><input type="checkbox" value="TT / SP / KIDSSESSION"> TT / SP / KIDSSESSION</label>
+          <label><input type="checkbox" value="SCHOOL"> SCHOOL</label>
+          <label><input type="checkbox" value="SCHOOL / SPLASH"> SCHOOL / SPLASH</label>
+          <label><input type="checkbox" value="KLUS"> KLUS</label>
+        </div>
+      </div>
+      <label class="wide">Opmerking<textarea id="activityNote" rows="2" placeholder="bv. Sint-Jozefschool, lunch om 12u30..."></textarea></label>
+    </div>
+    <div class="activity-preview" id="activityPreview"></div>
+    <div class="modalactions">
+      <button id="deleteActivityBtn" class="danger" style="display:none">Verwijderen</button>
+      <button id="cancelActivityBtn">Annuleren</button>
+      <button id="saveActivityBtn" class="success">Opslaan</button>
+    </div>
+  </div>
+</div>
 
 <div id="contractsModal" class="modalback"><div class="modal contracts-modal">
   <div class="year-head">
@@ -2715,8 +2860,8 @@ const firebaseConfig = {
 
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 const $=id=>document.getElementById(id);
-const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SOT","KLUS","VERLOF"];
-const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SOT":"schoolsot","KLUS":"klus","VERLOF":"verlof"};
+const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
+const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
 let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewDirectory=new Map(), crewContactsUnsub=null,
 studentShifts=[], studentDirectory=new Map(), studentShiftUnsub=null, studentDirectoryUnsub=null,
 studentEditing=null, studentView="day";
@@ -2726,7 +2871,7 @@ const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+Stri
 function mondayOf(k){const d=new Date(k+"T12:00:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
 function label(k){return new Date(k+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
 function sorted(a){return [...a].sort((x,y)=>x.date.localeCompare(y.date)||x.start.localeCompare(y.start)||x.zone.localeCompare(y.zone)||x.employee.localeCompare(y.employee))}
-function visibleShifts(){const n=$("myEmployee").value;return n?shifts.filter(x=>x.employee===n):shifts}
+function visibleShifts(){const n=$("myEmployee").value;const base=normalCrewShifts();return n?base.filter(x=>x.employee===n):base}
 
 async function loadFallback(){
  try{
@@ -2752,7 +2897,7 @@ function initDateOptions(){
  $("date").value=chosen;
 }
 function people(){
- const shiftNames=[...new Set(shifts.map(x=>x.employee).filter(Boolean))];
+ const shiftNames=[...new Set(normalCrewShifts().map(x=>x.employee).filter(Boolean))];
  const activeDirectory=[...crewDirectory.entries()]
    .filter(([name,data])=>data?.active!==false)
    .map(([name])=>name);
@@ -2829,9 +2974,38 @@ function forceAdminDeviceOverview(){
 }
 
 function renderToday(){
- const rows=shifts.filter(x=>x.date===key(new Date())), names=[...new Set(rows.map(x=>x.employee))].sort();
+ const rows=normalCrewShifts().filter(x=>x.date===key(new Date())), names=[...new Set(rows.map(x=>x.employee).filter(Boolean))].sort();
  $("workingToday").textContent=names.length?names.join(", "):"Geen crew ingepland";
 }
+
+function activityRecords(){
+ return shifts.filter(x=>x.recordType==="activity");
+}
+function normalCrewShifts(){
+ return shifts.filter(x=>x.recordType!=="activity");
+}
+function activityBlocksFor(dateKey,zone){
+ return activityRecords()
+   .filter(x=>x.date===dateKey && Array.isArray(x.activityZones) && x.activityZones.includes(zone))
+   .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.activityType||"").localeCompare(b.activityType||""));
+}
+function activityLabel(x){
+ return x.activityType==="SPLASH"?"💦 Splash":"🏫 School";
+}
+function activityBlockHtml(x,mini=false){
+ const count=Number(x.participants)||0;
+ const classes=`${mini?"mini-activity":"activity-block"} ${x.activityType==="SPLASH"?"splash":"school"} ${editMode?"editable":""}`;
+ if(mini){
+   const assigned=Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
+   return `<div class="${classes}" data-activity-id="${esc(x._id||"")}"><b>${activityLabel(x)}</b>${count?` · ${count} pers.`:""} · ${esc(x.start||"")}–${esc(x.end||"")}${x.note?` · ${esc(x.note)}`:""}${assigned.length?`<br>👤 ${assigned.map(esc).join(", ")}`:""}</div>`;
+ }
+ const assigned=Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
+ return `<div class="${classes}" data-activity-id="${esc(x._id||"")}">
+   <div class="activity-main"><b>${activityLabel(x)}</b><div class="activity-meta">${esc(x.start||"")}–${esc(x.end||"")}${x.note?` · ${esc(x.note)}`:""}</div>${assigned.length?`<div class="activity-assignees">${assigned.map(n=>`<span class="activity-assignee-chip">${esc(n)}</span>`).join("")}</div>`:""}</div>
+   ${count?`<span class="activity-count">${count} pers.</span>`:""}
+ </div>`;
+}
+
 function shiftHtml(x){
  const change=shiftChangeState(x._id);
  const badge=change?`<span class="change-badge ${change==="Gewijzigd"?"changed":""}" data-ack-shift="${esc(x._id||"")}">${change}</span>`:"";
@@ -2877,9 +3051,24 @@ function renderDay(){
    const rows=list
      .filter(x=>x.date===d&&x.zone===z)
      .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.end||"").localeCompare(b.end||""));
-   // Lege zones worden nergens meer getoond: dagplanning én Mijn planning.
-   if(!rows.length)return "";
-   return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${rows.map(shiftHtml).join("")}</section>`;
+   const blocks=activityBlocksFor(d,z);
+
+   // In Mijn planning tonen we alleen relevante activiteiten:
+   // ofwel is de medewerker expliciet aan de groep toegewezen,
+   // ofwel werkt hij/zij in die zone op die dag.
+   let relevantBlocks=blocks;
+   if(mineMode){
+     const selectedEmployee=($("myEmployee").value||"").trim();
+     relevantBlocks=blocks.filter(b=>
+       (Array.isArray(b.assignedEmployees)&&b.assignedEmployees.includes(selectedEmployee)) ||
+       rows.length>0
+     );
+     if(!rows.length && !relevantBlocks.length)return "";
+   }else if(!rows.length && !blocks.length){
+     return "";
+   }
+
+   return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${relevantBlocks.map(x=>activityBlockHtml(x,false)).join("")}${rows.map(shiftHtml).join("")}</section>`;
  }).join("");
 
  if(!vacationRows.length && !zoneHtml){
@@ -2911,7 +3100,17 @@ function renderWeek(){
  for(let i=0;i<7;i++){
    const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);
    daysHtml+=`<section class="week-day"><h3>${d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"numeric"})}</h3>`;
-   let weekZones=zones.filter(z=>z!=="VERLOF"&&list.some(x=>x.date===dk&&x.zone===z));
+   let weekZones=zones.filter(z=>{
+     if(z==="VERLOF")return false;
+     const hasOwnOrVisibleShift=list.some(x=>x.date===dk&&x.zone===z);
+     const blocks=activityBlocksFor(dk,z);
+     if(mineMode){
+       const selectedEmployee=($("myEmployee").value||"").trim();
+       const assignedBlock=blocks.some(b=>Array.isArray(b.assignedEmployees)&&b.assignedEmployees.includes(selectedEmployee));
+       return hasOwnOrVisibleShift || assignedBlock;
+     }
+     return hasOwnOrVisibleShift || blocks.length>0;
+   });
 
    // In "Mijn planning" worden de zones per dag chronologisch gerangschikt
    // volgens het vroegste startuur. Voor Simon blijft STANDBY altijd eerst.
@@ -2934,7 +3133,15 @@ function renderWeek(){
      const rows=list
        .filter(x=>x.date===dk&&x.zone===z)
        .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.end||"").localeCompare(b.end||""));
-     if(rows.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${rows.map(x=>`<div class="mini-shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("")}</div>`;
+     let blocks=activityBlocksFor(dk,z);
+     if(mineMode){
+       const selectedEmployee=($("myEmployee").value||"").trim();
+       blocks=blocks.filter(b=>
+         (Array.isArray(b.assignedEmployees)&&b.assignedEmployees.includes(selectedEmployee)) ||
+         rows.length>0
+       );
+     }
+     if(rows.length||blocks.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${blocks.map(x=>activityBlockHtml(x,true)).join("")}${rows.map(x=>`<div class="mini-shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("")}</div>`;
    });
    daysHtml+=`</section>`;
  }
@@ -3039,6 +3246,12 @@ $("myEmployee").onchange=e=>{
 
 function findShift(id){return shifts.find(x=>x._id===id)}
 document.addEventListener("click",e=>{
+ const activityEl=e.target.closest("[data-activity-id]");
+ if(!activityEl||!editMode||!user)return;
+ const x=shifts.find(s=>s._id===activityEl.dataset.activityId && s.recordType==="activity");
+ if(x){e.preventDefault();e.stopPropagation();openActivity(x)}
+});
+document.addEventListener("click",e=>{
  const el=e.target.closest("[data-id]");if(!el||!editMode||!user)return;
  const x=findShift(el.dataset.id);if(x)openShift(x);
 });
@@ -3106,7 +3319,7 @@ function updateWhatsAppShiftButton(){
 }
 
 
-const MULTI_SHIFT_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SOT","KLUS"];
+const MULTI_SHIFT_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS"];
 
 function multiShiftZoneOptions(selected="PRO"){
  return MULTI_SHIFT_ZONES.map(z=>`<option value="${esc(z)}"${z===selected?' selected':''}>${esc(z)}</option>`).join("");
@@ -3205,6 +3418,92 @@ async function saveMultiShifts(){
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 }
 
+
+let activityEditing=null;
+
+
+function availableCrewNamesForActivity(){
+ const names=[...new Set([
+   ...[...crewDirectory.values()].map(x=>x?.name).filter(Boolean),
+   ...normalCrewShifts().map(x=>x.employee).filter(Boolean)
+ ])];
+ return names.sort((a,b)=>a.localeCompare(b,"nl"));
+}
+function renderActivityEmployeeChoices(selectedNames=[]){
+ const wrap=$("activityEmployeeChoices");
+ if(!wrap)return;
+ const selected=new Set(selectedNames||[]);
+ const names=availableCrewNamesForActivity();
+ wrap.innerHTML=names.length?names.map(name=>`
+   <label><input type="checkbox" value="${esc(name)}"${selected.has(name)?' checked':''}> ${esc(name)}</label>
+ `).join(""):`<div class="empty">Geen medewerkers gevonden.</div>`;
+ wrap.querySelectorAll('input[type="checkbox"]').forEach(c=>c.addEventListener("change",updateActivityPreview));
+}
+function selectedActivityEmployees(){
+ return [...document.querySelectorAll('#activityEmployeeChoices input[type="checkbox"]:checked')].map(x=>x.value);
+}
+
+function selectedActivityZones(){
+ return [...document.querySelectorAll('#activityZoneChoices input[type="checkbox"]:checked')].map(x=>x.value);
+}
+function updateActivityPreview(){
+ const type=$("activityType")?.value==="SPLASH"?"💦 Splash":"🏫 School";
+ const zonesChosen=selectedActivityZones();
+ const count=Number($("activityParticipants")?.value)||0;
+ const start=$("activityStart")?.value||"";
+ const end=$("activityEnd")?.value||"";
+ const box=$("activityPreview");
+ if(!box)return;
+ const employees=selectedActivityEmployees();
+ box.innerHTML=`<b>${type}</b>${count?` · ${count} personen`:""}${start&&end?` · ${start}–${end}`:""}<br>${zonesChosen.length?`Zichtbaar in: ${zonesChosen.map(esc).join(", ")}`:"Kies minstens één zone."}${employees.length?`<br>Medewerkers: ${employees.map(esc).join(", ")}`:""}`;
+}
+function openActivity(x=null){
+ activityEditing=x;
+ $("activityTitle").textContent=x?"School / Splash aanpassen":"School / Splash toevoegen";
+ $("activityDate").value=x?.date||$("date").value||realTodayKey();
+ $("activityType").value=x?.activityType||"SCHOOL";
+ $("activityStart").value=x?.start||"09:00";
+ $("activityEnd").value=x?.end||"12:00";
+ $("activityParticipants").value=x?.participants||"";
+ $("activityNote").value=x?.note||"";
+ const selected=new Set(Array.isArray(x?.activityZones)?x.activityZones:["PRO"]);
+ document.querySelectorAll('#activityZoneChoices input[type="checkbox"]').forEach(c=>c.checked=selected.has(c.value));
+ renderActivityEmployeeChoices(Array.isArray(x?.assignedEmployees)?x.assignedEmployees:[]);
+ $("deleteActivityBtn").style.display=x?"inline-block":"none";
+ updateActivityPreview();
+ $("activityModal").classList.add("show");
+}
+async function saveActivity(){
+ const v={
+   recordType:"activity",
+   activityType:$("activityType").value,
+   date:$("activityDate").value,
+   start:$("activityStart").value,
+   end:$("activityEnd").value,
+   participants:Number($("activityParticipants").value)||0,
+   activityZones:selectedActivityZones(),
+   assignedEmployees:selectedActivityEmployees(),
+   note:$("activityNote").value.trim(),
+   employee:"",
+   zone:"__ACTIVITY__"
+ };
+ if(!v.date||!v.start||!v.end)return alert("Vul datum en uren in.");
+ if(mins(v.end)<=mins(v.start))return alert("Het einduur moet na het startuur liggen.");
+ if(!v.activityZones.length)return alert("Kies minstens één zone.");
+ if(v.participants<1 && !confirm("Je hebt geen aantal personen ingevuld. Toch opslaan?"))return;
+
+ try{
+   if(activityEditing){
+     await updateDoc(doc(db,"shifts",activityEditing._id),v);
+     await writeAudit(`${v.activityType==="SPLASH"?"Splash":"School"} aangepast`,activityEditing,v);
+   }else{
+     await addDoc(collection(db,"shifts"),v);
+     await writeAudit(`${v.activityType==="SPLASH"?"Splash":"School"} toegevoegd`,null,v);
+   }
+   $("activityModal").classList.remove("show");
+ }catch(e){alert("Opslaan mislukt: "+e.message)}
+}
+
 function openShift(x=null){
  editing=x;
  if($("multiShiftRows"))$("multiShiftRows").innerHTML="";
@@ -3220,6 +3519,23 @@ function openShift(x=null){
  $("keepAdding").checked=false;updateWhatsAppShiftButton();$("shiftModal").classList.add("show");
 }
 $("addShiftBtn").onclick=()=>openShift();
+$("addActivityBtn").onclick=()=>openActivity();
+$("cancelActivityBtn").onclick=()=>$("activityModal").classList.remove("show");
+$("saveActivityBtn").onclick=saveActivity;
+$("deleteActivityBtn").onclick=async()=>{
+ if(!activityEditing)return;
+ if(!confirm("Dit School / Splash-blok verwijderen?"))return;
+ try{
+   await deleteDoc(doc(db,"shifts",activityEditing._id));
+   await writeAudit(`${activityEditing.activityType==="SPLASH"?"Splash":"School"} verwijderd`,activityEditing,null);
+   $("activityModal").classList.remove("show");
+ }catch(e){alert("Verwijderen mislukt: "+e.message)}
+};
+["activityDate","activityType","activityStart","activityEnd","activityParticipants","activityNote"].forEach(id=>{
+ $(id)?.addEventListener("input",updateActivityPreview);
+ $(id)?.addEventListener("change",updateActivityPreview);
+});
+document.querySelectorAll('#activityZoneChoices input[type="checkbox"]').forEach(c=>c.addEventListener("change",updateActivityPreview));
 $("cancelShift").onclick=()=>{$("shiftModal").classList.remove("show");setMultiShiftMode(false)};
 $("multiShiftMode").addEventListener("change",e=>setMultiShiftMode(e.target.checked));
 $("addMultiShiftRow").onclick=()=>addMultiShiftRow();
@@ -3265,7 +3581,7 @@ function mins(t){const [h,m]=(t||"00:00").split(":").map(Number);return h*60+m}
 function overlapMatches(v){
  if(v.zone==="VERLOF"||!v.date||!v.employee||!v.start||!v.end)return [];
  const a=mins(v.start),b=mins(v.end);
- return shifts.filter(x=>x._id!==editing?._id && x.date===v.date && x.employee===v.employee &&
+ return normalCrewShifts().filter(x=>x._id!==editing?._id && x.date===v.date && x.employee===v.employee &&
    a<mins(x.end) && b>mins(x.start));
 }
 function updateOverlapWarning(){
@@ -3304,7 +3620,7 @@ function uncoveredOriginalShift(before,after=null){
  if(!before || before.zone==="VERLOF" || !before.date || !before.start || !before.end)return null;
 
  // Andere bestaande shifts, zonder de shift die momenteel wordt aangepast/verwijderd.
- const others=shifts.filter(x=>x._id!==before._id);
+ const others=normalCrewShifts().filter(x=>x._id!==before._id);
 
  // Bij een wijziging telt de nieuwe versie zelf ook mee als ze hetzelfde oorspronkelijke
  // zoneslot volledig blijft afdekken (bv. gewoon medewerker wisselen).
@@ -3650,7 +3966,7 @@ function contractCovers(type,name,date){
 function contractOverview(type){
  const names=type==="student"
    ?[...new Set(studentShifts.map(x=>x.employee).filter(Boolean))]
-   :[...new Set(shifts.filter(x=>x.zone!=="VERLOF").map(x=>x.employee).filter(Boolean))];
+   :[...new Set(normalCrewShifts().filter(x=>x.zone!=="VERLOF").map(x=>x.employee).filter(Boolean))];
 
  const rows=[];
  names.forEach(name=>{
@@ -3874,6 +4190,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
  if(shiftsInitialized && notificationsEnabled()){
    snap.docChanges().forEach(ch=>{
      const data={_id:ch.doc.id,...ch.doc.data()};
+     if(data.recordType==="activity")return;
      if(!relevantToMe(data))return;
 
      if(ch.type==="added"){
