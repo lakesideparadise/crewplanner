@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.13.3-my-planning-own-zones-only-2026-07-31">
+<meta name="cablecrew-version" content="v12.13.4-my-planning-persistent-filter-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -3650,9 +3650,15 @@ function renderMobileDayScroller(selectedKey=mobileSelectedDate()){
  }
  wrap.innerHTML=html;
  wrap.querySelectorAll("[data-mobile-date]").forEach(btn=>btn.onclick=()=>{
-   document.body.classList.remove("mobile-mine-mode");
+   const mineMode=document.body.classList.contains("mobile-mine-mode");
    mobileSetDate(btn.dataset.mobileDate);
-   mobileSetActive(btn.dataset.mobileDate===realTodayKey()?"mobileNavToday":"");
+   if(mineMode){
+     document.body.classList.add("mobile-mine-mode");
+     renderDay();
+     mobileSetActive("mobileNavMine");
+   }else{
+     mobileSetActive(btn.dataset.mobileDate===realTodayKey()?"mobileNavToday":"");
+   }
  });
  renderMobileTodayText();
 }
@@ -3684,9 +3690,15 @@ function renderMobileDateCalendar(){
  $("mobileDateCalendarGrid").querySelectorAll("[data-mobile-calendar-date]").forEach(btn=>{
    btn.onclick=()=>{
      const target=btn.dataset.mobileCalendarDate;
-     document.body.classList.remove("mobile-mine-mode");
+     const mineMode=document.body.classList.contains("mobile-mine-mode");
      mobileSetDate(target);
-     mobileSetActive(target===realTodayKey()?"mobileNavToday":"");
+     if(mineMode){
+       document.body.classList.add("mobile-mine-mode");
+       renderDay();
+       mobileSetActive("mobileNavMine");
+     }else{
+       mobileSetActive(target===realTodayKey()?"mobileNavToday":"");
+     }
      $("mobileDateCalendarModal").classList.remove("show");
    };
  });
@@ -3768,12 +3780,17 @@ $("mobileNavToday").onclick=()=>{
  mobileSetActive("mobileNavToday");
 };
 $("mobileNavTomorrow").onclick=()=>{
- document.body.classList.remove("mobile-mine-mode");
+ const mineMode=document.body.classList.contains("mobile-mine-mode");
  const d=new Date(realTodayKey()+"T12:00:00");d.setDate(d.getDate()+1);
  const tomorrow=key(d);
  mobileSetDate(tomorrow);
  if($("studentMain").classList.contains("active"))$("studentDayBtn").click();
- else{
+ else if(mineMode){
+   document.body.classList.add("mobile-mine-mode");
+   renderDay();renderWeek();
+   mobileSetActive("mobileNavMine");
+   return;
+ }else{
    $("myEmployee").value="";
    const dayBtn=[...document.querySelectorAll("main .viewbtn")].find(b=>b.dataset.view==="day");
    dayBtn?.click();
