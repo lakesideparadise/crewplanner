@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.3-whatsapp-only-badge-fix-2026-07-31">
+<meta name="cablecrew-version" content="v12.4-modern-admin-dashboard-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -451,6 +451,161 @@ body.admin-active .shift:hover{background:#fff8e8}
 
 /* V12.3: Crew Inbox uitgeschakeld; WhatsApp vervangt interne berichten. */
 #messagesBtn,#messagesPanel{display:none!important}
+
+/* ===== V12.4 MODERN ADMIN DASHBOARD ===== */
+.admin-dashboard{
+  display:none;
+  padding:0;
+  margin:14px 0 20px;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+.admin-dashboard.show{display:block}
+
+.admin-actionbar{
+  display:grid;
+  grid-template-columns:minmax(230px,1fr) minmax(270px,1.15fr) auto;
+  gap:14px;
+  align-items:center;
+  padding:20px 22px;
+  border-radius:18px;
+  color:#fff;
+  background:linear-gradient(135deg,#07365a 0%,#0b4f78 58%,#08385e 100%);
+  box-shadow:0 12px 30px rgba(11,52,82,.18);
+}
+.admin-identity{display:flex;align-items:center;gap:12px;min-width:0}
+.admin-avatar{
+  width:48px;height:48px;border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(0,0,0,.16);
+  font-size:22px;flex:0 0 auto
+}
+.admin-identity strong{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.admin-identity small{display:block;color:#f2bd44;font-weight:800;margin-top:3px}
+.admin-actionbar .edit-hint{
+  display:flex;align-items:center;justify-content:center;
+  min-height:50px;padding:12px 16px;border-radius:12px;
+  background:linear-gradient(135deg,#ffd66f,#f5bd3d);
+  border:1px solid #e6ad2b;color:#0d2840;font-weight:900;
+  text-align:center;box-shadow:0 5px 14px rgba(220,156,16,.20)
+}
+.admin-main-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.admin-action{
+  min-height:50px;padding:0 16px;border-radius:12px;
+  background:#fff;color:#10263a;border:1px solid rgba(255,255,255,.6);
+  box-shadow:0 5px 14px rgba(0,0,0,.10);
+  font-weight:850;white-space:nowrap
+}
+.admin-action.add-action{
+  color:#fff;background:transparent;border:1px solid #3c84b4;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)
+}
+.admin-action:hover{transform:translateY(-1px)}
+
+.admin-tools-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;margin-top:16px;padding:14px;
+  border:1px solid #e6ecf2;border-radius:18px;
+  background:rgba(255,255,255,.82);
+  box-shadow:0 10px 28px rgba(25,52,76,.08)
+}
+.admin-tool-card{
+  position:relative;display:grid;
+  grid-template-columns:58px minmax(0,1fr) 18px;
+  align-items:center;gap:12px;text-align:left;
+  min-height:138px;padding:16px 16px;
+  border:1px solid #e5ebf1;border-radius:15px;background:#fff;
+  color:#10263a;box-shadow:0 5px 16px rgba(24,55,82,.07);
+  overflow:hidden;transition:.18s ease
+}
+.admin-tool-card::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--tool-accent,#2f89e5)
+}
+.admin-tool-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(24,55,82,.12);border-color:#d7e2eb}
+.tool-icon{
+  width:56px;height:56px;border-radius:50%;display:grid;place-items:center;
+  font-size:28px;background:var(--tool-bg,#eef6ff)
+}
+.tool-copy{display:flex;flex-direction:column;gap:8px;min-width:0}
+.tool-copy b{font-size:16px;line-height:1.1;color:#10263a}
+.tool-copy small{font-size:12px;line-height:1.45;color:#607086;font-weight:650}
+.tool-arrow{font-size:28px;font-weight:400;color:#355269}
+.tool-blue{--tool-accent:#2b92ed;--tool-bg:#e8f4ff}
+.tool-orange{--tool-accent:#f2a51d;--tool-bg:#fff4df}
+.tool-yellow{--tool-accent:#efc21f;--tool-bg:#fff8d9}
+.tool-green{--tool-accent:#28b98d;--tool-bg:#e5f8f2}
+.tool-purple{--tool-accent:#8e60ec;--tool-bg:#f0eaff}
+.tool-lime{--tool-accent:#56b94d;--tool-bg:#edf9ea}
+.tool-teal{--tool-accent:#18bdb1;--tool-bg:#e4f9f7}
+.tool-slate{--tool-accent:#7c91a5;--tool-bg:#edf2f6}
+.tool-student{
+  --tool-accent:#745be8;--tool-bg:#eeeafd;
+  grid-column:1/-1;min-height:94px
+}
+.admin-dashboard-footer{display:flex;justify-content:flex-start;gap:10px;margin-top:14px}
+.logout-card{
+  display:flex;align-items:center;gap:8px;padding:12px 18px;
+  border-radius:12px;background:#fff;color:#182a3c;border:1px solid #e4e9ee;
+  box-shadow:0 5px 14px rgba(20,52,78,.06);font-weight:850
+}
+.logout-card::first-letter{color:#df3c2f}
+
+.toolbar{
+  gap:10px;margin-bottom:14px
+}
+.toolbar .viewbtn,.toolbar select{
+  min-height:50px;border-radius:12px
+}
+.toolbar .viewbtn.active{
+  background:linear-gradient(135deg,#073b64,#0b5683);
+  box-shadow:0 5px 12px rgba(11,75,111,.17)
+}
+
+@media(max-width:1100px){
+  .admin-actionbar{grid-template-columns:1fr 1fr}
+  .admin-main-actions{grid-column:1/-1;justify-content:stretch}
+  .admin-main-actions .admin-action{flex:1}
+  .admin-tools-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:720px){
+  .admin-dashboard{margin-top:10px}
+  .admin-actionbar{
+    display:flex;flex-direction:column;align-items:stretch;
+    padding:14px;border-radius:16px;gap:10px
+  }
+  .admin-identity{padding:2px 2px 4px}
+  .admin-avatar{width:42px;height:42px}
+  .admin-actionbar .edit-hint{min-height:46px}
+  .admin-main-actions{display:grid;grid-template-columns:1fr 1fr}
+  .admin-main-actions .add-action{grid-column:1/-1}
+  .admin-action{width:100%;padding:0 10px;font-size:13px}
+  .admin-tools-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    padding:9px;gap:9px;border-radius:15px
+  }
+  .admin-tool-card{
+    grid-template-columns:1fr;
+    align-content:start;text-align:center;gap:8px;
+    min-height:172px;padding:13px 10px
+  }
+  .admin-tool-card .tool-icon{margin:auto;width:52px;height:52px}
+  .admin-tool-card .tool-arrow{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:22px}
+  .tool-copy b{font-size:14px}
+  .tool-copy small{font-size:11px}
+  .tool-student{grid-column:1/-1;min-height:112px;grid-template-columns:52px 1fr 20px;text-align:left;align-items:center}
+  .tool-student .tool-icon{margin:0}
+  .tool-student .tool-arrow{position:static;transform:none}
+  .admin-dashboard-footer .logout-card{width:100%;justify-content:center}
+}
+@media(max-width:390px){
+  .admin-tools-grid{grid-template-columns:1fr 1fr}
+  .admin-tool-card{min-height:164px}
+}
+@media print{
+  .admin-dashboard{display:none!important}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -515,22 +670,59 @@ body.admin-active .shift:hover{background:#fff8e8}
     <div class="admin-login"><button id="loginBtn">🔐 Beheer login</button></div>
   </div>
 
-  <div id="adminBar" class="adminbar">
-    <strong id="adminWho">Beheer</strong>
-    <span class="edit-hint">✏️ Klik op een shift om te bewerken</span>
-    <button id="addShiftBtn" class="primary">+ Shift toevoegen</button>
-    <button id="duplicateDayBtn">Dag kopiëren</button>
-    <button id="copyWeekBtn">Week kopiëren</button>
-    <button id="yearPlannerBtn">📅 Jaarplanning</button>
-    <button id="archiveBtn">🗂️ Verleden</button>
-    <button id="changeLogBtn">📒 Logboek</button>
-    <button id="hoursReportBtn">📊 Urenrapport</button>
-    <button id="backupsBtn">💾 Back-ups</button>
-    <button id="crewContactsBtn">📱 WhatsApp nummers</button>
-    <button id="whatsappGroupBtn">💬 WhatsApp groep</button>
-    <button id="printBtn">Week afdrukken</button>
-    <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
-    <button id="logoutBtn">Uitloggen</button>
+  <div id="adminBar" class="adminbar admin-dashboard">
+    <div class="admin-actionbar">
+      <div class="admin-identity">
+        <span class="admin-avatar">🛠️</span>
+        <div>
+          <strong id="adminWho">Beheer</strong>
+          <small>Beheerder</small>
+        </div>
+      </div>
+
+      <span class="edit-hint">✏️ Klik op een shift om te bewerken</span>
+
+      <div class="admin-main-actions">
+        <button id="addShiftBtn" class="admin-action add-action">＋ <span>Shift toevoegen</span></button>
+        <button id="duplicateDayBtn" class="admin-action">📄 <span>Dag kopiëren</span></button>
+        <button id="copyWeekBtn" class="admin-action">🗓️ <span>Week kopiëren</span></button>
+      </div>
+    </div>
+
+    <div class="admin-tools-grid">
+      <button id="yearPlannerBtn" class="admin-tool-card tool-blue">
+        <span class="tool-icon">📅</span><span class="tool-copy"><b>Jaarplanning</b><small>Bekijk en beheer de jaarplanning.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="archiveBtn" class="admin-tool-card tool-orange">
+        <span class="tool-icon">📂</span><span class="tool-copy"><b>Verleden</b><small>Bekijk eerdere planningen.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="changeLogBtn" class="admin-tool-card tool-yellow">
+        <span class="tool-icon">📒</span><span class="tool-copy"><b>Logboek</b><small>Raadpleeg wijzigingen en acties.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="hoursReportBtn" class="admin-tool-card tool-green">
+        <span class="tool-icon">📊</span><span class="tool-copy"><b>Urenrapport</b><small>Overzicht van unieke geplande uren.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="backupsBtn" class="admin-tool-card tool-purple">
+        <span class="tool-icon">💾</span><span class="tool-copy"><b>Back-ups</b><small>Maak en herstel veilige back-ups.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="crewContactsBtn" class="admin-tool-card tool-lime">
+        <span class="tool-icon">📱</span><span class="tool-copy"><b>WhatsApp nummers</b><small>Beheer namen en telefoonnummers.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="whatsappGroupBtn" class="admin-tool-card tool-teal">
+        <span class="tool-icon">💬</span><span class="tool-copy"><b>WhatsApp groep</b><small>Open WhatsApp en deel de planning.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="printBtn" class="admin-tool-card tool-slate">
+        <span class="tool-icon">🖨️</span><span class="tool-copy"><b>Week afdrukken</b><small>Print de weekplanning of bewaar als PDF.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="studentDashboardBtn" class="admin-tool-card tool-student">
+        <span class="tool-icon">🎓</span><span class="tool-copy"><b>Jobstudenten</b><small>Planning en beheer van PRO, ROOKIE en VERHUUR.</small></span><span class="tool-arrow">›</span>
+      </button>
+    </div>
+
+    <div class="admin-dashboard-footer">
+      <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
+      <button id="logoutBtn" class="logout-card">↪ <span>Uitloggen</span></button>
+    </div>
   </div>
 
 
@@ -2066,6 +2258,8 @@ function setPlannerTab(tab){
 }
 $("crewPlannerTab").onclick=()=>setPlannerTab("crew");
 $("studentPlannerTab").onclick=()=>{if(isAdminUser())setPlannerTab("students")};
+$("studentDashboardBtn").onclick=()=>{if(isAdminUser())setPlannerTab("students")};
+
 
 $("studentDayBtn").onclick=()=>{
  studentView="day";$("studentDayBtn").classList.add("active");$("studentWeekBtn").classList.remove("active");
