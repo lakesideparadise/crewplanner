@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.1-jobstudenten-admin-only-2026-07-31">
+<meta name="cablecrew-version" content="v12.3-whatsapp-only-badge-fix-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -445,6 +445,12 @@ body.admin-active .shift:hover{background:#fff8e8}
  .planner-tabs,#studentMain .student-toolbar{display:none!important}
 }
 
+
+.deep-link-target{outline:3px solid #efb340!important;box-shadow:0 0 0 4px rgba(239,179,64,.18);animation:ccTargetPulse 1.2s ease-in-out 2}
+@keyframes ccTargetPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
+
+/* V12.3: Crew Inbox uitgeschakeld; WhatsApp vervangt interne berichten. */
+#messagesBtn,#messagesPanel{display:none!important}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -500,12 +506,12 @@ body.admin-active .shift:hover{background:#fff8e8}
   <button id="personalAlertClose" class="personal-alert-close">Sluiten</button>
 </div>
 
+<div style="display:none"><button id="messagesBtn"><span id="msgBadge">0</span></button></div>
 <main>
   <div class="toolbar">
     <button class="viewbtn active" data-view="day">Dag</button>
     <button class="viewbtn" data-view="week">Week</button>
     <select id="date"></select>
-    <button id="messagesBtn" class="messages-btn">📥 Inbox <span id="msgBadge" class="msg-badge" style="display:none">0</span></button>
     <div class="admin-login"><button id="loginBtn">🔐 Beheer login</button></div>
   </div>
 
@@ -521,6 +527,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button id="hoursReportBtn">📊 Urenrapport</button>
     <button id="backupsBtn">💾 Back-ups</button>
     <button id="crewContactsBtn">📱 WhatsApp nummers</button>
+    <button id="whatsappGroupBtn">💬 WhatsApp groep</button>
     <button id="printBtn">Week afdrukken</button>
     <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
     <button id="logoutBtn">Uitloggen</button>
@@ -990,6 +997,35 @@ function renderAll(){
  renderToday();renderDay();renderWeek();
 }
 
+function applyCrewDeepLink(){
+ const params=new URLSearchParams(location.search);
+ if(params.get("tab")!=="crew")return;
+ const d=params.get("date");
+ const shiftId=params.get("shift");
+
+ if(d){
+   ensureDateOption(d);
+   $("date").value=d;
+   currentView="day";
+   document.querySelectorAll(".viewbtn").forEach(b=>b.classList.toggle("active",b.dataset.view==="day"));
+   document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id==="day"));
+   renderDay();
+   renderWeek();
+ }
+
+ if(shiftId){
+   setTimeout(()=>{
+     const target=document.querySelector(`[data-id="${CSS.escape(shiftId)}"]`);
+     if(target){
+       target.classList.add("deep-link-target");
+       target.scrollIntoView({behavior:"smooth",block:"center"});
+       setTimeout(()=>target.classList.remove("deep-link-target"),4500);
+     }
+   },250);
+ }
+}
+
+
 document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
  currentView=b.dataset.view;document.querySelectorAll(".viewbtn").forEach(x=>x.classList.toggle("active",x===b));
  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===currentView));
@@ -1037,11 +1073,42 @@ function normalizeBelgianPhone(v){
 }
 function whatsappDigits(v){return normalizeBelgianPhone(v).replace(/\D/g,"")}
 function crewPhone(name){return crewDirectory.get(name)?.phone||crewContacts.get(name)||""}
+function currentCrewShareLink(){
+ const d=$("date")?.value||realTodayKey();
+ return `https://lakesideparadise.github.io/crewplanner/?tab=crew&date=${encodeURIComponent(d)}`;
+}
+function buildWhatsAppGroupText(){
+ const d=$("date")?.value||realTodayKey();
+ const rows=shifts.filter(x=>x.date===d);
+ const names=[...new Set(rows.map(x=>x.employee).filter(Boolean))];
+ const summary=names.length?`${names.length} crewleden ingepland`:"Geen crew ingepland";
+ return `📅 CableCrew – planning ${label(d)}\n${summary}\n\nOpen de planning:\n${currentCrewShareLink()}`;
+}
+function openWhatsAppShare(text){
+ // Zonder telefoonnummer opent WhatsApp de deel-/chatkeuze.
+ // Zo kan je gratis een bestaande groep kiezen.
+ const url=`https://wa.me/?text=${encodeURIComponent(text)}`;
+ window.open(url,"_blank","noopener");
+}
+$("whatsappGroupBtn").onclick=()=>{
+ if(!isAdminUser())return;
+ openWhatsAppShare(buildWhatsAppGroupText());
+};
+
+function crewPlannerDeepLink(v){
+ const base="https://lakesideparadise.github.io/crewplanner/";
+ const q=new URLSearchParams();
+ q.set("tab","crew");
+ if(v?.date)q.set("date",v.date);
+ if(v?._id)q.set("shift",v._id);
+ return base+"?"+q.toString();
+}
 function buildWhatsAppText(v,kind="gewijzigd"){
  const when=v.date?label(v.date):"";
- if(v.zone==="VERLOF")return `🏝️ CableCrew – verlof ${kind}\n${v.employee}, je verlof op ${when} is ${kind}.\nBekijk je planning in CableCrew.`;
+ const link=crewPlannerDeepLink(v);
+ if(v.zone==="VERLOF")return `🏝️ CableCrew – verlof ${kind}\n${v.employee}, je verlof op ${when} is ${kind}.\n\nOpen rechtstreeks in CableCrew:\n${link}`;
  const note=v.note?`\nOpmerking: ${v.note}`:"";
- return `🔄 CableCrew – planning ${kind}\n${v.employee}, je shift op ${when} is ${kind}.\n${v.zone} · ${v.start}–${v.end}${note}\nBekijk je planning in CableCrew.`;
+ return `🔄 CableCrew – planning ${kind}\n${v.employee}, je shift op ${when} is ${kind}.\n${v.zone} · ${v.start}–${v.end}${note}\n\nOpen rechtstreeks in CableCrew:\n${link}`;
 }
 function openWhatsAppForShift(v,kind="gewijzigd"){
  const phone=crewPhone(v.employee);
@@ -1166,7 +1233,8 @@ async function writeAudit(action,before,after){
 
 $("whatsappShiftBtn").onclick=()=>{
  const v=formObj();
- if(!openWhatsAppForShift(v,editing?"gewijzigd":"ingepland")){
+ const linked=editing?{...v,_id:editing._id}:v;
+ if(!openWhatsAppForShift(linked,editing?"gewijzigd":"ingepland")){
    alert("Voor deze medewerker is nog geen WhatsApp-nummer opgeslagen.");
  }
 };
@@ -1211,10 +1279,11 @@ $("saveShift").onclick=async()=>{
      await writeAudit(v.zone==="VERLOF"?"Verlof gewijzigd":"Shift gewijzigd",before,v);
      $("shiftModal").classList.remove("show");
      if(crewPhone(v.employee) && confirm(`Shift opgeslagen. WhatsApp-bericht openen voor ${v.employee}?`)){
-       openWhatsAppForShift(v,"gewijzigd");
+       openWhatsAppForShift({...v,_id:editing._id},"gewijzigd");
      }
    }else{
-     await addDoc(collection(db,"shifts"),v);
+     const createdRef=await addDoc(collection(db,"shifts"),v);
+     const createdShift={...v,_id:createdRef.id};
      await writeAudit("Shift toegevoegd",null,v);
      if($("keepAdding").checked){
        const keepDate=v.date, keepZone=v.zone;
@@ -1229,7 +1298,7 @@ $("saveShift").onclick=async()=>{
      }else{
        $("shiftModal").classList.remove("show");
        if(crewPhone(v.employee) && confirm(`Shift opgeslagen. WhatsApp-bericht openen voor ${v.employee}?`)){
-         openWhatsAppForShift(v,"ingepland");
+         openWhatsAppForShift(createdShift,"ingepland");
        }
      }
    }
@@ -1457,6 +1526,9 @@ $("importBtn").onclick=async()=>{
  }catch(e){alert("Import mislukt: "+e.message)}
 };
 
+// Oude Crew Inbox is uitgefaseerd.
+localStorage.setItem("cc_read_message_ids","[]");
+localStorage.setItem("cc_hidden_message_ids","[]");
 await loadFallback();
 
 // Elke nieuwe app/page-load start visueel op 'Iedereen'.
@@ -1476,6 +1548,7 @@ setTimeout(()=>{
     renderAll();
     applyPastDateVisibility();
     updateNotifyUI();
+    applyCrewDeepLink();
   }catch(err){
     console.error("Eerste planner-render mislukt:",err);
   }
@@ -1516,7 +1589,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
    $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
  }
  shiftsInitialized=true;
- updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();setTimeout(ensureDailyBackup,500);
+ updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();applyCrewDeepLink();setTimeout(ensureDailyBackup,500);
 },err=>{
  firestoreReady=false;shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
  $("syncStatus").textContent="🔴 Firebase niet bereikbaar – JSON-weergave";renderAll();updateNotifyUI();
@@ -1635,10 +1708,21 @@ function showLocalNotice(title,body,type=""){
  }
 }
 
+async function clearOpenedAppBadge(){
+ // Zodra de planner zichtbaar is, beschouwen we de app-icoonmelding als gezien.
+ // De in-app labels Nieuw/Gewijzigd kunnen wel zichtbaar blijven tot ze worden aangetikt.
+ localStorage.setItem("cc_pending_shift_alerts","0");
+ if(appBadgeSupported()){
+   try{
+     if("clearAppBadge" in navigator)await navigator.clearAppBadge();
+     else await navigator.setAppBadge(0);
+   }catch(e){console.warn("App-icoonbadge wissen:",e)}
+ }
+}
 document.addEventListener("visibilitychange",()=>{
- if(document.visibilityState==="visible")syncAppIconBadge();
+ if(document.visibilityState==="visible")clearOpenedAppBadge();
 });
-window.addEventListener("pageshow",syncAppIconBadge);
+window.addEventListener("pageshow",clearOpenedAppBadge);
 
 function shiftDescription(x){
  return `${x.date} · ${x.zone} · ${x.start}–${x.end}`;
@@ -2317,7 +2401,9 @@ function unreadMessageCount(){
 }
 async function syncAppIconBadge(){
  if(!appBadgeSupported())return;
- const total=unreadMessageCount()+pendingShiftAlerts();
+ // De interne Crew Inbox wordt niet meer gebruikt.
+ // Het app-icoon telt alleen nog ongeziene planningswijzigingen.
+ const total=pendingShiftAlerts();
  try{
    if(total>0) await navigator.setAppBadge(total);
    else if("clearAppBadge" in navigator) await navigator.clearAppBadge();
