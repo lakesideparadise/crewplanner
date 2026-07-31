@@ -1002,7 +1002,7 @@ body.admin-active .shift:hover{background:#fff8e8}
 
 
 /* ===== V12.7 MOBILE DATUM / MIJN PLANNING ===== */
-.mobile-today-text{display:none}
+.mobile-today-text{display:none!important}
 .mobile-date-picker{
   position:absolute!important;
   width:1px!important;height:1px!important;
@@ -1824,6 +1824,20 @@ body.admin-active .shift:hover{background:#fff8e8}
   /* Crew: één persoonssymbool, geen groepsicoon. */
   #crewPlannerTab::before,#crewPlannerTab.active::before{content:"👤 "!important}
 }
+
+/* ===== V12.14 DUIDELIJKE GESELECTEERDE DATUM ===== */
+.selected-date-banner{
+  display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:9px 12px;
+  border:1px solid #d8e3ea;border-radius:11px;background:#f8fbfd;color:#41566a;
+  font-size:13px;font-weight:750
+}
+.selected-date-banner strong{color:#102f49;font-size:14px;text-transform:capitalize}
+.selected-date-banner.other-date{background:#fff7e6;border-color:#edd39a;color:#755516}
+.selected-date-banner.other-date strong{color:#6f4c00}
+@media(max-width:720px){
+  .selected-date-banner{margin:0 0 10px;padding:7px 10px;border-radius:9px;font-size:11px}
+  .selected-date-banner strong{font-size:12px}
+}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1927,6 +1941,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <select id="date"></select>
     <div class="admin-login"><button id="loginBtn">🔐 Beheer login</button></div>
   </div>
+  <div id="selectedDateBanner" class="selected-date-banner"><span>Planning voor</span><strong id="selectedDateBannerText"></strong></div>
 
   <div id="adminActionTop" class="adminbar admin-action-top">
     <div class="admin-actionbar">
@@ -3956,12 +3971,23 @@ function mobileSetDate(k){
 function renderMobileTodayText(){
  updateMobileSelectedDateText(mobileSelectedDate());
 }
+let mobileDayWindowStart=realTodayKey();
+function mobileDateInWindow(k,startKey=mobileDayWindowStart){
+ const start=new Date(startKey+"T12:00:00");
+ const end=new Date(start);end.setDate(start.getDate()+4);
+ const d=new Date(k+"T12:00:00");
+ return d>=start && d<=end;
+}
+function setMobileDayWindowFor(k){
+ if(!mobileDateInWindow(k)) mobileDayWindowStart=k;
+}
 function renderMobileDayScroller(selectedKey=mobileSelectedDate()){
  const wrap=$("mobileDayScrollerInner");
  if(!wrap)return;
 
- // Geen dag vóór de geselecteerde datum. Altijd precies 5 dagen.
- const start=new Date((selectedKey||realTodayKey())+"T12:00:00");
+ // De zichtbare rij blijft vast staan. Alleen wanneer via de kalender een datum
+ // buiten deze 5 dagen gekozen wordt, start een nieuw vast venster op die datum.
+ const start=new Date((mobileDayWindowStart||realTodayKey())+"T12:00:00");
  let html="";
  for(let i=0;i<5;i++){
    const d=new Date(start);d.setDate(start.getDate()+i);
@@ -3977,6 +4003,7 @@ function renderMobileDayScroller(selectedKey=mobileSelectedDate()){
  wrap.innerHTML=html;
  wrap.querySelectorAll("[data-mobile-date]").forEach(btn=>btn.onclick=()=>{
    const mineMode=document.body.classList.contains("mobile-mine-mode");
+   // Geen wijziging aan mobileDayWindowStart: de 5 zichtbare dagen blijven staan.
    mobileSetDate(btn.dataset.mobileDate);
    if(mineMode){
      document.body.classList.add("mobile-mine-mode");
@@ -3986,7 +4013,6 @@ function renderMobileDayScroller(selectedKey=mobileSelectedDate()){
      mobileSetActive(btn.dataset.mobileDate===realTodayKey()?"mobileNavToday":"");
    }
  });
- renderMobileTodayText();
 }
 
 let mobileCalendarCursor=new Date(realTodayKey()+"T12:00:00");
@@ -4017,6 +4043,7 @@ function renderMobileDateCalendar(){
    btn.onclick=()=>{
      const target=btn.dataset.mobileCalendarDate;
      const mineMode=document.body.classList.contains("mobile-mine-mode");
+     setMobileDayWindowFor(target);
      mobileSetDate(target);
      if(mineMode){
        document.body.classList.add("mobile-mine-mode");
@@ -4481,31 +4508,31 @@ function setTodayHeader(){
 function updateSelectedDateHeader(){
  const today=realTodayKey();
  const selected=($("studentMain")?.classList.contains("active") ? $("studentDate")?.value : $("date")?.value) || today;
- const d=new Date(selected+"T12:00:00");
- const full=d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
- const fullLabel=full.charAt(0).toUpperCase()+full.slice(1);
+ const todayDate=new Date(today+"T12:00:00");
+ const todayFull=todayDate.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ const todayLabel=todayFull.charAt(0).toUpperCase()+todayFull.slice(1);
+ const selectedDate=new Date(selected+"T12:00:00");
+ const selectedFull=selectedDate.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ const selectedLabel=selectedFull.charAt(0).toUpperCase()+selectedFull.slice(1);
  const isToday=selected===today;
- if($("todayFullLabel")) $("todayFullLabel").textContent=full;
- if($("scheduleTodayDate")) $("scheduleTodayDate").textContent=fullLabel;
- if($("scheduleDateContext")) $("scheduleDateContext").textContent=isToday?"Vandaag":"Je bekijkt";
- if($("scheduleOverviewHeader")) $("scheduleOverviewHeader").classList.toggle("viewing-other-date",!isToday);
+
+ // De weerheader blijft altijd over vandaag gaan, ongeacht welke planningsdag bekeken wordt.
+ if($("todayFullLabel")) $("todayFullLabel").textContent=todayFull;
+ if($("scheduleTodayDate")) $("scheduleTodayDate").textContent=todayLabel;
+ if($("scheduleDateContext")) $("scheduleDateContext").textContent="Vandaag";
+ if($("scheduleOverviewHeader")) $("scheduleOverviewHeader").classList.remove("viewing-other-date");
+
+ // De gekozen planningsdatum staat vlak boven de planning.
+ if($("selectedDateBannerText")) $("selectedDateBannerText").textContent=selectedLabel;
+ if($("selectedDateBanner")) $("selectedDateBanner").classList.toggle("other-date",!isToday);
  if($("scheduleGoTodayBtn")){
    $("scheduleGoTodayBtn").disabled=isToday;
    $("scheduleGoTodayBtn").style.opacity=isToday?".58":"1";
    $("scheduleGoTodayBtn").style.cursor=isToday?"default":"pointer";
  }
- updateMobileSelectedDateText(selected);
 }
 function updateMobileSelectedDateText(selected){
- const el=$("mobileTodayText");
- if(!el)return;
- const today=realTodayKey();
- const d=new Date((selected||today)+"T12:00:00");
- const txt=d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
- el.innerHTML=(selected===today)
-   ? `Vandaag: <strong>${esc(txt)}</strong>`
-   : `Je bekijkt: <strong>${esc(txt)}</strong>`;
- el.classList.toggle("viewing-other-date",selected!==today);
+ // Niet meer gebruikt: geselecteerde datum staat nu in selectedDateBanner vlak boven de planning.
 }
 function ensureDateOption(target){
  if(![...$("date").options].some(o=>o.value===target)){
@@ -4513,6 +4540,7 @@ function ensureDateOption(target){
  }
 }
 function goToDate(target){
+ if(target===realTodayKey()) mobileDayWindowStart=realTodayKey();
  ensureDateOption(target);
  $("date").value=target;
  document.querySelector('[data-view="day"]').click();
