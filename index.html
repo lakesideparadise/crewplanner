@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.9.1-mobile-calendar-fit-fix-2026-07-31">
+<meta name="cablecrew-version" content="v12.10-desktop-layout-parity-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1231,6 +1231,69 @@ body.admin-active .shift:hover{background:#fff8e8}
   }
 }
 
+
+/* ===== V12.10 DESKTOP COMPACT + ACTIEBALK BOVEN PLANNING ===== */
+@media(min-width:721px){
+  /* Eerste rij compacter */
+  .quickbar{
+    margin-top:8px;
+    grid-template-columns:1.05fr 1.05fr .9fr;
+    gap:8px;
+  }
+  .quickcard{
+    min-height:62px;
+    padding:9px 11px;
+    border-radius:11px;
+  }
+  .quicktitle{font-size:10px}
+  .quickvalue{margin-top:4px;font-size:13px;line-height:1.2}
+  .quickbar #myEmployee{padding:7px 9px;font-size:13px}
+  .quickbar #notifyBtn{padding:5px 8px;font-size:10px;margin-top:4px}
+  .quickbar #notifyStatus,.quickbar #notificationIdentity{font-size:9px;line-height:1.15;margin-top:2px}
+
+  main{display:flex;flex-direction:column}
+  main > .toolbar{order:1;margin-bottom:8px}
+  main > #adminActionTop{order:2;margin:0 0 12px}
+  main > #messagesPanel{order:3}
+  main > #day,main > #week{order:4}
+  main > #adminBar{order:5;margin-top:24px}
+
+  /* Alleen de blauwe actiebalk boven de planning */
+  .admin-action-top,.student-admin-action-top{
+    padding:0!important;background:transparent!important;border:0!important;
+    border-radius:0!important;margin-bottom:12px!important
+  }
+  .admin-action-top .admin-actionbar,.student-admin-action-top .admin-actionbar{
+    min-height:88px;padding:14px 18px;border-radius:16px
+  }
+  .admin-action-top .admin-avatar,.student-admin-action-top .admin-avatar{width:42px;height:42px;font-size:19px}
+  .admin-action-top .edit-hint,.student-admin-action-top .edit-hint{min-height:44px;padding:10px 14px}
+  .admin-action-top .admin-action,.student-admin-action-top .admin-action{min-height:44px;padding:0 13px}
+
+  /* Onderste dashboard bevat enkel beheertools */
+  #adminBar{padding:0;background:transparent;border:0;box-shadow:none}
+
+  /* Jobstudenten exact dezelfde desktopstructuur */
+  .student-quickbar{
+    display:grid;grid-template-columns:1.05fr 1.05fr .9fr;
+    gap:8px;margin:0 0 10px;
+  }
+  .student-quickbar .quickcard{min-height:62px;padding:9px 11px}
+  .student-quickbar #studentPerson{width:100%;padding:7px 9px;font-size:13px}
+  .student-filter-hint{font-size:9px;color:var(--muted);margin-top:3px}
+  #studentMain{display:none;max-width:1280px;margin:auto;padding:14px}
+  #studentMain.active{display:flex;flex-direction:column}
+  #studentMain > .student-quickbar{order:1}
+  #studentMain > .student-toolbar{order:2;margin-bottom:8px}
+  #studentMain > #studentAdminActionTop{order:3;margin-bottom:12px}
+  #studentMain > #studentDayPanel,#studentMain > #studentWeekPanel{order:4}
+  .student-toolbar{justify-content:flex-start}
+}
+@media(max-width:720px){
+  .student-quickbar{display:none!important}
+  #studentAdminActionTop{display:none!important}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1301,7 +1364,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <div class="admin-login"><button id="loginBtn">🔐 Beheer login</button></div>
   </div>
 
-  <div id="adminBar" class="adminbar admin-dashboard">
+  <div id="adminActionTop" class="adminbar admin-action-top">
     <div class="admin-actionbar">
       <div class="admin-identity">
         <span class="admin-avatar">🛠️</span>
@@ -1319,6 +1382,10 @@ body.admin-active .shift:hover{background:#fff8e8}
         <button id="copyWeekBtn" class="admin-action">🗓️ <span>Week kopiëren</span></button>
       </div>
     </div>
+  </div>
+
+  <div id="adminBar" class="adminbar admin-dashboard">
+
 
     <div class="admin-tools-grid">
       <button id="yearPlannerBtn" class="admin-tool-card tool-blue">
@@ -1388,17 +1455,31 @@ body.admin-active .shift:hover{background:#fff8e8}
 
 
 <section id="studentMain">
+  <div class="student-quickbar">
+    <div class="quickcard"><div class="quicktitle">🌤️ Weer Knokke-Heist</div><div id="studentWeather" class="quickvalue weatherline">Weer laden…</div></div>
+    <div class="quickcard"><div class="quicktitle">🎓 Wie werkt vandaag?</div><div id="studentWorkingToday" class="quickvalue">Planning laden…</div></div>
+    <div class="quickcard"><div class="quicktitle">👤 Planning filter</div><div class="quickvalue"><select id="studentPerson"><option value="">Iedereen</option></select></div><div class="student-filter-hint">Toon iedereen of één jobstudent.</div></div>
+  </div>
+
   <div class="student-toolbar">
     <button id="studentDayBtn" class="viewbtn active" type="button">Dag</button>
     <button id="studentWeekBtn" class="viewbtn" type="button">Week</button>
     <select id="studentDate"></select>
-    <select id="studentPerson"><option value="">Iedereen</option></select>
-    <span class="spacer"></span>
-    <div id="studentAdminActions" class="student-admin-actions hidden">
-      <button id="studentAddShiftBtn" class="primary" type="button">+ Shift toevoegen</button>
-      <button id="studentManageBtn" type="button">👤 Studenten beheren</button>
-      <button id="studentCopyDayBtn" type="button">Dag kopiëren</button>
-      <button id="studentCopyWeekBtn" type="button">Week kopiëren</button>
+  </div>
+
+  <div id="studentAdminActionTop" class="adminbar student-admin-action-top">
+    <div class="admin-actionbar">
+      <div class="admin-identity">
+        <span class="admin-avatar">🎓</span>
+        <div><strong id="studentAdminWho">Jobstudenten</strong><small>Beheerder</small></div>
+      </div>
+      <span class="edit-hint">✏️ Klik op een shift om te bewerken</span>
+      <div class="admin-main-actions">
+        <button id="studentAddShiftBtn" class="admin-action add-action" type="button">＋ <span>Shift toevoegen</span></button>
+        <button id="studentCopyDayBtn" class="admin-action" type="button">📄 <span>Dag kopiëren</span></button>
+        <button id="studentCopyWeekBtn" class="admin-action" type="button">🗓️ <span>Week kopiëren</span></button>
+        <button id="studentManageBtn" class="admin-action" type="button">👤 <span>Studenten beheren</span></button>
+      </div>
     </div>
   </div>
 
@@ -2315,7 +2396,7 @@ onAuthStateChanged(auth,u=>{
    if($("myEmployee"))$("myEmployee").value="";
  }
  editMode=admin;
- $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");$("dayCopyModal").classList.remove("show");$("weekCopyModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null} if(studentShiftUnsub){studentShiftUnsub();studentShiftUnsub=null} if(studentDirectoryUnsub){studentDirectoryUnsub();studentDirectoryUnsub=null} setPlannerTab("crew"); $("crewContactsModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
+ $("adminBar").classList.toggle("show",admin); $("adminActionTop").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");$("dayCopyModal").classList.remove("show");$("weekCopyModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null} if(studentShiftUnsub){studentShiftUnsub();studentShiftUnsub=null} if(studentDirectoryUnsub){studentDirectoryUnsub();studentDirectoryUnsub=null} setPlannerTab("crew"); $("crewContactsModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
  updateAdminLoginVisibility();
  $("adminWho").textContent=admin?`🔧 ${u?.email||"Beheer"}`:"Beheer";
@@ -2866,7 +2947,13 @@ function renderStudentWeek(){
 function renderStudentAll(){
  const admin=isAdminUser();
  $("studentPlannerTab").style.display=admin?"inline-block":"none";
- $("studentAdminActions").classList.toggle("hidden",!admin);
+ $("studentAdminActionTop").classList.toggle("show",admin);
+ if($("studentWeather") && $("weather")) $("studentWeather").innerHTML=$("weather").innerHTML;
+ if($("studentWorkingToday")){
+   const today=realTodayKey();
+   const names=[...new Set(studentShifts.filter(x=>x.date===today).map(x=>x.employee).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"nl"));
+   $("studentWorkingToday").textContent=names.length?names.join(", "):"Geen jobstudenten ingepland";
+ }
 
  if(!admin){
    // Gewone crewleden krijgen de jobstudentenmodule nooit te zien.
