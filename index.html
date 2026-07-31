@@ -2616,9 +2616,19 @@ function renderDay(){
  // van de eigen shift die dag. Zo komt bv. ROOKIE 09:00–12:00
  // automatisch boven PRO 15:00–18:00.
  if(mineMode){
+   const selectedPerson=(($("myEmployee")?.value)||"").trim().toLowerCase();
+   const simonStandbyFirst=selectedPerson==="simon";
+
    zonesForDay=zonesForDay
      .filter(z=>list.some(x=>x.date===d&&x.zone===z))
      .sort((a,b)=>{
+       // Specifiek voor Simon in "Mijn planning": STANDBY staat altijd eerst,
+       // ongeacht het startuur. De overige zones blijven chronologisch.
+       if(simonStandbyFirst){
+         if(a==="STANDBY" && b!=="STANDBY")return -1;
+         if(b==="STANDBY" && a!=="STANDBY")return 1;
+       }
+
        const aStarts=list.filter(x=>x.date===d&&x.zone===a).map(x=>x.start||"99:99").sort();
        const bStarts=list.filter(x=>x.date===d&&x.zone===b).map(x=>x.start||"99:99").sort();
        return (aStarts[0]||"99:99").localeCompare(bStarts[0]||"99:99");
@@ -2659,8 +2669,29 @@ function renderWeek(){
  for(let i=0;i<7;i++){
    const d=new Date(start);d.setDate(d.getDate()+i);const dk=key(d);
    daysHtml+=`<section class="week-day"><h3>${d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"numeric"})}</h3>`;
-   zones.filter(z=>z!=="VERLOF").forEach(z=>{
-     const rows=list.filter(x=>x.date===dk&&x.zone===z);
+   let weekZones=zones.filter(z=>z!=="VERLOF"&&list.some(x=>x.date===dk&&x.zone===z));
+
+   // In "Mijn planning" worden de zones per dag chronologisch gerangschikt
+   // volgens het vroegste startuur. Voor Simon blijft STANDBY altijd eerst.
+   if(mineMode){
+     const selectedPerson=(($("myEmployee")?.value)||"").trim().toLowerCase();
+     const simonStandbyFirst=selectedPerson==="simon";
+
+     weekZones.sort((a,b)=>{
+       if(simonStandbyFirst){
+         if(a==="STANDBY" && b!=="STANDBY")return -1;
+         if(b==="STANDBY" && a!=="STANDBY")return 1;
+       }
+       const aStart=list.filter(x=>x.date===dk&&x.zone===a).map(x=>x.start||"99:99").sort()[0]||"99:99";
+       const bStart=list.filter(x=>x.date===dk&&x.zone===b).map(x=>x.start||"99:99").sort()[0]||"99:99";
+       return aStart.localeCompare(bStart);
+     });
+   }
+
+   weekZones.forEach(z=>{
+     const rows=list
+       .filter(x=>x.date===dk&&x.zone===z)
+       .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.end||"").localeCompare(b.end||""));
      if(rows.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${rows.map(x=>`<div class="mini-shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("")}</div>`;
    });
    daysHtml+=`</section>`;
