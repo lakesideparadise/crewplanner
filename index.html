@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.13.1-mobile-onboarding-first-open-fix-2026-07-31">
+<meta name="cablecrew-version" content="v12.13.2-clear-onboarding-click-name-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1448,6 +1448,98 @@ body.admin-active .shift:hover{background:#fff8e8}
   #mobileOnboardingModal{display:none!important}
 }
 
+
+/* ===== V12.13.2 ONBOARDING DUIDELIJKER + NAAM AANKLIKKEN ===== */
+.mobile-onboarding-modal{
+  border:1px solid #dce6ed;
+  box-shadow:0 22px 60px rgba(12,43,67,.24)!important;
+}
+.mobile-onboarding-step{
+  background:#fbfdff;
+  border:1px solid #e5edf3;
+  border-radius:15px;
+  padding:12px!important;
+  margin-top:10px;
+}
+.mobile-onboarding-stepnr{
+  margin-top:1px;
+}
+.mobile-onboarding-stepbody>strong{
+  font-size:16px!important;
+  color:#16334d;
+}
+.mobile-onboarding-stepbody>p{
+  font-size:12.5px!important;
+}
+.mobile-onboarding-name-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:8px;
+}
+.mobile-onboarding-name-btn{
+  min-height:46px;
+  padding:10px 12px;
+  border:1px solid #d8e3eb;
+  border-radius:12px;
+  background:#fff;
+  color:#18344d;
+  font-size:14px;
+  font-weight:850;
+  text-align:left;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.mobile-onboarding-name-btn::before{
+  content:"👤";
+  width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#edf5fb;
+  font-size:13px;
+  flex:0 0 auto;
+}
+.mobile-onboarding-name-btn.selected{
+  color:#fff;
+  background:linear-gradient(135deg,#083d68,#0b5a87);
+  border-color:#0b5a87;
+  box-shadow:0 5px 14px rgba(9,69,108,.18);
+}
+.mobile-onboarding-name-btn.selected::before{
+  content:"✓";
+  background:rgba(255,255,255,.18);
+  color:#fff;
+}
+.mobile-onboarding-loading{
+  grid-column:1/-1;
+  padding:14px;
+  border:1px dashed #ccd9e2;
+  border-radius:12px;
+  background:#f7fafc;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+  text-align:center;
+}
+.mobile-install-card{
+  background:#fff!important;
+}
+.mobile-install-card.recommended{
+  border-width:2px!important;
+}
+.mobile-install-card.recommended .mobile-install-title::after{
+  content:" · jouw toestel";
+  color:#0b5a87;
+  font-size:10px;
+}
+.mobile-onboarding-done{
+  font-size:14px;
+  font-weight:900;
+}
+@media(max-width:390px){
+  .mobile-onboarding-name-list{grid-template-columns:1fr}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1748,19 +1840,18 @@ body.admin-active .shift:hover{background:#fff8e8}
     <div class="mobile-onboarding-hero">
       <div class="mobile-onboarding-logo">👋</div>
       <div>
-        <h2>Welkom bij CableCrew</h2>
-        <p>Stel dit toestel één keer in. Daarna herkent de planner jou automatisch.</p>
+        <h2>Welkom bij CableCrew 👋</h2>
+        <p>Je hoeft dit maar één keer te doen. Kies hieronder je naam en voeg CableCrew toe aan je beginscherm.</p>
       </div>
     </div>
 
     <div class="mobile-onboarding-step">
       <div class="mobile-onboarding-stepnr">1</div>
       <div class="mobile-onboarding-stepbody">
-        <strong>Kies éénmalig je naam</strong>
-        <p>Zo kan <b>Mijn planning</b> alleen jouw shifts tonen en weet de app voor wie meldingen bedoeld zijn.</p>
-        <select id="mobileOnboardingName">
-          <option value="">Kies je naam…</option>
-        </select>
+        <strong>Wie ben jij?</strong>
+        <p>Tik gewoon op je naam. Je hoeft niets te typen. CableCrew onthoudt daarna dit toestel.</p>
+        <div id="mobileOnboardingNameList" class="mobile-onboarding-name-list" aria-label="Kies je naam"></div>
+        <input id="mobileOnboardingName" type="hidden" value="">
         <div id="mobileOnboardingNameError" class="mobile-onboarding-error"></div>
       </div>
     </div>
@@ -1768,7 +1859,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <div class="mobile-onboarding-step">
       <div class="mobile-onboarding-stepnr">2</div>
       <div class="mobile-onboarding-stepbody">
-        <strong>Zet CableCrew op je beginscherm</strong>
+        <strong>Maak er een echte app van</strong>
         <p class="mobile-onboarding-devicehint" id="mobileOnboardingDeviceHint"></p>
 
         <div class="mobile-install-grid">
@@ -4177,13 +4268,31 @@ function mobileOnboardingRecognized(){
  return localStorage.getItem(MOBILE_ONBOARDING_KEY)==="1";
 }
 function fillMobileOnboardingNames(){
- const select=$("mobileOnboardingName");
- if(!select)return 0;
+ const list=$("mobileOnboardingNameList");
+ const hidden=$("mobileOnboardingName");
+ if(!list||!hidden)return 0;
  const names=typeof people==="function" ? people() : [];
- const current=select.value;
- select.innerHTML='<option value="">Kies je naam…</option>'+
-   names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
- if(current&&names.includes(current))select.value=current;
+ const current=hidden.value||"";
+
+ if(!names.length){
+   list.innerHTML='<div class="mobile-onboarding-loading">Crewleden laden…</div>';
+   return 0;
+ }
+
+ list.innerHTML=names.map(n=>`
+   <button type="button" class="mobile-onboarding-name-btn ${n===current?"selected":""}" data-onboarding-name="${esc(n)}">
+     <span>${esc(n)}</span>
+   </button>`).join("");
+
+ list.querySelectorAll("[data-onboarding-name]").forEach(btn=>{
+   btn.onclick=()=>{
+     const name=btn.dataset.onboardingName;
+     hidden.value=name;
+     list.querySelectorAll(".mobile-onboarding-name-btn").forEach(b=>b.classList.toggle("selected",b===btn));
+     $("mobileOnboardingNameError").textContent="";
+     updateMobileOnboardingButton();
+   };
+ });
  return names.length;
 }
 function updateMobileOnboardingButton(){
@@ -4194,12 +4303,7 @@ function updateMobileOnboardingButton(){
 }
 function showMobileOnboarding(){
  if(!isMobileCableCrew() || mobileOnboardingRecognized())return;
- const count=fillMobileOnboardingNames();
- const nameSelect=$("mobileOnboardingName");
- if(nameSelect){
-   nameSelect.disabled=count===0;
-   if(count===0)nameSelect.innerHTML='<option value="">Namen laden…</option>';
- }
+ fillMobileOnboardingNames();
 
  const platform=cableCrewPlatform();
  const hint=$("mobileOnboardingDeviceHint");
@@ -4228,10 +4332,6 @@ function maybeShowMobileOnboarding(){
  showMobileOnboarding();
 }
 
-$("mobileOnboardingName").onchange=()=>{
- $("mobileOnboardingNameError").textContent="";
- updateMobileOnboardingButton();
-};
 $("mobileOnboardingInstalled").onchange=updateMobileOnboardingButton;
 
 $("mobileOnboardingDone").onclick=()=>{
@@ -4277,7 +4377,6 @@ window.addEventListener("load",()=>{
      clearInterval(nameTimer);return;
    }
    const count=fillMobileOnboardingNames();
-   if($("mobileOnboardingName"))$("mobileOnboardingName").disabled=count===0;
    updateMobileOnboardingButton();
    if(count>0 || tries>20)clearInterval(nameTimer);
  },300);
