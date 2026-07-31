@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v11.3-copy-day-week-fix-2026-07-30">
+<meta name="cablecrew-version" content="v11.4-free-whatsapp-crew-2026-07-30">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -380,6 +380,10 @@ body.admin-active .shift:hover{background:#fff8e8}
 
 .change-badge{display:inline-block;font-size:9px;font-weight:900;padding:2px 6px;border-radius:999px;margin-left:6px;background:#fff3cd;color:#7a5700;border:1px solid #ead58a;cursor:pointer}.change-badge.changed{background:#e8f2ff;color:#245b91;border-color:#b9d5f2}
 .admin-data-modal .modal{max-width:980px}.report-controls,.backup-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:12px 0}.report-controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:800;color:var(--muted)}.report-table{width:100%;border-collapse:collapse;font-size:13px}.report-table th,.report-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}.report-table th{background:#f6f8fa}.report-table td.num{text-align:right}.backup-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}.backup-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px}.backup-meta{font-size:12px;color:var(--muted)}
+
+.crew-contact-row{display:grid;grid-template-columns:1fr 1.2fr;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.crew-contact-row b{font-size:13px}.crew-contact-row input{width:100%}
+@media(max-width:620px){.crew-contact-row{grid-template-columns:1fr}}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -450,6 +454,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button id="changeLogBtn">📒 Logboek</button>
     <button id="hoursReportBtn">📊 Urenrapport</button>
     <button id="backupsBtn">💾 Back-ups</button>
+    <button id="crewContactsBtn">📱 WhatsApp nummers</button>
     <button id="printBtn">Week afdrukken</button>
     <button id="importBtn" class="success" style="display:none">Huidige planning online zetten</button>
     <button id="logoutBtn">Uitloggen</button>
@@ -600,11 +605,26 @@ body.admin-active .shift:hover{background:#fff8e8}
   <div class="modalactions">
     <button id="deleteShift" class="danger">Verwijderen</button>
     <button id="duplicateShift">Dupliceren</button>
+    <button id="whatsappShiftBtn" type="button" style="display:none">💬 WhatsApp</button>
     <button id="cancelShift">Annuleren</button>
     <label class="keepadding"><input id="keepAdding" type="checkbox"> Nog een shift toevoegen</label><button id="saveShift" class="success">Opslaan</button>
   </div>
 </div></div>
 
+
+<div id="crewContactsModal" class="modalback"><div class="modal">
+  <div class="year-head">
+    <div>
+      <h2>📱 WhatsApp nummers</h2>
+      <div class="year-sub">Alleen voor Nick en Arno. Deze nummers zijn enkel zichtbaar in beheer.</div>
+    </div>
+    <button id="closeCrewContactsBtn">Sluiten</button>
+  </div>
+  <div id="crewContactsList" style="display:grid;gap:8px;margin-top:10px"></div>
+  <div style="margin-top:12px">
+    <button id="saveCrewContactsBtn" class="success">Nummers opslaan</button>
+  </div>
+</div></div>
 
 <div id="dayCopyModal" class="modalback"><div class="modal">
   <h2>Dag kopiëren</h2>
@@ -650,7 +670,7 @@ const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app)
 const $=id=>document.getElementById(id);
 const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","VERLOF"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","VERLOF":"verlof"};
-let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false;
+let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewContactsUnsub=null;
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -837,6 +857,37 @@ document.addEventListener("click",e=>{
  const x=findShift(el.dataset.id);if(x)openShift(x);
 });
 
+function normalizeBelgianPhone(v){
+ let s=String(v||"").replace(/[^\d+]/g,"");
+ if(s.startsWith("00"))s="+"+s.slice(2);
+ if(s.startsWith("0"))s="+32"+s.slice(1);
+ if(s && !s.startsWith("+"))s="+32"+s;
+ return s;
+}
+function whatsappDigits(v){return normalizeBelgianPhone(v).replace(/\D/g,"")}
+function crewPhone(name){return crewContacts.get(name)||""}
+function buildWhatsAppText(v,kind="gewijzigd"){
+ const when=v.date?label(v.date):"";
+ if(v.zone==="VERLOF")return `🏝️ CableCrew – verlof ${kind}\n${v.employee}, je verlof op ${when} is ${kind}.\nBekijk je planning in CableCrew.`;
+ const note=v.note?`\nOpmerking: ${v.note}`:"";
+ return `🔄 CableCrew – planning ${kind}\n${v.employee}, je shift op ${when} is ${kind}.\n${v.zone} · ${v.start}–${v.end}${note}\nBekijk je planning in CableCrew.`;
+}
+function openWhatsAppForShift(v,kind="gewijzigd"){
+ const phone=crewPhone(v.employee);
+ if(!phone)return false;
+ const digits=whatsappDigits(phone);
+ if(!digits)return false;
+ const url=`https://wa.me/${digits}?text=${encodeURIComponent(buildWhatsAppText(v,kind))}`;
+ window.open(url,"_blank","noopener");
+ return true;
+}
+function updateWhatsAppShiftButton(){
+ const btn=$("whatsappShiftBtn");
+ if(!btn)return;
+ const emp=$("editEmployee")?.value||editing?.employee||"";
+ btn.style.display=isAdminUser() && !!crewPhone(emp) ? "inline-block" : "none";
+}
+
 function openShift(x=null){
  editing=x;
  $("shiftTitle").textContent=x?"Shift aanpassen":"Nieuwe shift";
@@ -846,7 +897,7 @@ function openShift(x=null){
  $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
  $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";updateLeaveFields();
  $("deleteShift").style.display=x?"inline-block":"none";$("duplicateShift").style.display=x?"inline-block":"none";
- $("keepAdding").checked=false;$("shiftModal").classList.add("show");
+ $("keepAdding").checked=false;updateWhatsAppShiftButton();$("shiftModal").classList.add("show");
 }
 $("addShiftBtn").onclick=()=>openShift();
 $("cancelShift").onclick=()=>$("shiftModal").classList.remove("show");
@@ -878,6 +929,7 @@ $("editEmployee").onchange=()=>{
   if(n){const o=document.createElement("option");o.value=n;o.textContent=n;$("editEmployee").insertBefore(o,$("editEmployee").lastElementChild);$("editEmployee").value=n}
   else $("editEmployee").value=editing?.employee||people()[0]||"";
  }
+ updateWhatsAppShiftButton();
 };
 
 document.querySelectorAll(".quicktimes button").forEach(b=>b.onclick=()=>{
@@ -941,6 +993,13 @@ async function writeAudit(action,before,after){
  }catch(e){console.warn("Audit log:",e)}
 }
 
+$("whatsappShiftBtn").onclick=()=>{
+ const v=formObj();
+ if(!openWhatsAppForShift(v,editing?"gewijzigd":"ingepland")){
+   alert("Voor deze medewerker is nog geen WhatsApp-nummer opgeslagen.");
+ }
+};
+
 $("saveShift").onclick=async()=>{
  const v=formObj();
  if(!v.date||!v.employee||(v.zone!=="VERLOF"&&(!v.start||!v.end))){
@@ -980,6 +1039,9 @@ $("saveShift").onclick=async()=>{
      await updateDoc(doc(db,"shifts",editing._id),v);
      await writeAudit(v.zone==="VERLOF"?"Verlof gewijzigd":"Shift gewijzigd",before,v);
      $("shiftModal").classList.remove("show");
+     if(crewPhone(v.employee) && confirm(`Shift opgeslagen. WhatsApp-bericht openen voor ${v.employee}?`)){
+       openWhatsAppForShift(v,"gewijzigd");
+     }
    }else{
      await addDoc(collection(db,"shifts"),v);
      await writeAudit("Shift toegevoegd",null,v);
@@ -995,6 +1057,9 @@ $("saveShift").onclick=async()=>{
        $("editEmployee").focus();
      }else{
        $("shiftModal").classList.remove("show");
+       if(crewPhone(v.employee) && confirm(`Shift opgeslagen. WhatsApp-bericht openen voor ${v.employee}?`)){
+         openWhatsAppForShift(v,"ingepland");
+       }
      }
    }
  }catch(e){alert("Opslaan mislukt: "+e.message)}
@@ -1184,7 +1249,7 @@ onAuthStateChanged(auth,u=>{
    if($("myEmployee"))$("myEmployee").value="";
  }
  editMode=admin;
- $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");$("dayCopyModal").classList.remove("show");$("weekCopyModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
+ $("adminBar").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");$("dayCopyModal").classList.remove("show");$("weekCopyModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null} $("crewContactsModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
  updateAdminLoginVisibility();
  $("adminWho").textContent=admin?`🔧 ${u?.email||"Beheer"}`:"Beheer";
@@ -1192,7 +1257,7 @@ onAuthStateChanged(auth,u=>{
    localStorage.setItem("cc_my_name",adminCrewName());
  }
 
- fillPeople();updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();renderDay();renderWeek();renderMessages();
+ fillPeople();updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();startCrewContactsListener();renderDay();renderWeek();renderMessages();
 });
 
 function updateImportButton(){
@@ -1435,6 +1500,48 @@ function updateAdminLoginVisibility(){
 }
 
 
+
+function renderCrewContacts(){
+ if(!isAdminUser())return;
+ const names=people();
+ $("crewContactsList").innerHTML=names.length?names.map(n=>`
+   <div class="crew-contact-row">
+     <b>${esc(n)}</b>
+     <input type="tel" data-crew-contact="${esc(n)}" value="${esc(crewPhone(n))}" placeholder="bv. 0471 12 34 56" autocomplete="tel">
+   </div>`).join(""):'<div class="empty">Nog geen medewerkers gevonden.</div>';
+}
+function startCrewContactsListener(){
+ if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null}
+ if(!isAdminUser())return;
+ crewContactsUnsub=onSnapshot(collection(db,"crewContacts"),snap=>{
+   crewContacts=new Map(snap.docs.map(d=>[d.id,d.data().phone||""]));
+   if($("crewContactsModal").classList.contains("show"))renderCrewContacts();
+   updateWhatsAppShiftButton();
+ },e=>console.warn("Crew contacts:",e));
+}
+$("crewContactsBtn").onclick=()=>{
+ if(!isAdminUser())return;
+ renderCrewContacts();
+ $("crewContactsModal").classList.add("show");
+};
+$("closeCrewContactsBtn").onclick=()=>$("crewContactsModal").classList.remove("show");
+$("saveCrewContactsBtn").onclick=async()=>{
+ if(!isAdminUser())return;
+ const inputs=[...document.querySelectorAll("[data-crew-contact]")];
+ try{
+   const batch=writeBatch(db);
+   inputs.forEach(inp=>{
+     const name=inp.dataset.crewContact;
+     const phone=normalizeBelgianPhone(inp.value.trim());
+     const ref=doc(db,"crewContacts",name);
+     if(phone)batch.set(ref,{phone,name,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true});
+     else batch.delete(ref);
+   });
+   await batch.commit();
+   alert("WhatsApp-nummers opgeslagen.");
+   $("crewContactsModal").classList.remove("show");
+ }catch(e){alert("Nummers opslaan mislukt: "+e.message)}
+};
 
 function hoursBetween(a,b){if(!a||!b)return 0;const [ah,am]=a.split(":").map(Number),[bh,bm]=b.split(":").map(Number);return Math.max(0,((bh*60+bm)-(ah*60+am))/60)}
 function defaultReportDates(){const d=new Date();$("reportFrom").value=key(new Date(d.getFullYear(),d.getMonth(),1));$("reportTo").value=key(new Date(d.getFullYear(),d.getMonth()+1,0))}
