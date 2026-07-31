@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.12-student-whatsapp-parity-2026-07-31">
+<meta name="cablecrew-version" content="v12.13-mobile-first-use-onboarding-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1359,6 +1359,95 @@ body.admin-active .shift:hover{background:#fff8e8}
   .desktop-header-info{display:none!important}
 }
 
+
+/* ===== V12.13 EERSTE MOBIELE INSTELLING ===== */
+.mobile-onboarding-backdrop{z-index:500}
+.mobile-onboarding-modal{width:min(620px,96vw)}
+.mobile-onboarding-hero{
+  display:flex;gap:13px;align-items:center;
+  padding:4px 2px 14px;border-bottom:1px solid var(--line)
+}
+.mobile-onboarding-logo{
+  width:50px;height:50px;border-radius:16px;
+  display:grid;place-items:center;flex:0 0 auto;
+  font-size:25px;background:linear-gradient(135deg,#e8f4ff,#dcecff)
+}
+.mobile-onboarding-hero h2{margin:0!important;font-size:22px}
+.mobile-onboarding-hero p{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.35}
+.mobile-onboarding-step{
+  display:grid;grid-template-columns:32px 1fr;gap:10px;
+  padding:14px 0 0
+}
+.mobile-onboarding-stepnr{
+  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  color:#fff;background:var(--navy);font-weight:900
+}
+.mobile-onboarding-stepbody>strong{display:block;font-size:15px;margin:5px 0 2px}
+.mobile-onboarding-stepbody>p{margin:4px 0 10px;color:#586a7b;font-size:12px;line-height:1.4}
+#mobileOnboardingName{width:100%;min-height:46px;font-weight:850}
+.mobile-onboarding-error{min-height:16px;margin-top:4px;color:#a33;font-size:11px;font-weight:800}
+.mobile-install-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.mobile-install-card{
+  border:1px solid #dfe7ed;border-radius:13px;padding:11px;
+  background:#f8fafc;transition:.15s ease
+}
+.mobile-install-card.recommended{
+  border-color:#78a9cc;background:#eef7fd;
+  box-shadow:inset 0 0 0 1px rgba(15,75,109,.08)
+}
+.mobile-install-title{font-size:13px;font-weight:900;margin-bottom:7px}
+.mobile-install-card ol{margin:0;padding-left:20px}
+.mobile-install-card li{margin:5px 0;font-size:11px;line-height:1.35;color:#425466}
+.install-symbol{font-size:16px;font-weight:900}
+.mobile-onboarding-devicehint{
+  padding:7px 9px;border-radius:9px;background:#fff7df;
+  color:#765500!important;font-weight:800!important
+}
+.mobile-onboarding-check{
+  display:flex;align-items:flex-start;gap:9px;margin-top:14px;
+  padding:10px 11px;border:1px solid #dfe7ed;border-radius:11px;background:#fff
+}
+.mobile-onboarding-check input{margin-top:2px;flex:0 0 auto}
+.mobile-onboarding-check span{font-size:11px;line-height:1.35;font-weight:750;color:#435568}
+.mobile-onboarding-done{width:100%;min-height:48px;margin-top:10px;border-radius:13px}
+.mobile-onboarding-done:disabled{opacity:.45;cursor:not-allowed}
+.mobile-onboarding-footnote{text-align:center;color:var(--muted);font-size:10px;margin-top:7px}
+
+@media(max-width:720px){
+  #mobileOnboardingModal{
+    display:none;
+    align-items:center!important;
+    padding:10px!important
+  }
+  #mobileOnboardingModal.show{display:flex}
+  .mobile-onboarding-modal{
+    width:min(430px,96vw)!important;
+    max-height:calc(100dvh - 20px)!important;
+    overflow-y:auto!important;
+    border-radius:21px!important;
+    padding:15px!important
+  }
+  .mobile-onboarding-hero h2{font-size:20px}
+  .mobile-install-grid{grid-template-columns:1fr}
+  .mobile-install-card{padding:9px 10px}
+  .mobile-install-card ol{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px}
+  .mobile-install-card li{font-size:10px;margin:3px 0}
+}
+@media(max-width:390px), (max-height:720px){
+  .mobile-onboarding-modal{padding:12px!important}
+  .mobile-onboarding-hero{padding-bottom:9px}
+  .mobile-onboarding-logo{width:42px;height:42px;font-size:21px}
+  .mobile-onboarding-hero h2{font-size:18px}
+  .mobile-onboarding-step{padding-top:9px}
+  .mobile-install-card ol{display:block}
+  .mobile-install-card li{margin:2px 0}
+  .mobile-onboarding-check{margin-top:9px;padding:8px}
+  .mobile-onboarding-done{min-height:44px;margin-top:8px}
+}
+@media(min-width:721px){
+  #mobileOnboardingModal{display:none!important}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1650,6 +1739,70 @@ body.admin-active .shift:hover{background:#fff8e8}
       <span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span>
     </div>
     <div id="mobileDateCalendarGrid" class="mobile-date-calendar-grid"></div>
+  </div>
+</div>
+
+
+<div id="mobileOnboardingModal" class="modalback mobile-onboarding-backdrop">
+  <div class="modal mobile-onboarding-modal">
+    <div class="mobile-onboarding-hero">
+      <div class="mobile-onboarding-logo">👋</div>
+      <div>
+        <h2>Welkom bij CableCrew</h2>
+        <p>Stel dit toestel één keer in. Daarna herkent de planner jou automatisch.</p>
+      </div>
+    </div>
+
+    <div class="mobile-onboarding-step">
+      <div class="mobile-onboarding-stepnr">1</div>
+      <div class="mobile-onboarding-stepbody">
+        <strong>Kies éénmalig je naam</strong>
+        <p>Zo kan <b>Mijn planning</b> alleen jouw shifts tonen en weet de app voor wie meldingen bedoeld zijn.</p>
+        <select id="mobileOnboardingName">
+          <option value="">Kies je naam…</option>
+        </select>
+        <div id="mobileOnboardingNameError" class="mobile-onboarding-error"></div>
+      </div>
+    </div>
+
+    <div class="mobile-onboarding-step">
+      <div class="mobile-onboarding-stepnr">2</div>
+      <div class="mobile-onboarding-stepbody">
+        <strong>Zet CableCrew op je beginscherm</strong>
+        <p class="mobile-onboarding-devicehint" id="mobileOnboardingDeviceHint"></p>
+
+        <div class="mobile-install-grid">
+          <div id="mobileInstallIphone" class="mobile-install-card">
+            <div class="mobile-install-title"> iPhone / iPad</div>
+            <ol>
+              <li>Open deze pagina in <b>Safari</b>.</li>
+              <li>Tik onderaan op <b>Deel</b> <span class="install-symbol">⬆︎</span>.</li>
+              <li>Kies <b>Zet op beginscherm</b>.</li>
+              <li>Tik op <b>Voeg toe</b>.</li>
+            </ol>
+          </div>
+          <div id="mobileInstallAndroid" class="mobile-install-card">
+            <div class="mobile-install-title">🤖 Android</div>
+            <ol>
+              <li>Open deze pagina in <b>Chrome</b>.</li>
+              <li>Tik rechtsboven op <b>⋮</b>.</li>
+              <li>Kies <b>Toevoegen aan startscherm</b> of <b>App installeren</b>.</li>
+              <li>Bevestig met <b>Toevoegen / Installeren</b>.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <label class="mobile-onboarding-check">
+      <input id="mobileOnboardingInstalled" type="checkbox">
+      <span>Ik heb de uitleg gelezen en weet hoe ik CableCrew op mijn beginscherm zet.</span>
+    </label>
+
+    <button id="mobileOnboardingDone" class="primary mobile-onboarding-done" type="button" disabled>
+      Klaar — open mijn planning
+    </button>
+    <div class="mobile-onboarding-footnote">Deze uitleg verschijnt daarna niet meer op dit toestel.</div>
   </div>
 </div>
 
@@ -3997,6 +4150,122 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+
+
+// =========================
+// EERSTE MOBIELE INSTELLING
+// =========================
+const MOBILE_ONBOARDING_KEY="cc_mobile_onboarding_complete_v1";
+
+function isMobileCableCrew(){
+ return window.matchMedia("(max-width: 720px)").matches ||
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+function cableCrewInstalledAsApp(){
+ return window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone===true;
+}
+function cableCrewPlatform(){
+ const ua=navigator.userAgent||"";
+ if(/iPhone|iPad|iPod/i.test(ua))return "ios";
+ if(/Android/i.test(ua))return "android";
+ return "other";
+}
+function mobileOnboardingRecognized(){
+ // Bestaande toestellen met reeds opgeslagen identiteit krijgen de onboarding
+ // niet plots opnieuw na deze update.
+ return localStorage.getItem(MOBILE_ONBOARDING_KEY)==="1" ||
+        !!localStorage.getItem("cc_my_name");
+}
+function fillMobileOnboardingNames(){
+ const select=$("mobileOnboardingName");
+ if(!select)return 0;
+ const names=typeof people==="function" ? people() : [];
+ const current=select.value;
+ select.innerHTML='<option value="">Kies je naam…</option>'+
+   names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+ if(current&&names.includes(current))select.value=current;
+ return names.length;
+}
+function updateMobileOnboardingButton(){
+ const name=$("mobileOnboardingName")?.value||"";
+ const read=$("mobileOnboardingInstalled")?.checked;
+ const btn=$("mobileOnboardingDone");
+ if(btn)btn.disabled=!(name&&read);
+}
+function showMobileOnboarding(){
+ if(!isMobileCableCrew() || mobileOnboardingRecognized())return;
+ if(!fillMobileOnboardingNames())return;
+
+ const platform=cableCrewPlatform();
+ const hint=$("mobileOnboardingDeviceHint");
+ const ios=$("mobileInstallIphone"), android=$("mobileInstallAndroid");
+ ios?.classList.toggle("recommended",platform==="ios");
+ android?.classList.toggle("recommended",platform==="android");
+
+ if(hint){
+   if(cableCrewInstalledAsApp()){
+     hint.textContent="✅ CableCrew lijkt al als app geopend. Kies hieronder alleen nog je naam.";
+     $("mobileOnboardingInstalled").checked=true;
+   }else if(platform==="ios"){
+     hint.textContent="Je gebruikt een iPhone/iPad — volg vooral de stappen bij  iPhone / iPad.";
+   }else if(platform==="android"){
+     hint.textContent="Je gebruikt Android — volg vooral de stappen bij 🤖 Android.";
+   }else{
+     hint.textContent="Kies hieronder de uitleg die bij jouw telefoon hoort.";
+   }
+ }
+ updateMobileOnboardingButton();
+ $("mobileOnboardingModal").classList.add("show");
+}
+function maybeShowMobileOnboarding(){
+ if(!isMobileCableCrew() || mobileOnboardingRecognized())return;
+ if(fillMobileOnboardingNames()>0)showMobileOnboarding();
+}
+
+$("mobileOnboardingName").onchange=()=>{
+ $("mobileOnboardingNameError").textContent="";
+ updateMobileOnboardingButton();
+};
+$("mobileOnboardingInstalled").onchange=updateMobileOnboardingButton;
+
+$("mobileOnboardingDone").onclick=()=>{
+ const name=$("mobileOnboardingName").value;
+ if(!name){
+   $("mobileOnboardingNameError").textContent="Kies eerst je naam.";
+   return;
+ }
+ localStorage.setItem("cc_my_name",name);
+ localStorage.setItem(MOBILE_ONBOARDING_KEY,"1");
+
+ // Koppel de bestaande plannerselectie meteen aan dezelfde identiteit.
+ fillPeople();
+ if([...$("myEmployee").options].some(o=>o.value===name)){
+   $("myEmployee").value=name;
+ }
+ renderDay();renderWeek();
+ updateNotifyUI();
+ updateAdminLoginVisibility();
+
+ $("mobileOnboardingModal").classList.remove("show");
+
+ // Eerste opening na installatie brengt de gebruiker meteen naar zijn eigen planning.
+ if(typeof showOnlyMyCrewPlanning==="function"){
+   setTimeout(()=>showOnlyMyCrewPlanning(),80);
+ }
+};
+
+// Firestore/namenlijst kan iets later geladen zijn. Probeer daarom enkele keren,
+// maar toon de onboarding nooit opnieuw zodra dit toestel voltooid is.
+window.addEventListener("load",()=>{
+ setTimeout(maybeShowMobileOnboarding,300);
+ setTimeout(maybeShowMobileOnboarding,1200);
+ setTimeout(maybeShowMobileOnboarding,2500);
+});
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible")setTimeout(maybeShowMobileOnboarding,250);
+});
+
 </script>
 
 
