@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.19.0-zone-coverage-contract-rules-2026-07-31">
+<meta name="cablecrew-version" content="v12.20.0-landscape-week-swipe-fix-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -2114,6 +2114,25 @@ body.contract-manager #contractsBtn{grid-column:1}
 <style id="v12-19-contract-review-coverage-warning">
 .contract-row.review{border-left:5px solid #e9a019}
 .contract-known{display:inline-block;padding:6px 8px;border-radius:8px;background:#eef6f0;color:#2b6a42;font-size:11px;font-weight:850}
+</style>
+
+
+<style id="v12-20-landscape-swipe-fix">
+@media(orientation:landscape) and (max-height:600px){
+  body.mobile-week-visible .mobile-swipe-hint{
+    display:block!important;
+    text-align:center;
+    margin:2px 10px 6px;
+    color:#7a8996;
+    font-size:9px;
+    font-weight:750;
+  }
+  #week.mobile-swipe-target,
+  #studentWeekPanel.mobile-swipe-target{
+    touch-action:pan-y!important;
+    overscroll-behavior-x:contain;
+  }
+}
 </style>
 
 </head>
@@ -4739,8 +4758,15 @@ function startStudentDirectoryListener(){
 // =========================
 // MOBIELE SWIPE-NAVIGATIE
 // =========================
+function mobileDeviceForSwipe(){
+ // Telefoons kunnen liggend 740–950 CSS-pixels breed zijn.
+ // Pointer:coarse voorkomt dat dit op een gewone desktop actief wordt.
+ return window.matchMedia("(pointer:coarse)").matches &&
+        (window.innerWidth<=1024 || window.innerHeight<=600);
+}
 function mobileIsLandscape(){
- return window.matchMedia("(max-width:720px) and (orientation:landscape)").matches;
+ return mobileDeviceForSwipe() &&
+        window.matchMedia("(orientation:landscape)").matches;
 }
 function mobileAddDays(dateKey,days){
  const d=new Date((dateKey||realTodayKey())+"T12:00:00");
@@ -4754,13 +4780,13 @@ function mobileStudentIsWeek(){
  return studentView==="week" || $("studentWeekPanel")?.style.display!=="none";
 }
 function refreshSwipeModeClass(){
- const onMobile=window.matchMedia("(max-width:720px)").matches;
+ const onMobile=mobileDeviceForSwipe();
  const student=$("studentMain")?.classList.contains("active");
  const week=student?mobileStudentIsWeek():mobileCrewIsWeek();
  document.body.classList.toggle("mobile-week-visible",!!(onMobile&&week&&mobileIsLandscape()));
 }
 function moveMobilePlanningBy(direction){
- if(!window.matchMedia("(max-width:720px)").matches)return;
+ if(!mobileDeviceForSwipe())return;
 
  const student=$("studentMain").classList.contains("active");
  const week=student?mobileStudentIsWeek():mobileCrewIsWeek();
