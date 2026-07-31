@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.11-desktop-header-info-2026-07-31">
+<meta name="cablecrew-version" content="v12.12-student-whatsapp-parity-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1558,6 +1558,7 @@ body.admin-active .shift:hover{background:#fff8e8}
         <button id="studentCopyDayBtn" class="admin-action" type="button">📄 <span>Dag kopiëren</span></button>
         <button id="studentCopyWeekBtn" class="admin-action" type="button">🗓️ <span>Week kopiëren</span></button>
         <button id="studentManageBtn" class="admin-action" type="button">👤 <span>Studenten beheren</span></button>
+        <button id="studentWhatsAppGroupBtn" class="admin-action" type="button">💬 <span>WhatsApp groep</span></button>
       </div>
     </div>
   </div>
@@ -2008,6 +2009,34 @@ function applyCrewDeepLink(){
        setTimeout(()=>target.classList.remove("deep-link-target"),4500);
      }
    },250);
+ }
+}
+
+function applyStudentDeepLink(){
+ const params=new URLSearchParams(location.search);
+ if(params.get("tab")!=="students" || !isAdminUser())return;
+ const d=params.get("date");
+ const shiftId=params.get("shift");
+ setPlannerTab("students");
+ if(d){
+   studentEnsureDate(d);
+   $("studentDate").value=d;
+   studentView="day";
+   $("studentDayBtn").classList.add("active");
+   $("studentWeekBtn").classList.remove("active");
+   $("studentDayPanel").style.display="block";
+   $("studentWeekPanel").style.display="none";
+   renderStudentDay();renderStudentWeek();
+ }
+ if(shiftId){
+   setTimeout(()=>{
+     const target=document.querySelector(`[data-student-shift="${CSS.escape(shiftId)}"]`);
+     if(target){
+       target.classList.add("deep-link-target");
+       target.scrollIntoView({behavior:"smooth",block:"center"});
+       setTimeout(()=>target.classList.remove("deep-link-target"),4500);
+     }
+   },300);
  }
 }
 
@@ -2535,6 +2564,7 @@ setTimeout(()=>{
     applyPastDateVisibility();
     updateNotifyUI();
     applyCrewDeepLink();
+    applyStudentDeepLink();
     renderMobileDayScroller();
   }catch(err){
     console.error("Eerste planner-render mislukt:",err);
@@ -2576,7 +2606,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
    $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
  }
  shiftsInitialized=true;
- updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();applyCrewDeepLink();renderMobileDayScroller();setTimeout(ensureDailyBackup,500);
+ updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();applyCrewDeepLink();applyStudentDeepLink();renderMobileDayScroller();setTimeout(ensureDailyBackup,500);
 },err=>{
  firestoreReady=false;shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
  $("syncStatus").textContent="🔴 Firebase niet bereikbaar – JSON-weergave";renderAll();updateNotifyUI();
@@ -3100,9 +3130,18 @@ $("studentEditPerson").onchange=()=>{
 function studentForm(){
  return {date:$("studentEditDate").value,employee:$("studentEditPerson").value,start:$("studentEditStart").value,end:$("studentEditEnd").value,zone:$("studentEditZone").value,note:$("studentEditNote").value.trim()};
 }
+function studentPlannerDeepLink(v){
+ const base="https://lakesideparadise.github.io/crewplanner/";
+ const q=new URLSearchParams();
+ q.set("tab","students");
+ if(v?.date)q.set("date",v.date);
+ if(v?._id)q.set("shift",v._id);
+ return base+"?"+q.toString();
+}
 function studentWhatsAppText(v,kind="gewijzigd"){
  const note=v.note?`\nOpmerking: ${v.note}`:"";
- return `🎓 Lakeside jobstudenten – planning ${kind}\n${v.employee}, je shift op ${label(v.date)} is ${kind}.\n${v.zone} · ${v.start}–${v.end}${note}`;
+ const link=studentPlannerDeepLink(v);
+ return `🎓 Lakeside jobstudenten – planning ${kind}\n${v.employee}, je shift op ${label(v.date)} is ${kind}.\n${v.zone} · ${v.start}–${v.end}${note}\n\nOpen rechtstreeks in de planning:\n${link}`;
 }
 function openStudentWhatsApp(v,kind="gewijzigd"){
  const digits=whatsappDigits(studentPhone(v.employee));
@@ -3110,6 +3149,21 @@ function openStudentWhatsApp(v,kind="gewijzigd"){
  window.open(`https://wa.me/${digits}?text=${encodeURIComponent(studentWhatsAppText(v,kind))}`,"_blank","noopener");
  return true;
 }
+function currentStudentShareLink(){
+ const d=$("studentDate")?.value||realTodayKey();
+ return `https://lakesideparadise.github.io/crewplanner/?tab=students&date=${encodeURIComponent(d)}`;
+}
+function buildStudentWhatsAppGroupText(){
+ const d=$("studentDate")?.value||realTodayKey();
+ const rows=studentShifts.filter(x=>x.date===d);
+ const names=[...new Set(rows.map(x=>x.employee).filter(Boolean))];
+ const summary=names.length?`${names.length} jobstudenten ingepland`:"Geen jobstudenten ingepland";
+ return `🎓 Lakeside jobstudenten – planning ${label(d)}\n${summary}\n\nOpen de planning:\n${currentStudentShareLink()}`;
+}
+$("studentWhatsAppGroupBtn").onclick=()=>{
+ if(!isAdminUser())return;
+ openWhatsAppShare(buildStudentWhatsAppGroupText());
+};
 $("studentWhatsAppBtn").onclick=()=>openStudentWhatsApp(studentForm(),studentEditing?"gewijzigd":"ingepland");
 
 $("studentSaveShift").onclick=async()=>{
@@ -3168,6 +3222,11 @@ $("studentAddPersonBtn").onclick=async()=>{
  try{
    await setDoc(doc(db,"students",name),{name,phone,active:true,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true});
    $("studentNewName").value="";$("studentNewPhone").value="";
+   if(phone && confirm(`${name} is toegevoegd. WhatsApp openen met de link naar de jobstudentenplanning?`)){
+     const digits=whatsappDigits(phone);
+     const msg=`🎓 Welkom bij de Lakeside jobstudentenplanning, ${name}!\n\nHier kan je de planning bekijken:\n${currentStudentShareLink()}`;
+     window.open(`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`,"_blank","noopener");
+   }
  }catch(e){alert("Student toevoegen mislukt: "+e.message)}
 };
 $("studentManageSaveBtn").onclick=async()=>{
