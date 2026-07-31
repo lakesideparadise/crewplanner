@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.6-final-responsive-mobile-week-2026-07-31">
+<meta name="cablecrew-version" content="v12.7-five-day-picker-my-planning-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1000,6 +1000,92 @@ body.admin-active .shift:hover{background:#fff8e8}
   .mobile-nav-plus{width:28px!important;height:28px!important;font-size:19px!important}
 }
 
+
+/* ===== V12.7 MOBILE DATUM / MIJN PLANNING ===== */
+.mobile-today-text{display:none}
+.mobile-date-picker{
+  position:absolute!important;
+  width:1px!important;height:1px!important;
+  opacity:0!important;pointer-events:none!important;
+}
+
+@media(max-width:720px){
+  /* Geen koppeling meer met persoonlijke telefoonagenda */
+  .calendar-header-btn{display:none!important}
+
+  .mobile-today-text{
+    display:block;
+    padding:11px 14px 3px;
+    background:#fff;
+    color:#162f49;
+    font-size:14px;
+    font-weight:650;
+    border-top:1px solid #edf1f4;
+  }
+  .mobile-today-text strong{font-weight:900}
+
+  /* Precies 5 dagen zichtbaar + kalenderknop */
+  .mobile-day-scroller{
+    position:relative;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 48px;
+    gap:8px;
+    padding:8px 10px 11px!important;
+    overflow:visible!important
+  }
+  .mobile-day-scroller-inner{
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:7px!important;
+    overflow:visible!important;
+    padding:0!important;
+  }
+  .mobile-day-pill{
+    min-width:0!important;
+    width:100%!important;
+    flex:none!important;
+    min-height:66px!important;
+    padding:6px 2px!important;
+  }
+  .mobile-day-pill small{font-size:10px!important}
+  .mobile-day-pill strong{font-size:20px!important}
+  .mobile-day-pill .mobile-month{
+    display:block;font-size:9px;line-height:1.1;margin-top:2px;
+    text-transform:lowercase;font-weight:800;opacity:.82
+  }
+  .mobile-calendar-btn{
+    width:48px!important;min-height:66px!important;
+    flex:none!important
+  }
+
+  /* De oude select blijft technisch bestaan, maar is niet meer nodig in mobiele UI. */
+  main .toolbar select#date{display:none!important}
+
+  /* Mijn planning: duidelijke gefilterde modus */
+  body.mobile-mine-mode .planner-tabs{
+    box-shadow:inset 3px 0 0 #1687df
+  }
+  body.mobile-mine-mode #crewPlannerTab::after{
+    content:" · Mijn planning";
+    color:#1687df;font-weight:900
+  }
+}
+
+@media(max-height:520px) and (orientation:landscape){
+  .mobile-today-text{display:none!important}
+  .mobile-day-scroller{
+    grid-template-columns:minmax(0,1fr) 42px!important;
+    padding:4px 8px 5px!important
+  }
+  .mobile-day-scroller-inner{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:5px!important
+  }
+  .mobile-day-pill{min-height:44px!important;padding:2px!important}
+  .mobile-day-pill .mobile-month{display:none!important}
+  .mobile-calendar-btn{min-height:44px!important;width:42px!important}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1016,7 +1102,7 @@ body.admin-active .shift:hover{background:#fff8e8}
 <div id="toastWrap" class="toast-wrap"></div>
 <header><div class="header-inner">
   <div class="brand-wrap"><img class="brand-logo" src="./icon-192.png" alt=""><div class="brand">CableCrew Lakeside</div></div>
-  <div class="mobile-header-actions"><div id="mobileHeaderWeather" class="mobile-header-weather"></div><button id="calendarHeaderBtn" class="calendar-header-btn" aria-label="Mijn agenda" title="Mijn agenda">📅</button></div>
+  <div class="mobile-header-actions"><div id="mobileHeaderWeather" class="mobile-header-weather"></div></div>
   <div id="syncStatus" class="status">Verbinden…</div>
 </div></header>
 <div class="planner-tabs">
@@ -1024,9 +1110,11 @@ body.admin-active .shift:hover{background:#fff8e8}
   <button id="studentPlannerTab" class="planner-tab" type="button" style="display:none">🎓 Jobstudenten</button>
 </div>
 
+<div id="mobileTodayText" class="mobile-today-text"></div>
 <div id="mobileDayScroller" class="mobile-day-scroller" aria-label="Dagen">
   <div id="mobileDayScrollerInner" class="mobile-day-scroller-inner"></div>
-  <button id="mobileCalendarBtn" class="mobile-calendar-btn" type="button" aria-label="Kalender">📅</button>
+  <button id="mobileCalendarBtn" class="mobile-calendar-btn" type="button" aria-label="Ga naar datum">📅</button>
+  <input id="mobileDatePicker" class="mobile-date-picker" type="date" aria-label="Kies datum">
 </div>
 
 
@@ -1237,25 +1325,6 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button id="studentWeekCopyDo" class="success" type="button">Week kopiëren</button>
   </div>
 </div></div>
-
-<div id="calendarModal" class="modalback">
-  <div class="modal calendar-modal">
-    <h2>📅 Mijn agenda</h2>
-    <div id="calendarIdentity" class="calendar-identity"></div>
-    <p class="calendar-help">
-      Voeg je toekomstige CableCrew-shifts toe aan de agenda op je telefoon.
-      Daarna kun je de gewone Agenda-widget van je telefoon gebruiken.
-    </p>
-    <div class="calendar-actions">
-      <button id="downloadCalendarBtn" class="primary">📅 Mijn shifts toevoegen</button>
-      <button id="closeCalendarBtn">Sluiten</button>
-    </div>
-    <div class="calendar-note">
-      Testversie: dit maakt een agenda-bestand van je huidige toekomstige shifts.
-      Latere wijzigingen synchroniseren nog niet automatisch.
-    </div>
-  </div>
-</div>
 
 <div id="loginModal" class="modalback"><div class="modal">
   <h2>Beheer login</h2>
@@ -2865,76 +2934,166 @@ function mobileSetActive(id){
  document.querySelectorAll(".mobile-nav-item").forEach(b=>b.classList.toggle("active",b.id===id));
 }
 function mobileSelectedDate(){
- return $("studentMain").classList.contains("active") ? ($("studentDate").value||realTodayKey()) : ($("date").value||realTodayKey());
+ return $("studentMain").classList.contains("active")
+   ? ($("studentDate").value||realTodayKey())
+   : ($("date").value||realTodayKey());
 }
 function mobileSetDate(k){
+ if(!k)return;
  if($("studentMain").classList.contains("active")){
-   studentEnsureDate(k);$("studentDate").value=k;renderStudentAll();
+   studentEnsureDate(k);
+   $("studentDate").value=k;
+   renderStudentAll();
  }else{
-   ensureDateOption(k);$("date").value=k;renderAll();applyPastDateVisibility();
+   ensureDateOption(k);
+   $("date").value=k;
+   renderDay();
+   renderWeek();
+   applyPastDateVisibility();
  }
  renderMobileDayScroller(k);
 }
-function renderMobileDayScroller(centerKey=mobileSelectedDate()){
+function renderMobileTodayText(){
+ const el=$("mobileTodayText");
+ if(!el)return;
+ const today=new Date(realTodayKey()+"T12:00:00");
+ const txt=today.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ el.innerHTML=`Vandaag is <strong>${esc(txt)}</strong>`;
+}
+function renderMobileDayScroller(selectedKey=mobileSelectedDate()){
  const wrap=$("mobileDayScrollerInner");
  if(!wrap)return;
- const center=new Date(centerKey+"T12:00:00");
+
+ // Geen dag vóór de geselecteerde datum. Altijd precies 5 dagen.
+ const start=new Date((selectedKey||realTodayKey())+"T12:00:00");
  let html="";
- for(let i=-1;i<=5;i++){
-   const d=new Date(center);d.setDate(center.getDate()+i);
+ for(let i=0;i<5;i++){
+   const d=new Date(start);d.setDate(start.getDate()+i);
    const k=key(d);
    const wd=d.toLocaleDateString("nl-BE",{weekday:"short"}).replace(".","");
-   html+=`<button type="button" class="mobile-day-pill ${k===centerKey?"active":""}" data-mobile-date="${k}">
-     <small>${esc(wd)}</small><strong>${d.getDate()}</strong>
+   const month=d.toLocaleDateString("nl-BE",{month:"short"}).replace(".","");
+   html+=`<button type="button" class="mobile-day-pill ${k===selectedKey?"active":""}" data-mobile-date="${k}">
+     <small>${esc(wd)}</small>
+     <strong>${d.getDate()}</strong>
+     <span class="mobile-month">${esc(month)}</span>
    </button>`;
  }
  wrap.innerHTML=html;
  wrap.querySelectorAll("[data-mobile-date]").forEach(btn=>btn.onclick=()=>{
+   document.body.classList.remove("mobile-mine-mode");
    mobileSetDate(btn.dataset.mobileDate);
    mobileSetActive(btn.dataset.mobileDate===realTodayKey()?"mobileNavToday":"");
  });
- setTimeout(()=>wrap.querySelector(".mobile-day-pill.active")?.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}),50);
+ renderMobileTodayText();
 }
-$("mobileCalendarBtn").onclick=()=>$("calendarHeaderBtn")?.click();
+
+$("mobileCalendarBtn").onclick=()=>{
+ const picker=$("mobileDatePicker");
+ picker.value=mobileSelectedDate()||realTodayKey();
+ if(typeof picker.showPicker==="function")picker.showPicker();
+ else picker.click();
+};
+$("mobileDatePicker").onchange=e=>{
+ if(!e.target.value)return;
+ document.body.classList.remove("mobile-mine-mode");
+ mobileSetDate(e.target.value);
+ mobileSetActive(e.target.value===realTodayKey()?"mobileNavToday":"");
+};
+
+function ensurePersonalCrewIdentity(){
+ let name=currentCrewName();
+ if(name)return name;
+
+ const names=people();
+ if(!names.length)return "";
+
+ const entered=prompt("Kies je naam voor Mijn planning:\\n\\n"+names.join(", "));
+ if(!entered)return "";
+ const match=names.find(n=>n.toLowerCase()===entered.trim().toLowerCase());
+ if(!match){
+   alert("Naam niet gevonden. Kies je naam exact zoals ze in de planning staat.");
+   return "";
+ }
+ localStorage.setItem("cc_my_name",match);
+ fillPeople();
+ return match;
+}
+function showOnlyMyCrewPlanning(){
+ const name=ensurePersonalCrewIdentity();
+ if(!name)return;
+
+ setPlannerTab("crew");
+ adminPlanningFilterChosen=true;
+ fillPeople();
+
+ // Voor gewone crew staat alleen Iedereen + eigen naam beschikbaar;
+ // voor Nick/Arno in beheer selecteren we hun eigen naam.
+ if([...$("myEmployee").options].some(o=>o.value===name)){
+   $("myEmployee").value=name;
+ }
+
+ // Toon vanaf vandaag en alleen de eigen shifts.
+ ensureDateOption(realTodayKey());
+ $("date").value=realTodayKey();
+ currentView="day";
+ document.querySelectorAll("main .viewbtn").forEach(b=>b.classList.toggle("active",b.dataset.view==="day"));
+ document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id==="day"));
+ renderDay();
+ renderWeek();
+ document.body.classList.add("mobile-mine-mode");
+ renderMobileDayScroller(realTodayKey());
+ mobileSetActive("mobileNavMine");
+ setTimeout(()=>document.querySelector("#dayGrid")?.scrollIntoView({behavior:"smooth",block:"start"}),60);
+}
 
 $("mobileNavToday").onclick=()=>{
+ document.body.classList.remove("mobile-mine-mode");
  const today=realTodayKey();
  mobileSetDate(today);
  if($("studentMain").classList.contains("active"))$("studentDayBtn").click();
  else{
+   $("myEmployee").value="";
    const dayBtn=[...document.querySelectorAll("main .viewbtn")].find(b=>b.dataset.view==="day");
    dayBtn?.click();
+   renderDay();renderWeek();
  }
  mobileSetActive("mobileNavToday");
 };
 $("mobileNavTomorrow").onclick=()=>{
+ document.body.classList.remove("mobile-mine-mode");
  const d=new Date(realTodayKey()+"T12:00:00");d.setDate(d.getDate()+1);
- mobileSetDate(key(d));
+ const tomorrow=key(d);
+ mobileSetDate(tomorrow);
  if($("studentMain").classList.contains("active"))$("studentDayBtn").click();
  else{
+   $("myEmployee").value="";
    const dayBtn=[...document.querySelectorAll("main .viewbtn")].find(b=>b.dataset.view==="day");
    dayBtn?.click();
+   renderDay();renderWeek();
  }
  mobileSetActive("mobileNavTomorrow");
 };
 $("mobileNavWeek").onclick=()=>{
+ document.body.classList.remove("mobile-mine-mode");
  if($("studentMain").classList.contains("active"))$("studentWeekBtn").click();
  else{
+   $("myEmployee").value="";
    const weekBtn=[...document.querySelectorAll("main .viewbtn")].find(b=>b.dataset.view==="week");
    weekBtn?.click();
+   renderDay();renderWeek();
  }
  mobileSetActive("mobileNavWeek");
  setTimeout(()=>window.scrollTo({top:0,behavior:"smooth"}),50);
 };
 $("mobileNavMine").onclick=()=>{
  if($("studentMain").classList.contains("active")){
+   // Jobstudentenmodule is alleen voor Nick en Arno beheer; daar blijft de bestaande filter beschikbaar.
    $("studentPerson")?.focus();
    $("studentPerson")?.scrollIntoView({behavior:"smooth",block:"center"});
- }else{
-   $("myEmployee")?.focus();
-   $("myEmployee")?.scrollIntoView({behavior:"smooth",block:"center"});
+   mobileSetActive("mobileNavMine");
+   return;
  }
- mobileSetActive("mobileNavMine");
+ showOnlyMyCrewPlanning();
 };
 $("mobileNavAdminAdd").onclick=()=>{
  if(!isAdminUser())return;
@@ -2946,72 +3105,6 @@ function syncMobileAdminState(){
 }
 window.addEventListener("resize",()=>renderMobileDayScroller());
 window.addEventListener("orientationchange",()=>setTimeout(()=>renderMobileDayScroller(),200));
-
-function icsEscape(v){
- return String(v??"")
-   .replace(/\\/g,"\\\\")
-   .replace(/\n/g,"\\n")
-   .replace(/,/g,"\\,")
-   .replace(/;/g,"\\;");
-}
-function icsDateTime(date,time){
- return date.replaceAll("-","")+"T"+(time||"00:00").replace(":","")+"00";
-}
-function buildPersonalIcs(){
- const name=currentCrewName();
- if(!name)return "";
- const today=realTodayKey();
- const mine=shifts
-   .filter(x=>x.employee===name && x.date>=today)
-   .sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
-
- const lines=[
-   "BEGIN:VCALENDAR",
-   "VERSION:2.0",
-   "PRODID:-//CableCrew Lakeside//Planning//NL",
-   "CALSCALE:GREGORIAN",
-   "METHOD:PUBLISH"
- ];
-
- mine.forEach((x,i)=>{
-   const uid=`${x._id||i}-${x.date}-${x.start}@cablecrew`;
-   const summary=`CableCrew – ${x.zone}`;
-   const description=x.note?`Opmerking: ${x.note}`:"";
-   lines.push(
-     "BEGIN:VEVENT",
-     `UID:${icsEscape(uid)}`,
-     `DTSTART;TZID=Europe/Brussels:${icsDateTime(x.date,x.start)}`,
-     `DTEND;TZID=Europe/Brussels:${icsDateTime(x.date,x.end)}`,
-     `SUMMARY:${icsEscape(summary)}`,
-     `DESCRIPTION:${icsEscape(description)}`,
-     "END:VEVENT"
-   );
- });
- lines.push("END:VCALENDAR");
- return lines.join("\r\n");
-}
-function openCalendarModal(){
- const name=currentCrewName();
- $("calendarIdentity").textContent=name?`Agenda voor: ${name}`:"Kies eerst één keer je naam bij Mijn planning.";
- $("downloadCalendarBtn").disabled=!name;
- $("calendarModal").classList.add("show");
-}
-$("calendarHeaderBtn").onclick=openCalendarModal;
-$("closeCalendarBtn").onclick=()=>$("calendarModal").classList.remove("show");
-$("downloadCalendarBtn").onclick=()=>{
- const name=currentCrewName();
- if(!name)return alert("Kies eerst één keer je naam bij Mijn planning.");
- const ics=buildPersonalIcs();
- const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});
- const url=URL.createObjectURL(blob);
- const a=document.createElement("a");
- a.href=url;
- a.download=`CableCrew-${name}.ics`;
- document.body.appendChild(a);
- a.click();
- a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),1000);
-};
 
 function formatMessageTime(ts){
  if(!ts)return "zojuist";
