@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.14.1-multishift-winterzones-leave-2026-07-31">
+<meta name="cablecrew-version" content="v12.17.0-contract-manager-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -2038,6 +2038,60 @@ body.admin-active .shift:hover{background:#fff8e8}
 }
 </style>
 
+
+<style id="v12-15-desktop-auth">
+.desktop-header-auth{display:none}
+@media(min-width:721px){
+  .desktop-header-auth{
+    display:flex;
+    align-items:center;
+    margin-left:10px;
+  }
+  #desktopAuthBtn{
+    display:none;
+    min-height:44px;
+    padding:0 17px;
+    border-radius:12px;
+    color:#fff;
+    background:linear-gradient(135deg,#073b64,#0b5683);
+    border:1px solid #0b5683;
+    box-shadow:0 5px 14px rgba(11,75,111,.20);
+    font-size:13px;
+    font-weight:900;
+    white-space:nowrap;
+  }
+  #desktopAuthBtn.is-logout{
+    display:inline-flex;
+    color:#8f2d27;
+    background:#fff7f6;
+    border-color:#e4bdb9;
+    box-shadow:none;
+  }
+  /* Oude beheerlogin onder de planner verdwijnt op desktop. */
+  main .admin-login{display:none!important}
+}
+</style>
+
+
+<style id="v12-17-contracts">
+.contracts-modal{width:min(980px,96vw);max-height:90vh;overflow:auto}
+.contract-tabs{display:flex;gap:8px;margin:10px 0}
+.contract-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.contract-tab span:not(:empty){display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#d92d20;color:#fff;font-size:10px;margin-left:4px}
+.contract-help{padding:10px 12px;margin-bottom:10px;border-radius:10px;background:#f4f7f9;color:#526577;font-size:12px;line-height:1.45}
+.contract-list{display:grid;gap:8px}
+.contract-row{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(240px,1.3fr) auto;gap:10px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.contract-row.needs{border-left:5px solid #d92d20}.contract-row.ok{border-left:5px solid #2b8a57}
+.contract-person{font-weight:900}.contract-meta{font-size:11px;color:var(--muted);margin-top:3px}.contract-status{font-size:12px;font-weight:850;line-height:1.4}
+.contract-actions button{padding:7px 9px;font-size:11px}
+#contractsBtn.contract-alert::before{content:attr(data-count);position:absolute;right:9px;top:8px;z-index:2;min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:grid;place-items:center;background:#d92d20;color:#fff;font-size:10px;font-weight:900}
+body.contract-manager .admin-main-actions,body.contract-manager .admin-actionbar .edit-hint{display:none!important}
+body.contract-manager .admin-tool-card:not(#contractsBtn){display:none!important}
+body.contract-manager .admin-tools-grid{grid-template-columns:minmax(280px,430px)}
+body.contract-manager #contractsBtn{grid-column:1}
+@media(max-width:720px){.contract-row{grid-template-columns:1fr}.contract-actions button{width:100%}body.contract-manager .admin-tools-grid{grid-template-columns:1fr}}
+</style>
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -2060,6 +2114,9 @@ body.admin-active .shift:hover{background:#fff8e8}
       <span class="desktop-chip-icon">👤</span>
       <div><small id="desktopPlanningTitle">Mijn planning</small><select id="desktopHeaderPerson"><option value="">Iedereen</option></select></div>
     </div>
+  </div>
+  <div class="desktop-header-auth">
+    <button id="desktopAuthBtn" type="button">🔐 Login</button>
   </div>
   <div id="syncStatus" class="status">Verbinden…</div>
 </div></header>
@@ -2128,7 +2185,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     <button class="viewbtn active" data-view="day">Dag</button>
     <button class="viewbtn" data-view="week">Week</button>
     <select id="date"></select>
-    <div class="admin-login"><button id="loginBtn">🔐 Beheer login</button></div>
+    <div class="admin-login"><button id="loginBtn">🔐 Login</button></div>
   </div>
   <div id="selectedDateBanner" class="selected-date-banner"><span>Planning voor</span><strong id="selectedDateBannerText"></strong></div>
 
@@ -2170,6 +2227,9 @@ body.admin-active .shift:hover{background:#fff8e8}
       </button>
       <button id="backupsBtn" class="admin-tool-card tool-purple">
         <span class="tool-icon">💾</span><span class="tool-copy"><b>Back-ups</b><small>Maak en herstel veilige back-ups.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="contractsBtn" class="admin-tool-card tool-orange">
+        <span class="tool-icon">📄</span><span class="tool-copy"><b>Contracten</b><small>Zie wie een contract nodig heeft en registreer contractperiodes.</small></span><span class="tool-arrow">›</span>
       </button>
       <button id="crewContactsBtn" class="admin-tool-card tool-lime">
         <span class="tool-icon">📱</span><span class="tool-copy"><b>WhatsApp nummers</b><small>Beheer namen en telefoonnummers.</small></span><span class="tool-arrow">›</span>
@@ -2523,6 +2583,33 @@ body.admin-active .shift:hover{background:#fff8e8}
 </div></div>
 
 
+<div id="contractsModal" class="modalback"><div class="modal contracts-modal">
+  <div class="year-head">
+    <div><h2>📄 Contractbeheer</h2><div class="year-sub">Automatische controle op basis van de ingeplande werkdagen.</div></div>
+    <button id="closeContractsBtn">Sluiten</button>
+  </div>
+  <div class="contract-tabs">
+    <button id="contractStudentsTab" class="contract-tab active">Jobstudenten <span id="studentContractBadge"></span></button>
+    <button id="contractCrewTab" class="contract-tab">Medewerkers <span id="crewContractBadge"></span></button>
+  </div>
+  <div id="contractHelp" class="contract-help"></div>
+  <div id="contractList" class="contract-list"></div>
+</div></div>
+
+<div id="contractEditModal" class="modalback"><div class="modal">
+  <h2 id="contractEditTitle">Contract registreren</h2>
+  <div class="formgrid">
+    <label class="wide">Persoon<input id="contractPerson" readonly></label>
+    <label>Begin contract<input id="contractStart" type="date"></label>
+    <label>Einde contract<input id="contractEnd" type="date"></label>
+    <label class="wide">Opmerking<input id="contractNote" placeholder="optioneel"></label>
+  </div>
+  <div class="modalactions">
+    <button id="cancelContractEdit">Annuleren</button>
+    <button id="saveContractEdit" class="primary">Opslaan als in orde</button>
+  </div>
+</div></div>
+
 <div id="crewContactsModal" class="modalback"><div class="modal crew-contacts-modal">
   <div class="year-head">
     <div>
@@ -2746,17 +2833,19 @@ function renderDay(){
    const rows=list
      .filter(x=>x.date===d&&x.zone===z)
      .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.end||"").localeCompare(b.end||""));
-   // Buiten "Mijn planning" blijven lege zones zichtbaar zoals vroeger.
-   if(mineMode && !rows.length)return "";
-   return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${rows.length?rows.map(shiftHtml).join(""):'<div class="empty" style="padding:12px 16px">Geen planning</div>'}</section>`;
+   // Lege zones worden nergens meer getoond: dagplanning én Mijn planning.
+   if(!rows.length)return "";
+   return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${rows.map(shiftHtml).join("")}</section>`;
  }).join("");
 
- if(mineMode && !vacationRows.length && !zoneHtml){
-   $("dayGrid").innerHTML=`<div class="my-planning-empty">
-     <div class="my-planning-empty-icon">☀️</div>
-     <strong>Je hebt deze dag geen shift.</strong>
-     <span>Kies hierboven een andere datum om je planning te bekijken.</span>
-   </div>`;
+ if(!vacationRows.length && !zoneHtml){
+   $("dayGrid").innerHTML=mineMode
+     ?`<div class="my-planning-empty">
+       <div class="my-planning-empty-icon">☀️</div>
+       <strong>Je hebt deze dag geen shift.</strong>
+       <span>Kies hierboven een andere datum om je planning te bekijken.</span>
+     </div>`
+     :`<div class="empty" style="padding:14px 4px">Geen shifts ingepland op deze dag.</div>`;
    return;
  }
  $("dayGrid").innerHTML=vacationBanner+zoneHtml;
@@ -3411,7 +3500,86 @@ $("doWeekCopy").onclick=async()=>{
 
 $("printBtn").onclick=()=>window.print();
 
+
+let contractRecords=[];
+let contractView="student";
+let contractEditing=null;
+
+function plannedContractPeriods(type,name){
+ const source=type==="student"?studentShifts:shifts;
+ const dates=[...new Set(source.filter(x=>x.employee===name&&x.date).map(x=>x.date))].sort();
+ const months={};
+ dates.forEach(d=>(months[d.slice(0,7)]||(months[d.slice(0,7)]=[])).push(d));
+ return Object.entries(months).sort().map(([month,ds])=>({month,start:ds[0],end:ds[ds.length-1],dates:ds}));
+}
+function contractCovers(type,name,date){
+ return contractRecords.find(c=>c.type===type&&c.person===name&&c.start<=date&&c.end>=date);
+}
+function contractOverview(type){
+ const names=type==="student"
+   ?[...new Set(studentShifts.map(x=>x.employee).filter(Boolean))]
+   :[...new Set(shifts.filter(x=>x.zone!=="VERLOF").map(x=>x.employee).filter(Boolean))];
+ const rows=[];
+ names.forEach(name=>plannedContractPeriods(type,name).forEach(period=>{
+   const contract=contractCovers(type,name,period.start);
+   rows.push({type,name,period,contract,needs:!contract});
+ }));
+ return rows.sort((a,b)=>a.period.start.localeCompare(b.period.start)||a.name.localeCompare(b.name));
+}
+function contractDate(d){return d?new Intl.DateTimeFormat("nl-BE",{day:"numeric",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):""}
+function updateContractBadge(){
+ const count=contractOverview("student").filter(r=>r.needs).length+contractOverview("crew").filter(r=>r.needs).length;
+ const b=$("contractsBtn");if(!b)return;
+ b.classList.toggle("contract-alert",count>0);b.dataset.count=count||"";
+}
+function renderContracts(){
+ const rows=contractOverview(contractView);
+ const sCount=contractOverview("student").filter(r=>r.needs).length;
+ const cCount=contractOverview("crew").filter(r=>r.needs).length;
+ $("studentContractBadge").textContent=sCount||"";$("crewContractBadge").textContent=cCount||"";
+ $("contractStudentsTab").classList.toggle("active",contractView==="student");
+ $("contractCrewTab").classList.toggle("active",contractView==="crew");
+ $("contractHelp").innerHTML=contractView==="student"
+  ?'Per kalendermaand wordt gecontroleerd of de <b>eerste ingeplande werkdag</b> gedekt is door een geregistreerde contractperiode. Komt iemand later opnieuw nadat het geregistreerde contract verlopen is, dan verschijnt opnieuw <b>Contract nodig</b>.'
+  :'Voor gewone medewerkers kun je op dezelfde manier contractperiodes registreren en controleren.';
+ $("contractList").innerHTML=rows.length?rows.map(r=>`<div class="contract-row ${r.needs?"needs":"ok"}">
+   <div><div class="contract-person">${esc(r.name)}</div><div class="contract-meta">${r.period.dates.length} geplande dag${r.period.dates.length===1?"":"en"} · ${esc(r.period.month)}</div></div>
+   <div class="contract-status">${r.needs?`🔴 Contract nodig vóór ${contractDate(r.period.start)}`:`✅ In orde: ${contractDate(r.contract.start)} – ${contractDate(r.contract.end)}`}<div class="contract-meta">Planning: ${contractDate(r.period.start)} – ${contractDate(r.period.end)}</div></div>
+   <div class="contract-actions"><button data-contract="${r.type}" data-person="${esc(r.name)}" data-start="${r.period.start}">${r.needs?"Registreren":"Aanpassen"}</button></div>
+ </div>`).join(""):'<div class="empty">Geen ingeplande personen gevonden.</div>';
+ document.querySelectorAll("[data-contract]").forEach(b=>b.onclick=()=>openContractEdit(b.dataset.contract,b.dataset.person,b.dataset.start));
+ updateContractBadge();
+}
+function openContractEdit(type,name,start){
+ contractEditing={type,name};
+ $("contractPerson").value=name;$("contractStart").value=start;
+ const d=new Date(start+"T12:00:00");$("contractEnd").value=ymd(new Date(d.getFullYear(),d.getMonth()+1,0));
+ $("contractNote").value="";$("contractEditTitle").textContent=`Contract registreren · ${name}`;$("contractEditModal").classList.add("show");
+}
+async function saveContractRecord(){
+ if(!contractEditing)return;
+ const start=$("contractStart").value,end=$("contractEnd").value,note=$("contractNote").value.trim();
+ if(!start||!end)return alert("Vul begin- en einddatum in.");if(end<start)return alert("Einddatum moet na begindatum liggen.");
+ try{await addDoc(collection(db,"contracts"),{type:contractEditing.type,person:contractEditing.name,start,end,note,updatedAt:new Date().toISOString(),updatedBy:user?.email||""});$("contractEditModal").classList.remove("show")}
+ catch(e){alert("Opslaan mislukt: "+e.message)}
+}
+$("contractsBtn").onclick=()=>{contractView="student";renderContracts();$("contractsModal").classList.add("show")};
+$("closeContractsBtn").onclick=()=>$("contractsModal").classList.remove("show");
+$("contractStudentsTab").onclick=()=>{contractView="student";renderContracts()};
+$("contractCrewTab").onclick=()=>{contractView="crew";renderContracts()};
+$("cancelContractEdit").onclick=()=>$("contractEditModal").classList.remove("show");
+$("saveContractEdit").onclick=saveContractRecord;
+
 $("loginBtn").onclick=()=>{
+ $("loginModal").classList.add("show");
+ setTimeout(()=>$("loginEmail").focus(),50);
+};
+$("desktopAuthBtn").onclick=async()=>{
+ if(isAdminUser()){
+   await signOut(auth);
+   await ensureAnonymousAuth();
+   return;
+ }
  $("loginModal").classList.add("show");
  setTimeout(()=>$("loginEmail").focus(),50);
 };
@@ -3450,8 +3618,10 @@ onAuthStateChanged(auth,u=>{
    adminPlanningFilterChosen=false;
    if($("myEmployee"))$("myEmployee").value="";
  }
- editMode=admin;
- $("adminBar").classList.toggle("show",admin); $("adminActionTop").classList.toggle("show",admin); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");$("dayCopyModal").classList.remove("show");$("weekCopyModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null} if(studentShiftUnsub){studentShiftUnsub();studentShiftUnsub=null} if(studentDirectoryUnsub){studentDirectoryUnsub();studentDirectoryUnsub=null} setPlannerTab("crew"); $("crewContactsModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
+ editMode=admin && !isContractManager();
+ document.body.classList.toggle("contract-manager",isContractManager());
+ $("adminBar").classList.toggle("show",admin);
+ $("adminActionTop").classList.toggle("show",admin && !isContractManager()); if(!admin){$("yearPlannerModal").classList.remove("show");$("changeLogModal").classList.remove("show");$("hoursReportModal").classList.remove("show");$("backupsModal").classList.remove("show");$("dayCopyModal").classList.remove("show");$("weekCopyModal").classList.remove("show");if(backupUnsub){backupUnsub();backupUnsub=null} if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null} if(studentShiftUnsub){studentShiftUnsub();studentShiftUnsub=null} if(studentDirectoryUnsub){studentDirectoryUnsub();studentDirectoryUnsub=null} setPlannerTab("crew"); $("crewContactsModal").classList.remove("show"); if(stopAuditListener){stopAuditListener();stopAuditListener=null;}}
  document.body.classList.toggle("admin-active",admin);
  updateAdminLoginVisibility();
  $("adminWho").textContent=admin?`🔧 ${u?.email||"Beheer"}`:"Beheer";
@@ -3520,6 +3690,12 @@ setTimeout(()=>{
 
 ensureAnonymousAuth().catch(err=>{
   console.warn("Anonymous auth kon niet onmiddellijk herstellen:",err);
+});
+
+onSnapshot(collection(db,"contracts"),snap=>{
+ contractRecords=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ updateContractBadge();
+ if($("contractsModal")?.classList.contains("show"))renderContracts();
 });
 
 onSnapshot(collection(db,"shifts"),snap=>{
@@ -3696,12 +3872,15 @@ function relevantToMe(x){
  return !!n && x && x.employee===n;
 }
 
-const ADMIN_EMAILS=["nick@lakesideparadise.be","arno@lakesideparadise.be"];
+const ADMIN_EMAILS=["nick@lakesideparadise.be","arno@lakesideparadise.be","annsophy@lakesideparadise.be"];
 const ADMIN_NAME_BY_EMAIL={
  "nick@lakesideparadise.be":"Nick",
- "arno@lakesideparadise.be":"Arno"
+ "arno@lakesideparadise.be":"Arno",
+ "annsophy@lakesideparadise.be":"Ann-Sophy"
 };
 function isAdminUser(){return !!(user && user.email && ADMIN_EMAILS.includes(user.email.toLowerCase()))}
+function isContractManager(){return (user?.email||"").toLowerCase()==="annsophy@lakesideparadise.be"}
+function isPlannerAdmin(){return ["nick@lakesideparadise.be","arno@lakesideparadise.be"].includes((user?.email||"").toLowerCase())}
 function adminCrewName(){
  const email=(user?.email||"").toLowerCase();
  return ADMIN_NAME_BY_EMAIL[email]||"";
@@ -3713,11 +3892,29 @@ function currentCrewName(){
 function updateAdminLoginVisibility(){
  const btn=$("loginBtn");
  const mobileBtn=$("mobileAuthBtn");
+ const desktopBtn=$("desktopAuthBtn");
  const selected=($("myEmployee")?.value || localStorage.getItem("cc_my_name") || "").trim();
- const mayManage=["Nick","Arno"].includes(selected) || isAdminUser();
+ const mayManage=["Nick","Arno","Ann-Sophy","Ann Sophy","Annsophy"].includes(selected) || isAdminUser();
 
  if(btn){
    btn.style.display=mayManage && !isAdminUser() ? "inline-block" : "none";
+ }
+
+ if(desktopBtn){
+   if(isAdminUser()){
+     desktopBtn.style.display="inline-flex";
+     desktopBtn.textContent=isContractManager()?"↪ Logout · Ann-Sophy":"↪ Logout";
+     desktopBtn.classList.add("is-logout");
+     desktopBtn.setAttribute("aria-label","Uitloggen");
+   }else if(mayManage){
+     desktopBtn.style.display="inline-flex";
+     desktopBtn.textContent="🔐 Login";
+     desktopBtn.classList.remove("is-logout");
+     desktopBtn.setAttribute("aria-label","Inloggen");
+   }else{
+     desktopBtn.style.display="none";
+     desktopBtn.classList.remove("is-logout");
+   }
  }
 
  if(mobileBtn){
