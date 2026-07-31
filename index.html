@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.9-mobile-calendar-modal-2026-07-31">
+<meta name="cablecrew-version" content="v12.9.1-mobile-calendar-fit-fix-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1153,6 +1153,82 @@ body.admin-active .shift:hover{background:#fff8e8}
     padding:18px 16px 20px!important
   }
   .mobile-date-calendar-day{font-size:15px}
+}
+
+
+/* ===== V12.9.1 FIX: KALENDER VOLLEDIG ZICHTBAAR OP MOBIEL ===== */
+@media(max-width:720px){
+  #mobileDateCalendarModal{
+    align-items:center!important;
+    padding:10px!important;
+  }
+  .mobile-date-calendar-modal{
+    width:min(420px,96vw)!important;
+    max-height:calc(100dvh - 24px)!important;
+    overflow:auto!important;
+    border-radius:20px!important;
+    padding:14px!important;
+  }
+  .mobile-date-calendar-modal .year-head{
+    margin-bottom:8px!important;
+    align-items:center!important;
+  }
+  .mobile-date-calendar-modal .year-head h2{
+    font-size:20px!important;
+    margin:0!important;
+  }
+  .mobile-date-calendar-modal .year-sub{
+    font-size:11px!important;
+    margin-top:2px!important;
+  }
+  .mobile-date-calendar-modal .year-head button{
+    padding:7px 9px!important;
+    font-size:11px!important;
+  }
+  .mobile-date-calendar-nav{
+    margin:4px 0 8px!important;
+    grid-template-columns:40px 1fr 40px!important;
+    gap:6px!important;
+  }
+  .mobile-date-calendar-nav strong{
+    font-size:16px!important;
+  }
+  .mobile-date-calendar-nav button{
+    min-height:36px!important;
+    padding:5px 7px!important;
+  }
+  .mobile-date-calendar-weekdays,
+  .mobile-date-calendar-grid{
+    gap:3px!important;
+  }
+  .mobile-date-calendar-weekdays span{
+    font-size:9px!important;
+    padding:2px 0!important;
+  }
+  .mobile-date-calendar-day{
+    aspect-ratio:auto!important;
+    min-height:34px!important;
+    border-radius:9px!important;
+    font-size:12px!important;
+  }
+}
+
+/* Extra compact voor kleinere iPhones */
+@media(max-width:390px), (max-height:700px){
+  .mobile-date-calendar-modal{
+    max-height:calc(100dvh - 16px)!important;
+    padding:11px!important;
+  }
+  .mobile-date-calendar-modal .year-head h2{
+    font-size:18px!important;
+  }
+  .mobile-date-calendar-nav{
+    margin:2px 0 6px!important;
+  }
+  .mobile-date-calendar-day{
+    min-height:30px!important;
+    font-size:11px!important;
+  }
 }
 
 </style>
