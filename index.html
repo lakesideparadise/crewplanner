@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.13.6-mobile-modal-visibility-fix-2026-07-31">
+<meta name="cablecrew-version" content="v12.13.7-mobile-auth-header-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -1678,6 +1678,51 @@ body.admin-active .shift:hover{background:#fff8e8}
 /* Fallback voor browsers zonder :has(): overlay zelf blijft altijd boven de navigatie. */
 .modalback.show{z-index:500!important}
 
+
+/* ===== V12.13.7 MOBIELE LOGIN/LOGOUT IN HEADER ===== */
+.mobile-auth-btn{display:none}
+
+@media(max-width:720px){
+  .mobile-header-actions{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+  }
+
+  .mobile-auth-btn{
+    display:none;
+    min-height:34px!important;
+    padding:6px 10px!important;
+    border-radius:10px!important;
+    border:1px solid #d7e2e9!important;
+    background:#f6f9fb!important;
+    color:#17344d!important;
+    font-size:11px!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    box-shadow:none!important;
+  }
+  .mobile-auth-btn.is-logout{
+    background:#fff4f2!important;
+    border-color:#efc7c0!important;
+    color:#9c3126!important;
+  }
+
+  /* Oude beheerlogin verdwijnt op mobiel uit de planner zelf. */
+  main .toolbar .admin-login{
+    display:none!important;
+  }
+
+  /* Logout staat op mobiel niet meer onderaan het beheerdersdashboard. */
+  #adminBar .admin-dashboard-footer #logoutBtn{
+    display:none!important;
+  }
+}
+
+@media(min-width:721px){
+  .mobile-auth-btn{display:none!important}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1694,7 +1739,10 @@ body.admin-active .shift:hover{background:#fff8e8}
 <div id="toastWrap" class="toast-wrap"></div>
 <header><div class="header-inner">
   <div class="brand-wrap"><img class="brand-logo" src="./icon-192.png" alt=""><div class="brand">CableCrew Lakeside</div></div>
-  <div class="mobile-header-actions"><div id="mobileHeaderWeather" class="mobile-header-weather"></div></div>
+  <div class="mobile-header-actions">
+    <div id="mobileHeaderWeather" class="mobile-header-weather"></div>
+    <button id="mobileAuthBtn" class="mobile-auth-btn" type="button" style="display:none">Login</button>
+  </div>
   <div id="desktopHeaderInfo" class="desktop-header-info">
     <div class="desktop-header-chip desktop-weather-chip">
       <span class="desktop-chip-icon">🌤️</span>
@@ -2890,6 +2938,15 @@ $("loginBtn").onclick=()=>{
  $("loginModal").classList.add("show");
  setTimeout(()=>$("loginEmail").focus(),50);
 };
+$("mobileAuthBtn").onclick=async()=>{
+ if(isAdminUser()){
+   await signOut(auth);
+   await ensureAnonymousAuth();
+   return;
+ }
+ $("loginModal").classList.add("show");
+ setTimeout(()=>$("loginEmail").focus(),50);
+};
 $("cancelLogin").onclick=()=>$("loginModal").classList.remove("show");
 
 $("loginForm").addEventListener("submit",async e=>{
@@ -3178,10 +3235,30 @@ function currentCrewName(){
 
 function updateAdminLoginVisibility(){
  const btn=$("loginBtn");
- if(!btn)return;
+ const mobileBtn=$("mobileAuthBtn");
  const selected=($("myEmployee")?.value || localStorage.getItem("cc_my_name") || "").trim();
  const mayManage=["Nick","Arno"].includes(selected) || isAdminUser();
- btn.style.display=mayManage && !isAdminUser() ? "inline-block" : "none";
+
+ if(btn){
+   btn.style.display=mayManage && !isAdminUser() ? "inline-block" : "none";
+ }
+
+ if(mobileBtn){
+   if(isAdminUser()){
+     mobileBtn.style.display="inline-block";
+     mobileBtn.textContent="Logout";
+     mobileBtn.classList.add("is-logout");
+     mobileBtn.setAttribute("aria-label","Uitloggen");
+   }else if(mayManage){
+     mobileBtn.style.display="inline-block";
+     mobileBtn.textContent="Login";
+     mobileBtn.classList.remove("is-logout");
+     mobileBtn.setAttribute("aria-label","Inloggen als beheerder");
+   }else{
+     mobileBtn.style.display="none";
+     mobileBtn.classList.remove("is-logout");
+   }
+ }
 }
 
 
