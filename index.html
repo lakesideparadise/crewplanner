@@ -1023,6 +1023,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     border-top:1px solid #edf1f4;
   }
   .mobile-today-text strong{font-weight:900}
+  .mobile-today-text.viewing-other-date{background:#fff6df;color:#6f4c00;border-top-color:#efd493;border-bottom:1px solid #efd493}
 
   /* Precies 5 dagen zichtbaar + kalenderknop */
   .mobile-day-scroller{
@@ -1774,6 +1775,11 @@ body.admin-active .shift:hover{background:#fff8e8}
 }
 .schedule-overview-date{display:flex;align-items:center;gap:13px;min-width:0;font-size:18px}
 .schedule-overview-date strong{font-size:21px}
+.schedule-overview-header.viewing-other-date .schedule-overview-top{background:rgba(255,179,64,.10)}
+.schedule-overview-header.viewing-other-date .schedule-overview-date strong{color:#ffd77a}
+.schedule-overview-header.viewing-other-date #scheduleTodayDate{font-weight:900}
+.schedule-viewing-badge{display:none}
+.schedule-overview-header.viewing-other-date .schedule-viewing-badge{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;background:#ffd77a;color:#15344b;font-size:10px;font-weight:950;letter-spacing:.04em;text-transform:uppercase}
 .schedule-cal-icon{font-size:25px}
 .schedule-date-divider{width:1px;height:30px;background:rgba(255,255,255,.42)}
 #scheduleTodayDate{font-weight:750;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1859,7 +1865,8 @@ body.admin-active .shift:hover{background:#fff8e8}
   <div class="schedule-overview-top">
     <div class="schedule-overview-date">
       <span class="schedule-cal-icon">📅</span>
-      <strong>Vandaag</strong>
+      <strong id="scheduleDateContext">Vandaag</strong>
+      <span class="schedule-viewing-badge" id="scheduleViewingBadge">Geselecteerd</span>
       <span class="schedule-date-divider"></span>
       <span id="scheduleTodayDate"></span>
     </div>
@@ -2617,7 +2624,7 @@ document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
  currentView=b.dataset.view;document.querySelectorAll(".viewbtn").forEach(x=>x.classList.toggle("active",x===b));
  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===currentView));
 });
-$("date").onchange=()=>{renderDay();renderWeek()};
+$("date").onchange=()=>{renderDay();renderWeek();updateSelectedDateHeader();renderMobileDayScroller()};
 $("myEmployee").onchange=e=>{
  const chosen=e.target.value;
 
@@ -3944,13 +3951,10 @@ function mobileSetDate(k){
    applyPastDateVisibility();
  }
  renderMobileDayScroller(k);
+ updateSelectedDateHeader();
 }
 function renderMobileTodayText(){
- const el=$("mobileTodayText");
- if(!el)return;
- const today=new Date(realTodayKey()+"T12:00:00");
- const txt=today.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
- el.innerHTML=`Vandaag is <strong>${esc(txt)}</strong>`;
+ updateMobileSelectedDateText(mobileSelectedDate());
 }
 function renderMobileDayScroller(selectedKey=mobileSelectedDate()){
  const wrap=$("mobileDayScrollerInner");
@@ -4472,10 +4476,36 @@ $("closeChangeLogBtn").onclick=()=>$("changeLogModal").classList.remove("show");
 
 function realTodayKey(){return key(new Date())}
 function setTodayHeader(){
- const d=new Date(realTodayKey()+"T12:00:00");
+ updateSelectedDateHeader();
+}
+function updateSelectedDateHeader(){
+ const today=realTodayKey();
+ const selected=($("studentMain")?.classList.contains("active") ? $("studentDate")?.value : $("date")?.value) || today;
+ const d=new Date(selected+"T12:00:00");
  const full=d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
- $("todayFullLabel").textContent=full;
- if($("scheduleTodayDate")) $("scheduleTodayDate").textContent=full.charAt(0).toUpperCase()+full.slice(1);
+ const fullLabel=full.charAt(0).toUpperCase()+full.slice(1);
+ const isToday=selected===today;
+ if($("todayFullLabel")) $("todayFullLabel").textContent=full;
+ if($("scheduleTodayDate")) $("scheduleTodayDate").textContent=fullLabel;
+ if($("scheduleDateContext")) $("scheduleDateContext").textContent=isToday?"Vandaag":"Je bekijkt";
+ if($("scheduleOverviewHeader")) $("scheduleOverviewHeader").classList.toggle("viewing-other-date",!isToday);
+ if($("scheduleGoTodayBtn")){
+   $("scheduleGoTodayBtn").disabled=isToday;
+   $("scheduleGoTodayBtn").style.opacity=isToday?".58":"1";
+   $("scheduleGoTodayBtn").style.cursor=isToday?"default":"pointer";
+ }
+ updateMobileSelectedDateText(selected);
+}
+function updateMobileSelectedDateText(selected){
+ const el=$("mobileTodayText");
+ if(!el)return;
+ const today=realTodayKey();
+ const d=new Date((selected||today)+"T12:00:00");
+ const txt=d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ el.innerHTML=(selected===today)
+   ? `Vandaag: <strong>${esc(txt)}</strong>`
+   : `Je bekijkt: <strong>${esc(txt)}</strong>`;
+ el.classList.toggle("viewing-other-date",selected!==today);
 }
 function ensureDateOption(target){
  if(![...$("date").options].some(o=>o.value===target)){
@@ -4486,7 +4516,7 @@ function goToDate(target){
  ensureDateOption(target);
  $("date").value=target;
  document.querySelector('[data-view="day"]').click();
- renderDay();renderWeek();
+ renderDay();renderWeek();updateSelectedDateHeader();renderMobileDayScroller(target);
 }
 $("goTodayBtn").onclick=()=>goToDate(realTodayKey());
 if($("scheduleGoTodayBtn")) $("scheduleGoTodayBtn").onclick=()=>goToDate(realTodayKey());
