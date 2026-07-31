@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.17.0-contract-manager-2026-07-31">
+<meta name="cablecrew-version" content="v12.19.0-zone-coverage-contract-rules-2026-07-31">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -2092,6 +2092,30 @@ body.contract-manager #contractsBtn{grid-column:1}
 @media(max-width:720px){.contract-row{grid-template-columns:1fr}.contract-actions button{width:100%}body.contract-manager .admin-tools-grid{grid-template-columns:1fr}}
 </style>
 
+
+<style id="v12-18-mobile-swipe">
+.mobile-swipe-hint{display:none}
+@media(max-width:720px){
+  .mobile-swipe-target{touch-action:pan-y}
+}
+@media(max-width:720px) and (orientation:landscape){
+  body.mobile-week-visible .mobile-swipe-hint{
+    display:block;
+    text-align:center;
+    margin:2px 10px 6px;
+    color:#7a8996;
+    font-size:9px;
+    font-weight:750;
+  }
+}
+</style>
+
+
+<style id="v12-19-contract-review-coverage-warning">
+.contract-row.review{border-left:5px solid #e9a019}
+.contract-known{display:inline-block;padding:6px 8px;border-radius:8px;background:#eef6f0;color:#2b6a42;font-size:11px;font-weight:850}
+</style>
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -2180,6 +2204,7 @@ body.contract-manager #contractsBtn{grid-column:1}
 </div>
 
 <div style="display:none"><button id="messagesBtn"><span id="msgBadge">0</span></button></div>
+<div id="mobileSwipeHint" class="mobile-swipe-hint">‹ swipe voor vorige/volgende periode ›</div>
 <main>
   <div class="toolbar">
     <button class="viewbtn active" data-view="day">Dag</button>
@@ -2493,7 +2518,7 @@ body.contract-manager #contractsBtn{grid-column:1}
 <div class="report-controls"><label>Van<input id="reportFrom" type="date"></label><label>Tot en met<input id="reportTo" type="date"></label><button id="refreshReportBtn" class="primary">Berekenen</button><button id="exportReportBtn">CSV exporteren</button></div><div id="hoursReportContent"></div>
 </div></div>
 <div id="backupsModal" class="modalback admin-data-modal"><div class="modal">
-<div class="year-head"><div><h2>💾 Back-ups</h2><div class="year-sub">Alleen zichtbaar voor Nick en Arno. Dagelijkse snapshots van de planning.</div></div><button id="closeBackupsBtn">Sluiten</button></div>
+<div class="year-head"><div><h2>💾 Back-ups</h2><div class="year-sub">Dagelijkse snapshots van crewplanning, jobstudenten, medewerkers en contracten.</div></div><button id="closeBackupsBtn">Sluiten</button></div>
 <div class="backup-actions"><button id="createBackupBtn" class="primary">Nu back-up maken</button><span id="backupStatus" class="small"></span></div><div id="backupList" class="backup-list"></div>
 </div></div>
 
@@ -2962,7 +2987,7 @@ function applyStudentDeepLink(){
 
 
 document.querySelectorAll(".viewbtn").forEach(b=>b.onclick=()=>{
- currentView=b.dataset.view;document.querySelectorAll(".viewbtn").forEach(x=>x.classList.toggle("active",x===b));
+ currentView=b.dataset.view;document.querySelectorAll(".viewbtn").forEach(x=>x.classList.toggle("active",x===b));refreshSwipeModeClass();
  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===currentView));
 });
 $("date").onchange=()=>{renderDay();renderWeek();updateSelectedDateHeader();renderMobileDayScroller()};
@@ -3248,6 +3273,43 @@ function formObj(){
  };
 }
 
+
+function shiftFullyCovers(slot,shift){
+ if(!slot||!shift)return false;
+ if(shift.zone==="VERLOF")return false;
+ if(slot.date!==shift.date||slot.zone!==shift.zone)return false;
+ return mins(shift.start)<=mins(slot.start) && mins(shift.end)>=mins(slot.end);
+}
+
+function uncoveredOriginalShift(before,after=null){
+ if(!before || before.zone==="VERLOF" || !before.date || !before.start || !before.end)return null;
+
+ // Andere bestaande shifts, zonder de shift die momenteel wordt aangepast/verwijderd.
+ const others=shifts.filter(x=>x._id!==before._id);
+
+ // Bij een wijziging telt de nieuwe versie zelf ook mee als ze hetzelfde oorspronkelijke
+ // zoneslot volledig blijft afdekken (bv. gewoon medewerker wisselen).
+ if(after && shiftFullyCovers(before,after))return null;
+
+ // Een andere collega die het oorspronkelijke tijdslot volledig afdekt = zone blijft bezet.
+ if(others.some(x=>shiftFullyCovers(before,x)))return null;
+
+ return before;
+}
+
+function confirmZoneStillCovered(before,after=null,actionWord="wijziging"){
+ const gap=uncoveredOriginalShift(before,after);
+ if(!gap)return true;
+
+ const employee=gap.employee?` (${gap.employee})`:"";
+ return confirm(
+   `⚠️ Mogelijk onbezette zone\n\n`+
+   `${gap.zone} · ${label(gap.date)} · ${gap.start}–${gap.end}${employee}\n\n`+
+   `Na deze ${actionWord} staat er niemand anders ingepland die dit volledige zoneslot overneemt.\n\n`+
+   `Wil je toch doorgaan?`
+ );
+}
+
 function dateRangeKeys(start,end){
  const out=[];
  const a=new Date(start+"T12:00:00");
@@ -3317,6 +3379,7 @@ $("saveShift").onclick=async()=>{
    const before=editing?{...editing}:null;
 
    if(editing){
+     if(!confirmZoneStillCovered(editing,v,"wijziging"))return;
      await updateDoc(doc(db,"shifts",editing._id),v);
      await writeAudit(v.zone==="VERLOF"?"Verlof gewijzigd":"Shift gewijzigd",before,v);
      $("shiftModal").classList.remove("show");
@@ -3346,7 +3409,13 @@ $("saveShift").onclick=async()=>{
    }
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 };
-$("deleteShift").onclick=async()=>{if(editing&&confirm("Deze shift verwijderen?")){await deleteDoc(doc(db,"shifts",editing._id));$("shiftModal").classList.remove("show")}};
+$("deleteShift").onclick=async()=>{
+ if(!editing)return;
+ if(!confirm("Deze shift verwijderen?"))return;
+ if(!confirmZoneStillCovered(editing,null,"verwijdering"))return;
+ await deleteDoc(doc(db,"shifts",editing._id));
+ $("shiftModal").classList.remove("show");
+};
 $("duplicateShift").onclick=async()=>{
  if(!editing)return;
  const v=formObj();
@@ -3505,6 +3574,42 @@ let contractRecords=[];
 let contractView="student";
 let contractEditing=null;
 
+
+const CREW_CONTRACT_RULES={
+ "simon":{kind:"fixed",label:"Vast contract"},
+ "nick":{kind:"fixed",label:"Vast contract"},
+ "arno":{kind:"fixed",label:"Vast contract"},
+
+ "bas":{kind:"covered",start:"2026-01-01",end:"2026-10-31",label:"Contract gekend t.e.m. 31 oktober"},
+ "guy g":{kind:"covered",start:"2026-01-01",end:"2026-10-31",label:"Contract gekend t.e.m. 31 oktober"},
+ "guy":{kind:"covered",start:"2026-01-01",end:"2026-10-31",label:"Contract gekend t.e.m. 31 oktober"},
+ "stefanie":{kind:"covered",start:"2026-01-01",end:"2026-09-01",label:"Stopt 1 september"},
+ "ibe":{kind:"review",remindFrom:"2026-08-25",label:"Contract nakijken eind augustus"}
+};
+
+function normalizedPersonName(name){
+ return String(name||"").trim().toLowerCase().replace(/\s+/g," ");
+}
+function crewContractRule(name){
+ return CREW_CONTRACT_RULES[normalizedPersonName(name)]||null;
+}
+function builtInCrewCoverage(name,date){
+ const rule=crewContractRule(name);
+ if(!rule)return null;
+ if(rule.kind==="fixed"){
+   return {type:"crew",person:name,start:"1900-01-01",end:"2999-12-31",note:rule.label,builtIn:true};
+ }
+ if(rule.kind==="covered" && rule.start<=date && rule.end>=date){
+   return {type:"crew",person:name,start:rule.start,end:rule.end,note:rule.label,builtIn:true};
+ }
+ return null;
+}
+function ibeReviewDue(){
+ const today=realTodayKey();
+ const rule=CREW_CONTRACT_RULES["ibe"];
+ return !!rule && today>=rule.remindFrom;
+}
+
 function plannedContractPeriods(type,name){
  const source=type==="student"?studentShifts:shifts;
  const dates=[...new Set(source.filter(x=>x.employee===name&&x.date).map(x=>x.date))].sort();
@@ -3513,40 +3618,86 @@ function plannedContractPeriods(type,name){
  return Object.entries(months).sort().map(([month,ds])=>({month,start:ds[0],end:ds[ds.length-1],dates:ds}));
 }
 function contractCovers(type,name,date){
- return contractRecords.find(c=>c.type===type&&c.person===name&&c.start<=date&&c.end>=date);
+ if(type==="crew"){
+   const builtIn=builtInCrewCoverage(name,date);
+   if(builtIn)return builtIn;
+ }
+ return contractRecords.find(c=>
+   c.type===type &&
+   normalizedPersonName(c.person)===normalizedPersonName(name) &&
+   c.start<=date && c.end>=date
+ );
 }
 function contractOverview(type){
  const names=type==="student"
    ?[...new Set(studentShifts.map(x=>x.employee).filter(Boolean))]
    :[...new Set(shifts.filter(x=>x.zone!=="VERLOF").map(x=>x.employee).filter(Boolean))];
+
  const rows=[];
- names.forEach(name=>plannedContractPeriods(type,name).forEach(period=>{
-   const contract=contractCovers(type,name,period.start);
-   rows.push({type,name,period,contract,needs:!contract});
- }));
+ names.forEach(name=>{
+   const rule=type==="crew"?crewContractRule(name):null;
+
+   // Simon, Nick en Arno hebben een vast contract en hoeven niet in de actielijst te staan.
+   if(type==="crew" && rule?.kind==="fixed")return;
+
+   plannedContractPeriods(type,name).forEach(period=>{
+     const contract=contractCovers(type,name,period.start);
+     rows.push({
+       type,name,period,contract,
+       needs:!contract,
+       builtInRule:rule||null,
+       reviewDue:type==="crew" && normalizedPersonName(name)==="ibe" && ibeReviewDue()
+     });
+   });
+ });
  return rows.sort((a,b)=>a.period.start.localeCompare(b.period.start)||a.name.localeCompare(b.name));
 }
 function contractDate(d){return d?new Intl.DateTimeFormat("nl-BE",{day:"numeric",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):""}
 function updateContractBadge(){
- const count=contractOverview("student").filter(r=>r.needs).length+contractOverview("crew").filter(r=>r.needs).length;
+ const studentRows=contractOverview("student");
+ const crewRows=contractOverview("crew");
+ const count=
+   studentRows.filter(r=>r.needs).length+
+   crewRows.filter(r=>r.needs || (!r.needs&&r.reviewDue)).length;
  const b=$("contractsBtn");if(!b)return;
  b.classList.toggle("contract-alert",count>0);b.dataset.count=count||"";
 }
 function renderContracts(){
  const rows=contractOverview(contractView);
  const sCount=contractOverview("student").filter(r=>r.needs).length;
- const cCount=contractOverview("crew").filter(r=>r.needs).length;
+ const cCount=contractOverview("crew").filter(r=>r.needs || (!r.needs&&r.reviewDue)).length;
  $("studentContractBadge").textContent=sCount||"";$("crewContractBadge").textContent=cCount||"";
  $("contractStudentsTab").classList.toggle("active",contractView==="student");
  $("contractCrewTab").classList.toggle("active",contractView==="crew");
  $("contractHelp").innerHTML=contractView==="student"
   ?'Per kalendermaand wordt gecontroleerd of de <b>eerste ingeplande werkdag</b> gedekt is door een geregistreerde contractperiode. Komt iemand later opnieuw nadat het geregistreerde contract verlopen is, dan verschijnt opnieuw <b>Contract nodig</b>.'
-  :'Voor gewone medewerkers kun je op dezelfde manier contractperiodes registreren en controleren.';
- $("contractList").innerHTML=rows.length?rows.map(r=>`<div class="contract-row ${r.needs?"needs":"ok"}">
-   <div><div class="contract-person">${esc(r.name)}</div><div class="contract-meta">${r.period.dates.length} geplande dag${r.period.dates.length===1?"":"en"} · ${esc(r.period.month)}</div></div>
-   <div class="contract-status">${r.needs?`🔴 Contract nodig vóór ${contractDate(r.period.start)}`:`✅ In orde: ${contractDate(r.contract.start)} – ${contractDate(r.contract.end)}`}<div class="contract-meta">Planning: ${contractDate(r.period.start)} – ${contractDate(r.period.end)}</div></div>
-   <div class="contract-actions"><button data-contract="${r.type}" data-person="${esc(r.name)}" data-start="${r.period.start}">${r.needs?"Registreren":"Aanpassen"}</button></div>
- </div>`).join(""):'<div class="empty">Geen ingeplande personen gevonden.</div>';
+  :'Simon, Nick en Arno zijn vaste medewerkers en worden niet als contractactie getoond. Bas, Guy G en Guy zijn als gedekt ingesteld t.e.m. 31 oktober 2026. Stefanie is gedekt t.e.m. 1 september 2026. Voor Ibe verschijnt vanaf eind augustus een extra herinnering om zijn contract na te kijken.';
+ $("contractList").innerHTML=rows.length?rows.map(r=>{
+   const builtIn=!!r.contract?.builtIn;
+   const ibeReminder=!r.needs&&r.reviewDue;
+   const rowClass=r.needs?"needs":ibeReminder?"review":"ok";
+
+   let status="";
+   if(r.needs){
+     status=`🔴 Contract nodig vóór ${contractDate(r.period.start)}`;
+   }else if(ibeReminder){
+     status=`🟠 Contract nakijken eind augustus`;
+   }else if(builtIn){
+     status=`✅ ${esc(r.contract.note||"Contract gekend")} · tot ${contractDate(r.contract.end)}`;
+   }else{
+     status=`✅ In orde: ${contractDate(r.contract.start)} – ${contractDate(r.contract.end)}`;
+   }
+
+   const action=builtIn && !ibeReminder
+     ?`<span class="contract-known">Geen actie nodig</span>`
+     :`<button data-contract="${r.type}" data-person="${esc(r.name)}" data-start="${r.period.start}">${r.needs?"Registreren":ibeReminder?"Nakijken / registreren":"Aanpassen"}</button>`;
+
+   return `<div class="contract-row ${rowClass}">
+     <div><div class="contract-person">${esc(r.name)}</div><div class="contract-meta">${r.period.dates.length} geplande dag${r.period.dates.length===1?"":"en"} · ${esc(r.period.month)}</div></div>
+     <div class="contract-status">${status}<div class="contract-meta">Planning: ${contractDate(r.period.start)} – ${contractDate(r.period.end)}</div></div>
+     <div class="contract-actions">${action}</div>
+   </div>`;
+ }).join(""):'<div class="empty">Geen ingeplande personen gevonden.</div>';
  document.querySelectorAll("[data-contract]").forEach(b=>b.onclick=()=>openContractEdit(b.dataset.contract,b.dataset.person,b.dataset.start));
  updateContractBadge();
 }
@@ -4112,36 +4263,138 @@ let backupUnsub=null;
 function backupDayKey(){return realTodayKey()}
 async function createPlanningBackup(auto=false,reason=""){
  if(!isAdminUser())return false;
- const payload=shifts
+
+ const crewShiftPayload=shifts
    .filter(x=>!String(x._id||"").startsWith("fallback_"))
    .map(({_id,...x})=>x);
+
+ const studentShiftPayload=studentShifts
+   .filter(x=>!String(x._id||"").startsWith("fallback_"))
+   .map(({_id,...x})=>x);
+
+ const crewDirectoryPayload=[...crewDirectory.entries()].map(([id,data])=>({
+   _id:id,
+   name:data?.name||id,
+   phone:data?.phone||"",
+   active:data?.active!==false
+ }));
+
+ const studentDirectoryPayload=[...studentDirectory.entries()].map(([id,data])=>({
+   _id:id,
+   name:data?.name||id,
+   phone:data?.phone||"",
+   active:data?.active!==false
+ }));
+
+ const contractPayload=contractRecords.map(({_id,...x})=>x);
+
  try{
    await addDoc(collection(db,"planningBackups"),{
+     backupVersion:2,
      createdAt:serverTimestamp(),
      createdBy:user.email||"",
      dayKey:backupDayKey(),
      automatic:!!auto,
      reason:reason|| (auto?"Dagelijkse automatische back-up":"Handmatige back-up"),
-     count:payload.length,
-     shifts:payload
+
+     // 'count' blijft bestaan voor compatibiliteit met oudere back-ups.
+     count:crewShiftPayload.length,
+     totalItems:
+       crewShiftPayload.length+
+       studentShiftPayload.length+
+       crewDirectoryPayload.length+
+       studentDirectoryPayload.length+
+       contractPayload.length,
+
+     shifts:crewShiftPayload,
+     studentShifts:studentShiftPayload,
+     crewDirectory:crewDirectoryPayload,
+     studentDirectory:studentDirectoryPayload,
+     contracts:contractPayload
    });
+
    localStorage.setItem("cc_last_backup_day",backupDayKey());
-   if($("backupStatus"))$("backupStatus").textContent=auto?"Automatische dagback-up gemaakt.":"Back-up gemaakt.";
+   if($("backupStatus"))$("backupStatus").textContent=
+     auto?"Automatische volledige dagback-up gemaakt.":"Volledige back-up gemaakt.";
    return true;
  }catch(e){
-   if($("backupStatus"))$("backupStatus").textContent="Back-up mislukt: Firebase-regels moeten planningBackups toelaten.";
+   if($("backupStatus"))$("backupStatus").textContent=
+     "Back-up mislukt: controleer de Firebase-regels voor planningBackups.";
    console.warn(e);
    return false;
  }
 }
+
+async function backupReplaceAutoIdCollection(collectionName,currentRows,newRows){
+ const currentIds=(currentRows||[])
+   .map(x=>x?._id)
+   .filter(id=>id && !String(id).startsWith("fallback_"));
+
+ for(let i=0;i<currentIds.length;i+=350){
+   const batch=writeBatch(db);
+   currentIds.slice(i,i+350).forEach(id=>batch.delete(doc(db,collectionName,id)));
+   await batch.commit();
+ }
+
+ for(let i=0;i<(newRows||[]).length;i+=350){
+   const batch=writeBatch(db);
+   (newRows||[]).slice(i,i+350).forEach(x=>{
+     const clean={...x};delete clean._id;
+     batch.set(doc(collection(db,collectionName)),clean);
+   });
+   await batch.commit();
+ }
+}
+
+async function backupReplaceNamedCollection(collectionName,currentMap,newRows){
+ const currentIds=[...(currentMap||new Map()).keys()];
+
+ for(let i=0;i<currentIds.length;i+=350){
+   const batch=writeBatch(db);
+   currentIds.slice(i,i+350).forEach(id=>batch.delete(doc(db,collectionName,id)));
+   await batch.commit();
+ }
+
+ for(let i=0;i<(newRows||[]).length;i+=350){
+   const batch=writeBatch(db);
+   (newRows||[]).slice(i,i+350).forEach(x=>{
+     const id=x._id||x.name;
+     if(!id)return;
+     const clean={...x};delete clean._id;
+     batch.set(doc(db,collectionName,id),clean);
+   });
+   await batch.commit();
+ }
+}
+
 async function ensureDailyBackup(){if(!isAdminUser()||!shiftsInitialized||localStorage.getItem("cc_last_backup_day")===backupDayKey())return;await createPlanningBackup(true)}
-function startBackupListener(){if(backupUnsub){backupUnsub();backupUnsub=null}if(!isAdminUser())return;const q=query(collection(db,"planningBackups"),orderBy("createdAt","desc"),limit(30));backupUnsub=onSnapshot(q,snap=>{$("backupList").innerHTML=snap.empty?'<div class="empty">Nog geen back-ups.</div>':snap.docs.map(d=>{const x={_id:d.id,...d.data()},when=x.createdAt?.toDate?.().toLocaleString("nl-BE")||"zojuist";return `<div class="backup-item"><div><b>${esc(when)}</b><div class="backup-meta">${esc(x.createdBy||"")} · ${x.count||0} shifts${x.automatic?" · automatisch":""}${x.reason?` · ${esc(x.reason)}`:""}</div></div><button data-restore-backup="${x._id}">Herstellen</button></div>`}).join("");$("backupList").querySelectorAll("[data-restore-backup]").forEach(btn=>btn.onclick=async()=>{const found=snap.docs.find(d=>d.id===btn.dataset.restoreBackup),data=found?.data();if(!isAdminUser()||!data?.shifts)return;if(!confirm(`Back-up met ${data.shifts.length} shifts herstellen?`))return;if(!confirm("De huidige planning wordt volledig overschreven. Zeker?"))return;try{
+function startBackupListener(){if(backupUnsub){backupUnsub();backupUnsub=null}if(!isAdminUser())return;const q=query(collection(db,"planningBackups"),orderBy("createdAt","desc"),limit(30));backupUnsub=onSnapshot(q,snap=>{$("backupList").innerHTML=snap.empty?'<div class="empty">Nog geen back-ups.</div>':snap.docs.map(d=>{const x={_id:d.id,...d.data()},when=x.createdAt?.toDate?.().toLocaleString("nl-BE")||"zojuist";return `<div class="backup-item"><div><b>${esc(when)}</b><div class="backup-meta">${esc(x.createdBy||"")} · ${x.backupVersion>=2?`${x.totalItems||x.count||0} items · volledige back-up`:`${x.count||0} shifts · oude back-up`}${x.automatic?" · automatisch":""}${x.reason?` · ${esc(x.reason)}`:""}</div></div><button data-restore-backup="${x._id}">Herstellen</button></div>`}).join("");$("backupList").querySelectorAll("[data-restore-backup]").forEach(btn=>btn.onclick=async()=>{const found=snap.docs.find(d=>d.id===btn.dataset.restoreBackup),data=found?.data();if(!isAdminUser()||!data?.shifts)return;
+ const full=data.backupVersion>=2;
+ const restoreText=full
+   ?`Volledige back-up herstellen?\n\nCrewplanning: ${data.shifts?.length||0}\nJobstudent-shifts: ${data.studentShifts?.length||0}\nMedewerkers: ${data.crewDirectory?.length||0}\nJobstudenten: ${data.studentDirectory?.length||0}\nContracten: ${data.contracts?.length||0}`
+   :`Dit is een oudere back-up met ${data.shifts.length} crewshifts. Alleen de crewplanning kan hiermee worden hersteld.`;
+ if(!confirm(restoreText))return;
+ if(!confirm(full?"De huidige gegevens uit deze onderdelen worden overschreven. Zeker?":"De huidige crewplanning wordt volledig overschreven. Zeker?"))return;
+ try{
        const safetyBackup=await createPlanningBackup(false,"Automatisch vóór herstel");
        if(!safetyBackup){
          alert("Herstel geannuleerd omdat de veiligheidsback-up niet kon worden gemaakt.");
          return;
        }
-       for(let i=0;i<shifts.length;i+=400){const batch=writeBatch(db);shifts.slice(i,i+400).forEach(x=>{if(x._id&&!String(x._id).startsWith("fallback_"))batch.delete(doc(db,"shifts",x._id))});await batch.commit()}for(let i=0;i<data.shifts.length;i+=400){const batch=writeBatch(db);data.shifts.slice(i,i+400).forEach(x=>batch.set(doc(collection(db,"shifts")),x));await batch.commit()}alert("Back-up hersteld.");$("backupsModal").classList.remove("show")}catch(e){alert("Herstellen mislukt: "+e.message)}})},e=>{$("backupList").innerHTML='<div class="empty">Back-ups konden niet geladen worden. Controleer de Firebase-regels voor planningBackups.</div>';console.warn(e)})}
+
+       await backupReplaceAutoIdCollection("shifts",shifts,data.shifts||[]);
+
+       // Alleen nieuwe volledige back-ups mogen ook de nieuwe modules overschrijven.
+       if(full){
+         await backupReplaceAutoIdCollection("studentShifts",studentShifts,data.studentShifts||[]);
+         await backupReplaceNamedCollection("crewContacts",crewDirectory,data.crewDirectory||[]);
+         await backupReplaceNamedCollection("students",studentDirectory,data.studentDirectory||[]);
+         await backupReplaceAutoIdCollection("contracts",contractRecords,data.contracts||[]);
+       }
+
+       alert(full?"Volledige back-up hersteld.":"Oude back-up hersteld: alleen de crewplanning.");
+       $("backupsModal").classList.remove("show")
+     }catch(e){alert("Herstellen mislukt: "+e.message)}})},e=>{$("backupList").innerHTML='<div class="empty">Back-ups konden niet geladen worden. Controleer de Firebase-regels voor planningBackups.</div>';console.warn(e)})}
 $("backupsBtn").onclick=()=>{if(!isAdminUser())return;$("backupsModal").classList.add("show");startBackupListener()};$("closeBackupsBtn").onclick=()=>$("backupsModal").classList.remove("show");$("createBackupBtn").onclick=()=>createPlanningBackup(false,"Handmatige back-up");
 
 
@@ -4258,11 +4511,11 @@ $("studentDashboardBtn").onclick=()=>{if(isAdminUser())setPlannerTab("students")
 
 
 $("studentDayBtn").onclick=()=>{
- studentView="day";$("studentDayBtn").classList.add("active");$("studentWeekBtn").classList.remove("active");
+ studentView="day";refreshSwipeModeClass();$("studentDayBtn").classList.add("active");$("studentWeekBtn").classList.remove("active");
  $("studentDayPanel").style.display="block";$("studentWeekPanel").style.display="none";
 };
 $("studentWeekBtn").onclick=()=>{
- studentView="week";$("studentWeekBtn").classList.add("active");$("studentDayBtn").classList.remove("active");
+ studentView="week";refreshSwipeModeClass();$("studentWeekBtn").classList.add("active");$("studentDayBtn").classList.remove("active");
  $("studentDayPanel").style.display="none";$("studentWeekPanel").style.display="block";
 };
 $("studentDate").onchange=()=>{renderStudentDay();renderStudentWeek()};
@@ -4480,6 +4733,116 @@ function startStudentDirectoryListener(){
  },e=>console.warn("students:",e));
 }
 
+
+
+
+// =========================
+// MOBIELE SWIPE-NAVIGATIE
+// =========================
+function mobileIsLandscape(){
+ return window.matchMedia("(max-width:720px) and (orientation:landscape)").matches;
+}
+function mobileAddDays(dateKey,days){
+ const d=new Date((dateKey||realTodayKey())+"T12:00:00");
+ d.setDate(d.getDate()+days);
+ return key(d);
+}
+function mobileCrewIsWeek(){
+ return currentView==="week" || $("week")?.classList.contains("active");
+}
+function mobileStudentIsWeek(){
+ return studentView==="week" || $("studentWeekPanel")?.style.display!=="none";
+}
+function refreshSwipeModeClass(){
+ const onMobile=window.matchMedia("(max-width:720px)").matches;
+ const student=$("studentMain")?.classList.contains("active");
+ const week=student?mobileStudentIsWeek():mobileCrewIsWeek();
+ document.body.classList.toggle("mobile-week-visible",!!(onMobile&&week&&mobileIsLandscape()));
+}
+function moveMobilePlanningBy(direction){
+ if(!window.matchMedia("(max-width:720px)").matches)return;
+
+ const student=$("studentMain").classList.contains("active");
+ const week=student?mobileStudentIsWeek():mobileCrewIsWeek();
+
+ // Week per swipe alleen in liggende mobiele weergave, zodat portret-week
+ // horizontaal door de dagkolommen kan blijven scrollen.
+ if(week && !mobileIsLandscape())return;
+
+ const step=week?7:1;
+ const current=student
+   ?($("studentDate").value||realTodayKey())
+   :($("date").value||realTodayKey());
+ const target=mobileAddDays(current,direction*step);
+
+ if(student){
+   studentEnsureDate(target);
+   $("studentDate").value=target;
+   renderStudentDay();
+   renderStudentWeek();
+   renderMobileDayScroller(target);
+   updateSelectedDateHeader();
+ }else{
+   const mineMode=document.body.classList.contains("mobile-mine-mode");
+   setMobileDayWindowFor(target);
+   mobileSetDate(target);
+
+   // "Mijn planning" blijft actief tijdens het swipen.
+   if(mineMode){
+     document.body.classList.add("mobile-mine-mode");
+     renderDay();
+     renderWeek();
+     mobileSetActive("mobileNavMine");
+   }
+ }
+
+ refreshSwipeModeClass();
+}
+
+function installMobileSwipeNavigation(){
+ const targets=[
+   $("day"),
+   $("week"),
+   $("studentDayPanel"),
+   $("studentWeekPanel")
+ ].filter(Boolean);
+
+ targets.forEach(el=>{
+   if(el.dataset.swipeReady==="1")return;
+   el.dataset.swipeReady="1";
+   el.classList.add("mobile-swipe-target");
+
+   let startX=0,startY=0,startTime=0,blocked=false;
+
+   el.addEventListener("touchstart",e=>{
+     if(e.touches.length!==1)return;
+     const t=e.target;
+     blocked=!!t.closest("button,input,select,textarea,a,.modal,.modalback");
+     if(blocked)return;
+     startX=e.touches[0].clientX;
+     startY=e.touches[0].clientY;
+     startTime=Date.now();
+   },{passive:true});
+
+   el.addEventListener("touchend",e=>{
+     if(blocked||!startTime||!e.changedTouches.length)return;
+     const dx=e.changedTouches[0].clientX-startX;
+     const dy=e.changedTouches[0].clientY-startY;
+     const elapsed=Date.now()-startTime;
+     startTime=0;
+
+     // Bewuste horizontale swipe: voldoende afstand, vooral horizontaal, niet te traag.
+     if(elapsed>900||Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.25)return;
+
+     // Naar links = volgende dag/week, naar rechts = vorige.
+     moveMobilePlanningBy(dx<0?1:-1);
+   },{passive:true});
+ });
+}
+
+window.addEventListener("resize",refreshSwipeModeClass);
+window.addEventListener("orientationchange",()=>setTimeout(refreshSwipeModeClass,120));
+setTimeout(()=>{installMobileSwipeNavigation();refreshSwipeModeClass()},0);
 
 
 // =========================
