@@ -2102,6 +2102,9 @@ body.admin-active .shift:hover{background:#fff8e8}
 .contract-actions{display:flex;gap:6px;flex-wrap:wrap}.contract-actions button{padding:7px 9px;font-size:11px}.contract-remove-btn{background:#fff0f0;color:#9b1c1c;border-color:#efb4b4}.contract-hidden-box{margin-top:12px;padding:10px 12px;border:1px dashed #c9d5de;border-radius:11px;background:#f8fafb}.contract-hidden-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.contract-hidden-list{display:grid;gap:6px;margin-top:8px}.contract-hidden-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:9px}.contract-hidden-row button{padding:6px 8px;font-size:11px}
 #contractsBtn.contract-alert::before{content:attr(data-count);position:absolute;right:9px;top:8px;z-index:2;min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:grid;place-items:center;background:#d92d20;color:#fff;font-size:10px;font-weight:900}
 body.contract-manager .admin-main-actions,body.contract-manager .admin-actionbar .edit-hint{display:none!important}
+body.contract-manager .shift,body.contract-manager .mini-shift,body.contract-manager .student-shift,body.contract-manager .student-mini-row{cursor:default!important}
+body.contract-manager .shift:hover,body.contract-manager .student-shift:hover{background:inherit!important;outline:0!important}
+.contract-email-auto-status{font-size:11px;color:#51606b;margin-top:5px;font-weight:700}
 body.contract-manager .admin-tool-card:not(#contractsBtn){display:none!important}
 body.contract-manager .admin-tools-grid{grid-template-columns:minmax(280px,430px)}
 body.contract-manager #contractsBtn{grid-column:1}
@@ -3622,7 +3625,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
         <span class="admin-avatar">🛠️</span>
         <div>
           <strong id="adminWho">Beheer</strong>
-          <small>Beheerder</small>
+          <small id="adminRoleLabel">Beheerder</small>
         </div>
       </div>
 
@@ -4148,7 +4151,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   <div id="contractNotifyPanel" class="contract-notify-panel">
     <div class="contract-notify-copy">
       <b>🔔 Meldingen voor Ann-Sophy</b>
-      Nieuwe contracten, contractwijzigingen en periodes die bijna eindigen.
+      Nieuwe contracten en contractperiodes die binnen 7 dagen moeten starten of stoppen.<div id="contractEmailAutoStatus" class="contract-email-auto-status">✉️ Automatische e-mail wordt klaargezet voor Ann-Sophy.</div>
     </div>
     <div class="contract-notify-actions">
       <button id="contractBrowserNotifyBtn" type="button">🔔 Browsermelding</button>
@@ -6710,6 +6713,29 @@ function buildContractEvents(){
 function contractMessageForAnnSophy(ev){
  return `${ev.title}\n${ev.body}\n\nCableCrew contractbeheer`;
 }
+function contractMailDocId(key){
+ let h=2166136261;
+ for(let i=0;i<key.length;i++){h^=key.charCodeAt(i);h=Math.imul(h,16777619)}
+ return `contract-${(h>>>0).toString(16)}`;
+}
+async function queueAutomaticContractEmails(events){
+ if(!Array.isArray(events)||!events.length||!isAdminUser())return;
+ for(const ev of events){
+   const id=contractMailDocId(ev.key);
+   const subject=ev.kind==="urgent"?`Actie nodig: ${ev.title}`:`Herinnering: ${ev.title}`;
+   const text=`Dag Ann-Sophy,\n\n${ev.body}\n\nOpen CableCrew en ga naar Contractbeheer om dit na te kijken.\n\nAutomatische melding van CableCrew.`;
+   try{
+     await setDoc(doc(db,"mail",id),{
+       to:[ANN_SOPHY_EMAIL],
+       message:{subject,text,html:`<p>Dag Ann-Sophy,</p><p><strong>${esc(ev.title)}</strong></p><p>${esc(ev.body)}</p><p>Open CableCrew en ga naar <strong>Contractbeheer</strong> om dit na te kijken.</p><p><small>Automatische melding van CableCrew.</small></p>`},
+       contractEventKey:ev.key,
+       createdAt:serverTimestamp()
+     });
+   }catch(err){
+     console.warn("Automatische contractmail kon niet worden klaargezet",err);
+   }
+ }
+}
 function renderContractEvents(){
  contractEvents=buildContractEvents();
  const list=$("contractEventList");
@@ -6758,6 +6784,9 @@ function maybeNotifyAnnSophyContractEvents(){
  const previous=localStorage.getItem("cc_contract_alert_fingerprint")||"";
  lastContractAlertFingerprint=fp;
  localStorage.setItem("cc_contract_alert_fingerprint",fp);
+
+ const freshForEmail=contractEvents.filter(e=>!previous.includes(e.key));
+ if(freshForEmail.length)queueAutomaticContractEmails(freshForEmail);
 
  // Alleen Ann-Sophy krijgt deze lokale browsermelding.
  if((user?.email||"").toLowerCase()!==ANN_SOPHY_EMAIL)return;
@@ -7034,6 +7063,7 @@ onAuthStateChanged(auth,u=>{
  document.body.classList.toggle("admin-active",admin);
  updateAdminLoginVisibility();
  $("adminWho").textContent=admin?`🔧 ${u?.email||"Beheer"}`:"Beheer";
+ if($("adminRoleLabel"))$("adminRoleLabel").textContent=isContractManager()?"Contractbeheer · planning alleen lezen":"Beheerder";
  if(admin && adminCrewName()){
    localStorage.setItem("cc_my_name",adminCrewName());
  }
