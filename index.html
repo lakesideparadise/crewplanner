@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13-MOBILE-TABS-FIX-2026-08-01">
+<meta name="cablecrew-version" content="V13-MOBILE-MANDATORY-WHATSAPP-CHANGE-2026-08-01">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -5593,10 +5593,12 @@ function openShift(x=null){
  if($("whatsappAfterSaveWrap")){
    $("whatsappAfterSaveWrap").style.display=x&&crewPhone($("editEmployee").value)?"flex":$("whatsappAfterSaveWrap").style.display;
    if(x){
-     // Bij een bestaande shift staat WhatsApp standaard aan, maar de beheerder kan dit uitvinken.
-     $("whatsappAfterSave").disabled=false;
+     // Bij een bestaande shift is de WhatsApp-melding verplicht.
+     $("whatsappAfterSave").disabled=true;
      $("whatsappAfterSave").checked=!!crewPhone($("editEmployee").value);
-     $("whatsappAfterSaveWrap").lastChild.textContent=" WhatsApp-bericht openen na opslaan";
+     $("whatsappAfterSaveWrap").lastChild.textContent=crewPhone($("editEmployee").value)
+       ? " WhatsApp-melding verplicht na wijziging"
+       : " Geen WhatsApp-nummer ingesteld voor deze medewerker";
    }else{
      $("whatsappAfterSave").disabled=false;
      $("whatsappAfterSave").checked=false;
@@ -5775,10 +5777,14 @@ $("saveShift").onclick=async()=>{
 
  if(v.zone!=="VERLOF" && !await confirmAvailabilityOverride("crew",v.employee,v.date))return;
 
- const sendWhatsApp=!!$("whatsappAfterSave")?.checked && (editing
+ const sendWhatsApp=editing
    ? !!whatsappUrlForShift(v,"gewijzigd")
-   : !!whatsappUrlForShift(v,"ingepland"));
+   : (!!$("whatsappAfterSave")?.checked && !!whatsappUrlForShift(v,"ingepland"));
  let whatsappWindow=null;
+ if(editing && !sendWhatsApp){
+   alert(`Deze shift kan niet worden gewijzigd omdat er geen WhatsApp-nummer voor ${v.employee} is ingesteld. Voeg eerst een nummer toe bij WhatsApp nummers.`);
+   return;
+ }
  if(sendWhatsApp){
    // Open het tabblad rechtstreeks vanuit de klikactie; zo blokkeren mobiele browsers het minder snel.
    whatsappWindow=window.open("about:blank","_blank");
