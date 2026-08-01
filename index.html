@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="FINAL-PRO-DAILY-PREFS-2026-08-01">
+<meta name="cablecrew-version" content="FINAL-FIXED-MOBILE-WEATHER-2026-08-01">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -3112,6 +3112,10 @@ input:focus,select:focus,textarea:focus{
 .daily-planning-pref input{width:auto;margin:0}
 </style>
 
+
+<style id="weather-cleanup-final">
+.weather-fun-tip{display:none!important}
+</style>
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -3153,7 +3157,7 @@ input:focus,select:focus,textarea:focus{
     </div>
     <button id="scheduleGoTodayBtn" class="schedule-today-btn" type="button">📅 <span>Vandaag</span></button>
   </div>
-  <div id="scheduleWeatherForecast" class="schedule-weather-forecast" title="Kledij- en wetsuittips zijn praktische richtlijnen op basis van de buitentemperatuur.">
+  <div id="scheduleWeatherForecast" class="schedule-weather-forecast" title="Weersverwachting met windsterkte en windrichting.">
     <div class="schedule-weather-loading">Weer laden…</div>
   </div>
 </section>
@@ -5337,7 +5341,6 @@ function currentActiveCrewShiftsFor(name){
 }
 
 function alarmCanBeActivatedNow(){
- if($("studentMain")?.classList.contains("active"))return false;
  const person=alertPersonName();
  if(!person)return false;
  return currentActiveCrewShiftsFor(person).length>0;
@@ -5347,22 +5350,23 @@ function updateZoneAlertButtonState(){
  const btn=$("zoneAlertBtn");
  if(!btn)return;
 
- const studentMode=$("studentMain")?.classList.contains("active");
- if(studentMode){
+ const person=alertPersonName();
+
+ // Alleen crewleden zien de knop. Op mobiel blijft hij zichtbaar,
+ // ook wanneer een ander tabblad openstaat.
+ if(!person){
    btn.style.display="none";
+   btn.disabled=true;
+   btn.title="Alarm is alleen beschikbaar voor crew";
    return;
  }
  btn.style.display="";
 
- const person=alertPersonName();
  const active=currentActiveCrewShiftsFor(person);
- const enabled=!!person && active.length>0;
-
+ const enabled=active.length>0;
  btn.disabled=!enabled;
 
- if(!person){
-   btn.title="Kies eerst je naam bij Mijn planning";
- }else if(!enabled){
+ if(!enabled){
    btn.title="Alarm is alleen actief tijdens je ingeplande shift";
  }else{
    const zones=[...new Set(active.map(x=>x.zone))];
@@ -5392,11 +5396,6 @@ function alertZoneOptions(person){
  return zones;
 }
 function openZoneAlert(){
- if($("studentMain")?.classList.contains("active")){
-   alert("De alarmfunctie is alleen beschikbaar voor crewleden.");
-   return;
- }
-
  const person=alertPersonName();
  if(!person){
    alert("Kies eerst je eigen naam bij 'Mijn planning'.");
@@ -5741,7 +5740,6 @@ function renderAlarmLog(){
 }
 
 function zoneAlertHelperName(){
- if($("studentMain")?.classList.contains("active"))return "";
  return ($("myEmployee")?.value||"").trim();
 }
 
@@ -8730,30 +8728,23 @@ function windguruInline(i){
 }
 
 
-function recommendedOutfit(temp){
- const t=Number(temp);
- if(!Number.isFinite(t))return "";
- if(t>=25)return "😎 tanktop + short";
- if(t>=20)return "👕 T-shirt + short";
- if(t>=15)return "🧥 hoodie + lange broek";
- return "🥶 jas + lange broek";
-}
 
-function recommendedWetsuit(temp){
- const t=Number(temp);
- if(!Number.isFinite(t))return "";
- // Dit is een praktische Lakeside-richtlijn, geen veiligheidsnorm.
- if(t>=20)return "🏄 shorty";
- if(t>=17)return "🏄 3/2 mm";
- if(t>=13)return "🏄 4/3 mm";
- return "🏄 5/4 mm";
+function compactWindDirection(deg){
+ const names=["N","NO","O","ZO","Z","ZW","W","NW"];
+ const arrows=["↓","↙","←","↖","↑","↗","→","↘"];
+ const i=Math.round((((Number(deg)||0)%360)+360)%360/45)%8;
+ return {name:names[i],arrow:arrows[i]};
 }
-
-function weatherFunInline(temp){
- const outfit=recommendedOutfit(temp);
- const wetsuit=recommendedWetsuit(temp);
- if(!outfit&&!wetsuit)return "";
- return `<span class="weather-fun-tip"><span class="outfit">· ${outfit}</span><span class="wetsuit"> · ${wetsuit}</span></span>`;
+function windForecastInline(daily,i){
+ const speed=daily.wind_speed_10m_max?.[i];
+ const gust=daily.wind_gusts_10m_max?.[i];
+ const deg=daily.wind_direction_10m_dominant?.[i];
+ if(speed==null){
+   return `<span class="windguru-inline"><a href="${WINDGURU_DUINBERGEN_URL}" target="_blank" rel="noopener">💨 Windguru ↗</a></span>`;
+ }
+ const dir=compactWindDirection(deg);
+ const gustText=gust!=null?` · vlagen ${Math.round(gust)}`:"";
+ return `<span class="windguru-inline"><a href="${WINDGURU_DUINBERGEN_URL}" target="_blank" rel="noopener" title="Windguru Duinbergen openen"> · 💨 ${Math.round(speed)} km/u ${dir.name} ${dir.arrow}${gustText}</a></span>`;
 }
 
 function renderThreeDayWeather(d){
@@ -8771,7 +8762,7 @@ function renderThreeDayWeather(d){
      <div class="schedule-weather-copy">
        <strong>${labels[i]||new Date(date+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"short"})}</strong>
        <span class="schedule-weather-temp">${hi==null?"–":Math.round(hi)+"°C"}</span>
-       <small>${weatherText(code)}${lo==null?"":" · min "+Math.round(lo)+"°"}${windguruInline(i)}${weatherFunInline(hi)}</small>
+       <small>${weatherText(code)}${lo==null?"":" · min "+Math.round(lo)+"°"}${windForecastInline(daily,i)}</small>
      </div>
    </div>`;
  }).join("") || '<div class="schedule-weather-loading">Weer tijdelijk niet beschikbaar</div>';
@@ -8781,18 +8772,35 @@ let latestWaterTemp=null;
 let latestWaterLabel="";
 
 function extractWaterTemperature(text){
- const clean=String(text||"").replace(/\s+/g," ");
- const m=clean.match(/Watertemperatuur:\s*([0-9]+(?:[.,][0-9]+)?)\s*°?C\s*(?:\(([^)]+)\))?/i);
- if(!m)return null;
- return {
-   value:Number(m[1].replace(",",".")),
-   label:(m[2]||"").trim()
- };
+ const clean=String(text||"")
+   .replace(/<[^>]+>/g," ")
+   .replace(/&nbsp;|&#160;/gi," ")
+   .replace(/\s+/g," ");
+
+ const patterns=[
+   /Watertemperatuur:\s*([0-9]+(?:[.,][0-9]+)?)\s*°?\s*C(?:\s*\(([^)]+)\))?/i,
+   /Water\s*temperature:\s*([0-9]+(?:[.,][0-9]+)?)\s*°?\s*C(?:\s*\(([^)]+)\))?/i
+ ];
+
+ for(const p of patterns){
+   const m=clean.match(p);
+   if(m){
+     return {value:Number(m[1].replace(",",".")),label:(m[2]||"").trim()};
+   }
+ }
+ return null;
 }
 
 function updateWaterTempUI(){
- const water=latestWaterTemp==null?"–":latestWaterTemp.toFixed(1).replace(".",",")+"°C";
- const suffix=latestWaterLabel?` · ${latestWaterLabel}`:"";
+ const cached=localStorage.getItem("cc_water_temp_cache");
+ let cacheData=null;
+ try{cacheData=cached?JSON.parse(cached):null}catch(e){}
+
+ const value=latestWaterTemp!=null?latestWaterTemp:cacheData?.value;
+ const label=latestWaterLabel||cacheData?.label||"";
+ const isCached=latestWaterTemp==null && value!=null;
+ const water=value==null?"niet beschikbaar":Number(value).toFixed(1).replace(".",",")+"°C";
+ const suffix=label?` · ${label}`:"";
 
  const weatherEl=$("weather");
  if(weatherEl){
@@ -8803,7 +8811,7 @@ function updateWaterTempUI(){
      chip.className="water-temp-inline";
      weatherEl.appendChild(chip);
    }
-   chip.textContent=`💧 water ${water}`;
+   chip.textContent=`💧 water ${water}${isCached?" (laatst gekend)":""}`;
  }
 
  if($("mobileHeaderWeather")){
@@ -8820,41 +8828,53 @@ function updateWaterTempUI(){
      strip.className="schedule-water-strip";
      forecast.appendChild(strip);
    }
-   strip.textContent=`💧 Watertemperatuur Duinenwater: ${water}${suffix}`;
+   strip.textContent=`💧 Duinenwater: ${water}${suffix}${isCached?" · laatst gekend":""}`;
  }
 }
 
 async function loadWaterTemperature(){
- const source="https://www.lakesideparadise.be/test-temperatuur/";
- const urls=[
-   source,
-   "https://api.allorigins.win/raw?url="+encodeURIComponent(source)
+ const pages=[
+   "https://www.lakesideparadise.be/info/ligging/",
+   "https://www.lakesideparadise.be/location/",
+   "https://www.lakesideparadise.be/",
+   "https://www.lakesideparadise.be/test-temperatuur/"
  ];
 
- for(const url of urls){
+ const candidates=[];
+ pages.forEach(source=>{
+   candidates.push(source);
+   candidates.push("https://api.allorigins.win/raw?url="+encodeURIComponent(source));
+   candidates.push("https://corsproxy.io/?url="+encodeURIComponent(source));
+   candidates.push("https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(source));
+ });
+
+ for(const url of candidates){
    try{
-     const r=await fetch(url,{cache:"no-store"});
+     const controller=new AbortController();
+     const timer=setTimeout(()=>controller.abort(),5000);
+     const r=await fetch(url,{cache:"no-store",signal:controller.signal});
+     clearTimeout(timer);
      if(!r.ok)continue;
-     const text=await r.text();
-     const found=extractWaterTemperature(text);
-     if(found){
+     const found=extractWaterTemperature(await r.text());
+     if(found && found.value>0 && found.value<40){
        latestWaterTemp=found.value;
        latestWaterLabel=found.label;
+       localStorage.setItem("cc_water_temp_cache",JSON.stringify({
+         value:found.value,label:found.label,updatedAt:new Date().toISOString()
+       }));
        updateWaterTempUI();
        return;
      }
    }catch(e){}
  }
 
- // Weer blijft werken als de externe watertemperatuur tijdelijk niet geladen kan worden.
  latestWaterTemp=null;
  latestWaterLabel="";
  updateWaterTempUI();
 }
-
 async function loadWeather(){
  try{
-   const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBrussels&forecast_days=3",{cache:"no-store"});
+   const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant&timezone=Europe%2FBrussels&forecast_days=3",{cache:"no-store"});
    const d=await r.json(),c=d.current||{};window.lastWeatherData=d;let rain="";
    if(d.hourly?.time?.length){let bi=0,bd=Infinity,now=new Date();d.hourly.time.forEach((t,i)=>{const z=Math.abs(new Date(t)-now);if(z<bd){bd=z;bi=i}});const ch=d.hourly.precipitation_probability?.[bi];if(ch!=null)rain=` · regen ${Math.round(ch)}%`}
    $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${Math.round(c.wind_speed_10m)} km/u${rain}</span>`;
@@ -8867,7 +8887,6 @@ async function loadWeather(){
  }
 }
 loadWeather();
-loadWindguruForecast();
 loadWaterTemperature();
 setTodayHeader();
 updateNotifyUI();
