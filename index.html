@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CableCrew Planner – Firebase TEST</title>
-<meta name="cablecrew-version" content="v12.23.0-school-zones-plus-blocks-2026-07-31">
+<title>CableCrew Planner</title>
+<meta name="cablecrew-version" content="FINAL-PRO-DAILY-PREFS-2026-08-01">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -2235,6 +2235,883 @@ body.contract-manager #contractsBtn{grid-column:1}
 .schoolsplash h2{background:var(--schoolsplash)}
 </style>
 
+
+<style id="v12-24-todo">
+.todo-main{
+  display:none;
+  max-width:1280px;
+  margin:auto;
+  padding:14px;
+}
+.todo-main.active{display:block}
+.todo-header{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  margin-bottom:12px
+}
+.todo-header h2{margin:0;font-size:24px}
+.todo-sub{margin-top:4px;color:var(--muted);font-size:12px}
+.todo-header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.todo-stats{
+  display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px
+}
+.todo-stat{
+  padding:6px 9px;border-radius:999px;background:#eef3f7;color:#526577;
+  font-size:11px;font-weight:850
+}
+.todo-list{display:grid;gap:9px}
+.todo-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;align-items:center;
+  background:#fff;border:1px solid #e2e8ed;border-radius:13px;
+  padding:12px 14px;box-shadow:0 4px 12px rgba(22,54,79,.05)
+}
+.todo-item.high{border-left:5px solid #d45545}
+.todo-item.normal{border-left:5px solid #2b7cab}
+.todo-item.low{border-left:5px solid #8aa099}
+.todo-item.done{opacity:.58}
+.todo-item.done .todo-title{text-decoration:line-through}
+.todo-title{font-weight:900;font-size:14px}
+.todo-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.todo-chip{
+  display:inline-flex;align-items:center;padding:3px 6px;border-radius:999px;
+  background:#f1f5f8;color:#5c6f80;font-size:10px;font-weight:800
+}
+.todo-note{margin-top:6px;font-size:12px;color:#5d6f7f;line-height:1.4;white-space:pre-wrap}
+.todo-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.todo-actions button{padding:7px 9px;font-size:11px}
+.todo-empty{
+  padding:24px 14px;text-align:center;color:var(--muted);
+  background:#fff;border:1px dashed #ced9e1;border-radius:13px
+}
+.todo-edit-modal{width:min(620px,96vw)}
+.todo-audience-all{background:#eef5f9}
+.todo-audience-crew{background:#eaf2ff}
+.todo-audience-students{background:#f2ecff}
+@media(max-width:720px){
+  .todo-main{padding:10px}
+  .todo-header{flex-direction:column;align-items:stretch}
+  .todo-header-actions{display:grid;grid-template-columns:1fr auto}
+  .todo-item{grid-template-columns:1fr}
+  .todo-actions{justify-content:stretch}
+  .todo-actions button{flex:1}
+}
+</style>
+
+
+<style id="v12-25-todo-collaboration">
+.todo-photo-field{margin-top:2px}
+.todo-photo-label{
+  font-size:12px;font-weight:850;color:#51606b;margin-bottom:6px
+}
+.todo-photo-label span{
+  font-size:10px;font-weight:700;color:#84919d;margin-left:5px
+}
+.todo-photo-field input[type="file"]{
+  width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:#fff
+}
+.todo-photo-help{font-size:10px;color:#7b8995;margin-top:5px;line-height:1.35}
+.todo-photo-preview,.todo-photos{
+  display:flex;gap:7px;flex-wrap:wrap;margin-top:8px
+}
+.todo-photo-thumb{
+  position:relative;width:88px;height:68px;border-radius:9px;overflow:hidden;
+  border:1px solid #d7e1e8;background:#eef3f6
+}
+.todo-photo-thumb img{
+  width:100%;height:100%;object-fit:cover;display:block;cursor:pointer
+}
+.todo-photo-remove{
+  position:absolute;right:3px;top:3px;width:23px;height:23px!important;
+  min-height:0!important;padding:0!important;border-radius:50%!important;
+  background:rgba(20,35,48,.82)!important;color:#fff!important;border:0!important;
+  font-size:14px!important;line-height:1!important
+}
+.todo-photo-viewer-modal{
+  width:min(900px,96vw)!important;max-height:94vh!important;padding:10px!important
+}
+.todo-photo-viewer-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 4px 10px
+}
+.todo-photo-viewer-modal img{
+  display:block;max-width:100%;max-height:80vh;margin:auto;border-radius:10px
+}
+.todo-by{font-size:10px;color:#81909c;margin-top:6px}
+.todo-manager-badge{
+  display:inline-flex;align-items:center;padding:3px 6px;border-radius:999px;
+  background:#fff3d6;color:#805b00;font-size:9px;font-weight:900;margin-left:5px
+}
+.todo-collab-note{
+  padding:8px 10px;margin-bottom:10px;border-radius:9px;background:#eef6fa;
+  color:#506879;font-size:11px;line-height:1.4
+}
+@media(max-width:720px){
+ .todo-photo-thumb{width:78px;height:62px}
+}
+</style>
+
+
+<style id="v12-26-water-temp">
+.water-temp-inline{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  margin-left:5px;
+  font-weight:850;
+  color:#31566f;
+  white-space:nowrap;
+}
+.schedule-water-strip{
+  grid-column:1/-1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:34px;
+  padding:4px 10px 8px;
+  border-top:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.92);
+  font-size:11px;
+  font-weight:850;
+}
+@media(max-width:720px){
+  .water-temp-inline{margin-left:2px;font-size:11px}
+  .schedule-water-strip{font-size:9px;min-height:28px;padding:3px 6px 6px}
+}
+</style>
+
+
+<style id="v12-27-student-zone-filter">
+.student-zone-assign,.student-new-zones{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#f8fafc
+}
+.student-zone-assign>span,.student-new-zones>span{
+  width:100%;font-size:9px;font-weight:900;color:#748291;text-transform:uppercase;letter-spacing:.04em
+}
+.student-zone-assign label,.student-new-zones label{
+  display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;color:#405468
+}
+.student-zone-assign input,.student-new-zones input{width:auto;margin:0}
+.student-manage-row{
+  grid-template-columns:minmax(170px,.8fr) minmax(240px,1.2fr) minmax(180px,.8fr) auto!important
+}
+.student-manage-tools{
+  grid-template-columns:minmax(150px,1fr) minmax(160px,1fr) minmax(260px,1.4fr) auto!important
+}
+@media(max-width:720px){
+  .student-manage-row,.student-manage-tools{grid-template-columns:1fr!important}
+}
+</style>
+
+
+<style id="v12-28-windguru-contract-alerts">
+.windguru-inline{
+  display:inline;
+  margin-left:4px;
+  font-size:10px;
+  font-weight:800;
+  color:#607487;
+  white-space:nowrap;
+}
+.windguru-inline a{color:inherit;text-decoration:none}
+.windguru-inline a:hover{text-decoration:underline}
+@media(max-width:720px){
+  .windguru-inline{font-size:9px;margin-left:2px}
+  .schedule-weather-copy small{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+  }
+}
+
+/* Contractmeldingen */
+.contract-notify-panel{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:8px 0 12px;padding:9px 10px;border:1px solid #dbe5ec;
+  border-radius:10px;background:#f8fafc
+}
+.contract-notify-copy{font-size:11px;color:#5c6f7f;line-height:1.35}
+.contract-notify-copy b{display:block;color:#28465d;font-size:12px;margin-bottom:2px}
+.contract-notify-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.contract-notify-actions button,.contract-notify-actions a{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:34px;padding:6px 9px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:#263d52;text-decoration:none;
+  font-size:10px;font-weight:850
+}
+.contract-event-list{display:grid;gap:6px;margin-bottom:10px}
+.contract-event{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:8px 9px;border-radius:9px;background:#fff;border:1px solid #e2e8ed;
+  font-size:11px
+}
+.contract-event.urgent{border-left:4px solid #d92d20}
+.contract-event.soon{border-left:4px solid #e9a019}
+.contract-event.info{border-left:4px solid #2b7cab}
+.contract-event-text b{display:block;font-size:11px;color:#263d52}
+.contract-event-text span{display:block;color:#6b7c8c;margin-top:2px;line-height:1.3}
+.contract-event-actions{display:flex;gap:4px;flex-wrap:wrap}
+.contract-event-actions a{
+  padding:5px 7px;border:1px solid var(--line);border-radius:7px;
+  background:#fff;text-decoration:none;color:#365267;font-size:9px;font-weight:850
+}
+.contract-ending{border-left:5px solid #e9a019!important}
+.contract-ending .contract-status{color:#805b00}
+@media(max-width:720px){
+  .contract-notify-panel,.contract-event{grid-template-columns:1fr;display:grid}
+  .contract-notify-actions,.contract-event-actions{justify-content:stretch}
+  .contract-notify-actions button,.contract-notify-actions a,.contract-event-actions a{flex:1}
+}
+</style>
+
+
+<style id="v12-29-weather-outfit-wetsuit">
+.weather-fun-tip{
+  display:inline;
+  margin-left:4px;
+  font-size:9px;
+  font-weight:800;
+  color:#66798a;
+  white-space:nowrap;
+}
+.weather-fun-tip .outfit{font-weight:900;color:#40596d}
+.weather-fun-tip .wetsuit{font-weight:850;color:#315d73}
+@media(max-width:720px){
+  .weather-fun-tip{font-size:8px;margin-left:2px}
+  .schedule-weather-copy small{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+  }
+}
+</style>
+
+
+<style id="v12-31-zone-alert">
+.zone-alert-btn{
+  min-height:42px;
+  padding:0 14px;
+  border-radius:12px;
+  border:1px solid #a61f1f;
+  background:linear-gradient(135deg,#c92a2a,#9f1717);
+  color:#fff;
+  font-size:12px;
+  font-weight:950;
+  box-shadow:0 5px 14px rgba(167,31,31,.20);
+  white-space:nowrap;
+}
+.zone-alert-btn:hover{transform:translateY(-1px)}
+.zone-alert-modal{width:min(560px,96vw)}
+.zone-alert-warning{
+  margin:0 0 12px;
+  padding:9px 11px;
+  border-radius:10px;
+  background:#fff4e8;
+  border:1px solid #f1c392;
+  color:#74471f;
+  font-size:11px;
+  line-height:1.4;
+}
+.zone-alert-detected{
+  margin-top:10px;
+  padding:8px 10px;
+  border-radius:9px;
+  background:#f4f7f9;
+  color:#526577;
+  font-size:11px;
+  line-height:1.4;
+}
+.live-zone-alert{
+  position:fixed;
+  left:50%;
+  top:78px;
+  transform:translateX(-50%);
+  z-index:250;
+  width:min(680px,calc(100vw - 20px));
+  padding:12px 14px;
+  border-radius:13px;
+  background:#9f1717;
+  color:#fff;
+  box-shadow:0 12px 34px rgba(100,20,20,.28);
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+}
+.live-zone-alert strong{display:block;font-size:14px}
+.live-zone-alert small{display:block;margin-top:3px;opacity:.88;line-height:1.35}
+.live-zone-alert button{
+  margin-left:auto;
+  flex:0 0 auto;
+  padding:5px 7px;
+  min-height:0;
+  border-radius:8px;
+  background:#fff;
+  color:#8f1d1d;
+  border:0;
+  font-size:10px;
+}
+@media(max-width:720px){
+  .zone-alert-btn{
+    position:fixed;
+    right:12px;
+    bottom:82px;
+    z-index:125;
+    min-height:46px;
+    padding:0 13px;
+    border-radius:15px;
+    font-size:11px;
+    box-shadow:0 7px 20px rgba(135,20,20,.30);
+  }
+  .live-zone-alert{top:70px}
+}
+</style>
+
+
+<style id="v12-33-availability-template">
+.availability-modal{width:min(1120px,96vw);max-height:92vh;overflow:auto}
+.availability-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 12px}.availability-tab.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.availability-explain{margin-bottom:10px;padding:9px 11px;border-radius:10px;background:#f4f7f9;color:#526577;font-size:11px;line-height:1.45}
+.availability-people-list{display:grid;gap:7px}.availability-person-row{display:grid;grid-template-columns:minmax(140px,.65fr) minmax(430px,1.7fr);gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.availability-person-name{font-size:12px;font-weight:900;color:#29465d}.weekday-checks{display:flex;gap:5px;flex-wrap:wrap}
+.weekday-check{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border-radius:8px;background:#f7f9fb;border:1px solid #e0e6eb;font-size:10px;font-weight:800;color:#53687a}.weekday-check input{width:auto;margin:0}
+.weekday-check:has(input:checked){background:#fff0ed;border-color:#e7b1a8;color:#963a31}
+.availability-exception-box{margin-top:14px;padding:11px;border:1px solid #dae4eb;border-radius:11px;background:#fbfcfd}.availability-exception-box h3{margin:0 0 9px;font-size:14px}
+.availability-exception-form{display:grid;grid-template-columns:1.1fr .85fr .85fr 1.3fr auto;gap:7px;align-items:end}.availability-exceptions-list{display:grid;gap:5px;margin-top:9px}
+.availability-exception-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 9px;border-radius:8px;background:#fff;border:1px solid #e2e8ed;font-size:10px}
+.availability-exception-row.work{border-left:4px solid #2b8a57}.availability-exception-row.off{border-left:4px solid #d45545}
+.month-template-controls{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:9px;align-items:end}.month-template-controls label{display:grid;gap:5px;font-size:10px;font-weight:850;color:#667785}
+.month-template-summary{margin:12px 0 8px;padding:10px 11px;border-radius:10px;background:#eef5f9;color:#405c70;font-size:11px;line-height:1.45}.month-template-summary:empty{display:none}
+.month-template-preview{display:grid;gap:8px}.template-person{border:1px solid #e1e7ec;border-radius:10px;background:#fff;overflow:hidden}.template-person-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f7f9fb;font-size:11px;font-weight:900}
+.template-person-body{padding:7px 10px;font-size:10px;color:#617382;line-height:1.45}.template-day-chip{display:inline-flex;margin:2px 4px 2px 0;padding:3px 6px;border-radius:999px;font-size:9px;font-weight:800}
+.template-ready{background:#eaf7ee;color:#2a7546}.template-skip{background:#fff2e5;color:#91612d}.template-existing{background:#f2f2f2;color:#747474}
+@media(max-width:760px){.availability-person-row,.availability-exception-form,.month-template-controls{grid-template-columns:1fr}}
+</style>
+
+
+<style id="v12-34-alert-acknowledge">
+.live-zone-alert{
+  align-items:center;
+}
+.live-zone-alert-actions{
+  margin-left:auto;
+  display:flex;
+  gap:6px;
+  flex:0 0 auto;
+}
+.live-zone-alert .alert-help-btn{
+  min-height:34px;
+  padding:6px 10px;
+  border-radius:9px;
+  border:0;
+  background:#1f8a4c;
+  color:#fff;
+  font-size:10px;
+  font-weight:950;
+  white-space:nowrap;
+}
+.live-zone-alert .alert-close-btn{
+  min-height:34px;
+  padding:6px 8px;
+  border-radius:9px;
+  border:0;
+  background:#fff;
+  color:#8f1d1d;
+  font-size:10px;
+  font-weight:850;
+}
+.zone-help-confirmation{
+  position:fixed;
+  left:50%;
+  top:78px;
+  transform:translateX(-50%);
+  z-index:251;
+  width:min(680px,calc(100vw - 20px));
+  padding:11px 13px;
+  border-radius:13px;
+  background:#197243;
+  color:#fff;
+  box-shadow:0 12px 30px rgba(25,114,67,.25);
+  font-size:12px;
+  font-weight:850;
+  text-align:center;
+}
+@media(max-width:720px){
+  .live-zone-alert{
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .live-zone-alert-actions{
+    width:100%;
+    margin-left:0;
+  }
+  .live-zone-alert .alert-help-btn{flex:1}
+  .zone-help-confirmation{top:70px}
+}
+</style>
+
+
+<style id="v12-35-template-replacements">
+.template-options-box{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:end;
+  margin:10px 0;
+  padding:10px 11px;
+  border:1px solid #dce5ec;
+  border-radius:10px;
+  background:#fbfcfd;
+}
+.template-options-box b{font-size:12px;color:#29465d}
+.template-options-box small{display:block;margin-top:3px;font-size:10px;color:#738391;line-height:1.35}
+.template-exclude-people{
+  grid-column:1/-1;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.template-exclude-person{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:5px 7px;
+  border:1px solid #dce4ea;
+  border-radius:999px;
+  background:#fff;
+  font-size:10px;
+  font-weight:800;
+  color:#526778;
+}
+.template-exclude-person input{width:auto;margin:0}
+.template-exclude-person:has(input:checked){
+  background:#fff0ed;
+  border-color:#e3b2a9;
+  color:#963a31;
+}
+.template-replacement{
+  background:#eaf3ff!important;
+  color:#315f86!important;
+}
+.template-unfilled{
+  background:#fdecec!important;
+  color:#a8362d!important;
+}
+.template-person.excluded{
+  opacity:.72;
+  border-style:dashed;
+}
+.template-person.excluded .template-person-head{
+  background:#fff3f0;
+}
+@media(max-width:760px){
+  .template-options-box{grid-template-columns:1fr}
+  #rebuildMonthTemplateBtn{width:100%}
+}
+</style>
+
+
+<style id="v12-37-loud-alert-sound">
+.alert-sound-status{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  margin-top:4px;
+  font-size:9px;
+  font-weight:900;
+  opacity:.95;
+}
+</style>
+
+
+<style id="v12-39-flashing-red-alert">
+@keyframes cablecrewAlarmFlash{
+  0%,100%{
+    background:#b31313;
+    box-shadow:0 0 0 0 rgba(220,0,0,.75),0 10px 30px rgba(140,0,0,.35);
+  }
+  50%{
+    background:#ff1f1f;
+    box-shadow:0 0 0 9px rgba(255,0,0,.16),0 10px 38px rgba(255,0,0,.58);
+  }
+}
+@keyframes cablecrewAlarmIconPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.32)}
+}
+.live-zone-alert{
+  animation:cablecrewAlarmFlash .72s infinite;
+  border:2px solid #fff!important;
+}
+.live-zone-alert>div:first-child{
+  font-size:24px;
+  animation:cablecrewAlarmIconPulse .72s infinite;
+}
+.live-zone-alert strong{
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.25px;
+}
+</style>
+
+
+<style id="v12-40-alarm-reports-logbook">
+.alarm-report-modal{width:min(650px,96vw)}
+.alarm-report-summary{margin:0 0 12px;padding:9px 11px;border-radius:10px;background:#f4f7f9;color:#526577;font-size:11px;line-height:1.45}
+.zone-help-confirmation{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;text-align:left}
+.zone-help-confirmation button{border:0;border-radius:9px;background:#fff;color:#17693d;padding:6px 9px;font-size:10px;font-weight:900}
+.alarm-log-modal{width:min(980px,96vw);max-height:92vh;overflow:auto}
+.alarm-log-stats{display:flex;gap:7px;flex-wrap:wrap;margin:6px 0 12px}
+.alarm-log-stat{padding:5px 8px;border-radius:999px;background:#eef3f7;color:#526577;font-size:10px;font-weight:850}
+.alarm-log-list{display:grid;gap:8px}
+.alarm-log-row{border:1px solid #e0e7ec;border-radius:11px;background:#fff;padding:10px 11px}
+.alarm-log-row.open{border-left:5px solid #d92d20}.alarm-log-row.followup{border-left:5px solid #e9a019}.alarm-log-row.resolved{border-left:5px solid #2b8a57}
+.alarm-log-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.alarm-log-title{font-size:12px;font-weight:950;color:#29465d}
+.alarm-log-meta{font-size:10px;color:#738391;margin-top:3px;line-height:1.4}
+.alarm-log-duration{flex:0 0 auto;padding:4px 7px;border-radius:999px;background:#eef6fa;color:#345a72;font-size:10px;font-weight:900}
+.alarm-log-body{margin-top:7px;padding-top:7px;border-top:1px solid #edf1f4;font-size:11px;color:#526577;line-height:1.45}
+.alarm-log-body b{color:#334e63}.alarm-log-actions{margin-top:7px}.alarm-log-actions button{padding:6px 8px;font-size:10px}
+@media(max-width:720px){.zone-help-confirmation{grid-template-columns:1fr}.zone-help-confirmation button{width:100%}}
+</style>
+
+
+<style id="v12-41-app-usage-crew-only-alarm">
+.app-usage-modal{width:min(900px,96vw);max-height:92vh;overflow:auto}
+.app-usage-tabs{display:flex;gap:7px;margin:5px 0 10px}
+.app-usage-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.app-usage-stats{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.app-usage-stat{
+  padding:5px 8px;border-radius:999px;background:#eef3f7;
+  color:#526577;font-size:10px;font-weight:850
+}
+.app-usage-list{display:grid;gap:7px}
+.app-usage-row{
+  display:grid;grid-template-columns:minmax(150px,.8fr) minmax(220px,1.1fr) auto;
+  gap:10px;align-items:center;padding:9px 10px;border:1px solid #e1e7ec;
+  border-radius:10px;background:#fff
+}
+.app-usage-row.used{border-left:5px solid #2b8a57}
+.app-usage-row.not-used{border-left:5px solid #c9d2d8}
+.app-usage-name{font-weight:900;font-size:12px;color:#29465d}
+.app-usage-meta{font-size:10px;color:#738391;line-height:1.4}
+.app-usage-status{
+  font-size:10px;font-weight:900;padding:4px 7px;border-radius:999px;
+  background:#f3f6f8;color:#60717f;white-space:nowrap
+}
+.app-usage-row.used .app-usage-status{background:#eaf7ee;color:#2a7546}
+.app-usage-row.not-used .app-usage-status{background:#f3f4f5;color:#7a848b}
+body.student-mode #zoneAlertBtn{display:none!important}
+@media(max-width:720px){
+  .app-usage-row{grid-template-columns:1fr}
+  body.student-mode #zoneAlertBtn{display:none!important}
+}
+</style>
+
+
+<style id="v12-42-alarm-only-during-active-shift">
+.zone-alert-btn:disabled{
+  background:#9aa7b1!important;
+  border-color:#8d99a2!important;
+  color:#eef2f4!important;
+  box-shadow:none!important;
+  opacity:.72;
+  cursor:not-allowed!important;
+  transform:none!important;
+}
+.zone-alert-btn:disabled:hover{transform:none!important}
+</style>
+
+
+<style id="final-responsive-qa">
+html,body{max-width:100%;overflow-x:hidden}
+.schedule-weather-copy,.schedule-weather-copy small{min-width:0}
+.schedule-weather-copy small{display:block;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:720px){
+  .planner-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .planner-tabs::-webkit-scrollbar{display:none}
+  .planner-tab{flex:0 0 auto}
+  .modal{max-width:calc(100vw - 12px)!important}
+  input,select,textarea,button{max-width:100%}
+}
+@media(orientation:landscape) and (max-height:600px){
+  .modalback{align-items:flex-start;overflow-y:auto;padding-top:6px}
+  .modal{max-height:calc(100vh - 12px)!important;overflow:auto}
+}
+</style>
+
+
+<style id="final-professional-polish">
+:root{
+  --ui-radius:12px;
+  --ui-radius-sm:9px;
+  --ui-shadow:0 6px 18px rgba(28,55,74,.08);
+  --ui-shadow-soft:0 2px 8px rgba(28,55,74,.05);
+}
+
+/* General rhythm & typography */
+body{
+  letter-spacing:.01em;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+button,input,select,textarea{
+  border-radius:var(--ui-radius-sm);
+}
+button{
+  transition:transform .14s ease,box-shadow .14s ease,background-color .14s ease,border-color .14s ease,opacity .14s ease;
+}
+button:not(:disabled):active{transform:translateY(1px) scale(.995)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{
+  outline:2px solid rgba(54,124,166,.45);
+  outline-offset:2px;
+}
+
+/* Header */
+header,.topbar,.app-header{
+  box-shadow:0 1px 0 rgba(31,57,77,.08);
+}
+.desktop-header-auth button,
+.zone-alert-btn{
+  font-weight:900;
+}
+
+/* Tabs */
+.planner-tabs{
+  gap:6px;
+}
+.planner-tab{
+  min-height:38px;
+  border-radius:10px;
+  padding-inline:12px;
+}
+.planner-tab.active{
+  box-shadow:0 3px 10px rgba(34,77,105,.14);
+}
+
+/* Planner sections */
+.zone{
+  border-radius:var(--ui-radius);
+  overflow:hidden;
+  box-shadow:var(--ui-shadow-soft);
+}
+.zone h2{
+  letter-spacing:.02em;
+}
+.shift,.student-shift,.activity-block,.todo-item,.contract-row,
+.admin-tool-card,.template-person,.alarm-log-row,.app-usage-row{
+  border-radius:var(--ui-radius);
+}
+.shift,.student-shift{
+  box-shadow:0 1px 0 rgba(20,50,70,.04);
+}
+
+/* Admin cards */
+.admin-tool-card{
+  min-height:74px;
+  box-shadow:var(--ui-shadow-soft);
+  border:1px solid rgba(60,92,114,.10);
+}
+.admin-tool-card:hover{
+  transform:translateY(-1px);
+  box-shadow:var(--ui-shadow);
+}
+.tool-copy b{font-size:13px}
+.tool-copy small{line-height:1.35}
+
+/* Modals */
+.modal{
+  border-radius:16px!important;
+  box-shadow:0 18px 50px rgba(27,51,68,.20)!important;
+  border:1px solid rgba(62,91,112,.10);
+}
+.modal h2{
+  letter-spacing:-.01em;
+}
+.modalactions{
+  gap:8px;
+  padding-top:10px;
+}
+.modalactions button{
+  min-height:38px;
+  font-weight:850;
+}
+
+/* Inputs */
+input,select,textarea{
+  border:1px solid #d7e0e7;
+  background:#fff;
+}
+input:hover,select:hover,textarea:hover{
+  border-color:#c3d0d9;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:#7aa9c6;
+  box-shadow:0 0 0 3px rgba(73,135,174,.10);
+}
+
+/* Weather: dense, professional, no added height */
+.schedule-weather-forecast{
+  align-items:stretch;
+}
+.schedule-weather-day{
+  min-width:0;
+}
+.schedule-weather-copy{
+  line-height:1.18;
+}
+.schedule-weather-copy small{
+  color:#657b8c;
+}
+.windguru-inline,.weather-fun-tip,.water-temp-inline{
+  vertical-align:baseline;
+}
+
+/* To-do */
+.todo-item{
+  box-shadow:var(--ui-shadow-soft);
+}
+.todo-title{
+  letter-spacing:.005em;
+}
+.todo-chip{
+  border:1px solid rgba(80,110,130,.07);
+}
+
+/* Contracts */
+.contract-row{
+  box-shadow:var(--ui-shadow-soft);
+}
+.contract-status{
+  line-height:1.35;
+}
+
+/* Availability / month template */
+.availability-person-row,.availability-exception-box,
+.template-options-box{
+  box-shadow:var(--ui-shadow-soft);
+}
+.weekday-check{
+  transition:background-color .14s ease,border-color .14s ease,color .14s ease;
+}
+
+/* Alarm */
+.live-zone-alert{
+  backdrop-filter:saturate(1.05);
+  -webkit-backdrop-filter:saturate(1.05);
+}
+.alert-help-btn{
+  box-shadow:0 2px 8px rgba(12,94,47,.20);
+}
+
+/* App usage / logbook */
+.app-usage-row,.alarm-log-row{
+  box-shadow:var(--ui-shadow-soft);
+}
+
+/* Tables / small metadata */
+.year-sub,.contract-meta,.todo-meta,.alarm-log-meta,.app-usage-meta{
+  line-height:1.4;
+}
+
+/* Mobile polish */
+@media(max-width:720px){
+  body{font-size:14px}
+  .planner-tabs{
+    padding-bottom:2px;
+  }
+  .planner-tab{
+    min-height:36px;
+    padding-inline:10px;
+    font-size:11px;
+  }
+  .zone{
+    margin-bottom:10px;
+  }
+  .zone h2{
+    font-size:13px;
+  }
+  .shift,.student-shift{
+    padding-top:8px;
+    padding-bottom:8px;
+  }
+  .modal{
+    border-radius:14px!important;
+  }
+  .modalactions{
+    position:sticky;
+    bottom:0;
+    background:linear-gradient(to top,#fff 82%,rgba(255,255,255,.92));
+    z-index:2;
+    padding-bottom:4px;
+  }
+  .admin-tool-card{
+    min-height:66px;
+  }
+  .todo-item,.contract-row,.alarm-log-row,.app-usage-row{
+    padding:10px;
+  }
+}
+
+/* Landscape mobile: keep compact and usable */
+@media(orientation:landscape) and (max-height:600px){
+  .zone{margin-bottom:6px}
+  .planner-tab{min-height:32px}
+  .modalactions button{min-height:34px}
+}
+
+/* Reduced motion accessibility */
+@media(prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto!important}
+  button,.weekday-check,.admin-tool-card{transition:none!important}
+  .live-zone-alert,.live-zone-alert>div:first-child{animation-duration:1.2s!important}
+}
+</style>
+
+
+<style id="final-daily-planning-popup">
+.daily-planning-modal{width:min(560px,96vw)}
+.daily-planning-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.daily-planning-head h2{margin:0}.daily-planning-date{margin-top:3px;color:#6c7d8b;font-size:11px;font-weight:750}
+.daily-planning-content{display:grid;gap:8px}.daily-planning-shift{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:10px 11px;border:1px solid #dfe7ec;border-radius:11px;background:#fff;box-shadow:0 2px 8px rgba(28,55,74,.05)}
+.daily-planning-time{min-width:78px;padding:6px 8px;border-radius:9px;background:#eef4f7;color:#36556a;font-size:11px;font-weight:950;text-align:center}
+.daily-planning-zone{font-size:13px;font-weight:950;color:#28465d}.daily-planning-note{margin-top:2px;color:#71818f;font-size:10px;line-height:1.35}
+.daily-planning-empty{padding:20px 12px;text-align:center;border:1px dashed #cfd9df;border-radius:11px;background:#fafcfd;color:#6b7d8b;font-size:12px}
+.daily-planning-free{display:inline-flex;margin-top:6px;padding:4px 7px;border-radius:999px;background:#eaf7ee;color:#2c7748;font-size:10px;font-weight:900}
+@media(max-width:720px){.daily-planning-modal{width:calc(100vw - 12px)!important}.daily-planning-shift{grid-template-columns:1fr}.daily-planning-time{text-align:left;width:max-content}}
+</style>
+
+
+<style id="daily-planning-preferences">
+.daily-planning-toggle{
+  margin-top:6px;
+  background:#eef5f9;
+  border-color:#cbdbe5;
+  color:#35576d;
+}
+.daily-planning-toggle.enabled{
+  background:#eaf7ee;
+  border-color:#a8d5b7;
+  color:#237044;
+}
+.daily-planning-pref{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:12px;
+  padding:9px 10px;
+  border:1px solid #dce5eb;
+  border-radius:10px;
+  background:#f8fafc;
+  color:#506879;
+  font-size:11px;
+  font-weight:800;
+}
+.daily-planning-pref input{width:auto;margin:0}
+</style>
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -2258,7 +3135,8 @@ body.contract-manager #contractsBtn{grid-column:1}
       <div><small id="desktopPlanningTitle">Mijn planning</small><select id="desktopHeaderPerson"><option value="">Iedereen</option></select></div>
     </div>
   </div>
-  <div class="desktop-header-auth">
+  <button id="zoneAlertBtn" class="zone-alert-btn" type="button" title="Stuur meteen een alarm via WhatsApp">🚨 ALERT</button>
+    <div class="desktop-header-auth">
     <button id="desktopAuthBtn" type="button">🔐 Login</button>
   </div>
   <div id="syncStatus" class="status">Verbinden…</div>
@@ -2275,7 +3153,7 @@ body.contract-manager #contractsBtn{grid-column:1}
     </div>
     <button id="scheduleGoTodayBtn" class="schedule-today-btn" type="button">📅 <span>Vandaag</span></button>
   </div>
-  <div id="scheduleWeatherForecast" class="schedule-weather-forecast">
+  <div id="scheduleWeatherForecast" class="schedule-weather-forecast" title="Kledij- en wetsuittips zijn praktische richtlijnen op basis van de buitentemperatuur.">
     <div class="schedule-weather-loading">Weer laden…</div>
   </div>
 </section>
@@ -2283,6 +3161,182 @@ body.contract-manager #contractsBtn{grid-column:1}
 <div class="planner-tabs">
   <button id="crewPlannerTab" class="planner-tab active" type="button">Crew</button>
   <button id="studentPlannerTab" class="planner-tab" type="button" style="display:none">🎓 Jobstudenten</button>
+  <button id="todoPlannerTab" class="planner-tab" type="button">✅ To do</button>
+</div>
+
+
+<section id="todoMain" class="todo-main">
+  <div class="todo-header">
+    <div>
+      <h2>✅ To do</h2>
+      <div class="todo-sub">Taken voor rustige momenten. Iedereen kan toevoegen en afvinken; Nick, Arno en Simon beheren de lijst.</div>
+    </div>
+    <div class="todo-header-actions">
+      <select id="todoAudienceFilter" aria-label="Toon taken voor">
+        <option value="all">Iedereen</option>
+        <option value="crew">Crew</option>
+        <option value="students">Jobstudenten</option>
+      </select>
+      <button id="todoAddBtn" class="primary" type="button" style="display:none">+ Taak toevoegen</button>
+    </div>
+  </div>
+  <div id="todoStats" class="todo-stats"></div>
+  <div id="todoList" class="todo-list"></div>
+</section>
+
+
+
+<div id="alarmReportModal" class="modalback">
+  <div class="modal alarm-report-modal">
+    <h2>📝 Alarmrapport</h2>
+    <div id="alarmReportSummary" class="alarm-report-summary"></div>
+    <div class="formgrid">
+      <label class="wide">Wat was het probleem?
+        <textarea id="alarmReportProblem" rows="3" placeholder="Omschrijf kort wat er aan de hand was."></textarea>
+      </label>
+      <label class="wide">Wat werd gedaan?
+        <textarea id="alarmReportAction" rows="3" placeholder="Welke actie is ondernomen om het probleem op te lossen?"></textarea>
+      </label>
+      <label>Afhandeling
+        <select id="alarmReportStatus">
+          <option value="resolved">✅ Opgelost</option>
+          <option value="followup">🟠 Opvolging nodig</option>
+        </select>
+      </label>
+      <label>Opmerking
+        <input id="alarmReportNote" type="text" placeholder="optioneel">
+      </label>
+    </div>
+    <div class="modalactions">
+      <button id="cancelAlarmReportBtn" type="button">Annuleren</button>
+      <button id="saveAlarmReportBtn" class="success" type="button">Rapport opslaan</button>
+    </div>
+  </div>
+</div>
+
+
+
+<div id="dailyPlanningModal" class="modalback">
+  <div class="modal daily-planning-modal">
+    <div class="daily-planning-head">
+      <div><h2>☀️ Jouw planning vandaag</h2><div id="dailyPlanningDate" class="daily-planning-date"></div></div>
+      <button id="closeDailyPlanningBtn" type="button">Sluiten</button>
+    </div>
+    <div id="dailyPlanningContent" class="daily-planning-content"></div>
+    <label class="daily-planning-pref">
+      <input id="dailyPlanningPopupPref" type="checkbox">
+      <span>Deze dagelijkse planning om 07:00 tonen</span>
+    </label>
+    <div class="modalactions"><button id="openMyPlanningBtn" class="primary" type="button">Open Mijn planning</button></div>
+  </div>
+</div>
+<div id="appUsageModal" class="modalback">
+  <div class="modal app-usage-modal">
+    <div class="year-head">
+      <div>
+        <h2>📱 App gebruik</h2>
+        <div class="year-sub">Overzicht van crew en jobstudenten die CableCrew al geopend hebben.</div>
+      </div>
+      <button id="closeAppUsageBtn" type="button">Sluiten</button>
+    </div>
+
+    <div class="app-usage-tabs">
+      <button id="appUsageCrewTab" class="app-usage-tab active" type="button">Crew</button>
+      <button id="appUsageStudentTab" class="app-usage-tab" type="button">Jobstudenten</button>
+    </div>
+
+    <div id="appUsageStats" class="app-usage-stats"></div>
+    <div id="appUsageList" class="app-usage-list"></div>
+  </div>
+</div>
+
+<div id="alarmLogModal" class="modalback">
+  <div class="modal alarm-log-modal">
+    <div class="year-head">
+      <div>
+        <h2>📕 Alarm logboek</h2>
+        <div class="year-sub">Automatisch overzicht van meldingen, hulp en afhandeling.</div>
+      </div>
+      <button id="closeAlarmLogBtn" type="button">Sluiten</button>
+    </div>
+    <div id="alarmLogStats" class="alarm-log-stats"></div>
+    <div id="alarmLogList" class="alarm-log-list"></div>
+  </div>
+</div>
+
+<div id="zoneAlertModal" class="modalback">
+  <div class="modal zone-alert-modal">
+    <h2>🚨 Probleem melden</h2>
+    <div class="zone-alert-warning">
+      Gebruik dit voor een operationeel probleem waarbij je snel hulp van collega's nodig hebt.
+      Bij echte medische of levensbedreigende nood: gebruik de normale noodprocedure/nooddiensten.
+    </div>
+    <div class="formgrid">
+      <label class="wide">Melder<input id="zoneAlertPerson" readonly></label>
+      <label>Zone
+        <select id="zoneAlertZone"></select>
+      </label>
+      <label>Urgentie
+        <select id="zoneAlertUrgency">
+          <option value="help">Hulp nodig</option>
+          <option value="urgent">Dringend probleem</option>
+        </select>
+      </label>
+      <label class="wide">Korte melding<textarea id="zoneAlertNote" rows="2" placeholder="bv. kabel stilgevallen, materiaalprobleem, extra hulp nodig..."></textarea></label>
+    </div>
+    <div id="zoneAlertDetected" class="zone-alert-detected"></div>
+    <div class="modalactions">
+      <button id="cancelZoneAlertBtn" type="button">Annuleren</button>
+      <button id="sendZoneAlertBtn" class="danger" type="button">🚨 Alarm versturen</button>
+    </div>
+  </div>
+</div>
+
+<div id="todoPhotoViewer" class="modalback">
+  <div class="modal todo-photo-viewer-modal">
+    <div class="todo-photo-viewer-head">
+      <strong>Foto</strong>
+      <button id="closeTodoPhotoViewer" type="button">Sluiten</button>
+    </div>
+    <img id="todoPhotoViewerImg" alt="Foto bij taak">
+  </div>
+</div>
+
+<div id="todoEditModal" class="modalback">
+  <div class="modal todo-edit-modal">
+    <h2 id="todoEditTitle">Taak toevoegen</h2>
+    <div class="formgrid">
+      <label class="wide">Taak<input id="todoTitleInput" type="text" placeholder="bv. Materiaal opruimen"></label>
+      <label>Voor wie?
+        <select id="todoAudienceInput">
+          <option value="all">Iedereen</option>
+          <option value="crew">Crew</option>
+          <option value="students">Jobstudenten</option>
+        </select>
+      </label>
+      <label>Prioriteit
+        <select id="todoPriorityInput">
+          <option value="normal">Normaal</option>
+          <option value="high">Belangrijk</option>
+          <option value="low">Als er tijd is</option>
+        </select>
+      </label>
+      <label>Zone / plaats<input id="todoZoneInput" type="text" placeholder="bv. PRO, shop, materiaalhok"></label>
+      <label>Deadline<input id="todoDueInput" type="date"></label>
+      <label class="wide">Uitleg / aantekeningen<textarea id="todoNoteInput" rows="4" placeholder="Extra uitleg, aandachtspunten, wat er al gebeurd is..."></textarea></label>
+      <div class="wide todo-photo-field">
+        <div class="todo-photo-label">Foto's <span>max. 2 foto's per taak</span></div>
+        <input id="todoPhotoInput" type="file" accept="image/*" multiple>
+        <div class="todo-photo-help">Foto's worden automatisch verkleind zodat ze mee in de taak en back-up kunnen worden bewaard.</div>
+        <div id="todoPhotoPreview" class="todo-photo-preview"></div>
+      </div>
+    </div>
+    <div class="modalactions">
+      <button id="todoDeleteBtn" class="danger" type="button" style="display:none">Verwijderen</button>
+      <button id="todoCancelBtn" type="button">Annuleren</button>
+      <button id="todoSaveBtn" class="success" type="button">Opslaan</button>
+    </div>
+  </div>
 </div>
 
 <div id="mobileTodayText" class="mobile-today-text"></div>
@@ -2299,6 +3353,7 @@ body.contract-manager #contractsBtn{grid-column:1}
   <div class="quicktitle">👤 Mijn planning</div>
   <div class="quickvalue"><select id="myEmployee"><option value="">Iedereen</option></select></div>
   <button id="notifyBtn" class="notify-btn">🔔 Meldingen aanzetten</button>
+  <button id="dailyPlanningToggleBtn" class="notify-btn daily-planning-toggle" type="button">☀️ Dagplanning om 7u: uit</button>
   <div id="notifyStatus" class="notify-status"></div><div id="notificationIdentity" class="notification-identity"></div>
 </div>
 </div>
@@ -2369,6 +3424,15 @@ body.contract-manager #contractsBtn{grid-column:1}
       </button>
       <button id="hoursReportBtn" class="admin-tool-card tool-green">
         <span class="tool-icon">📊</span><span class="tool-copy"><b>Urenrapport</b><small>Overzicht van unieke geplande uren.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="availabilityBtn" class="admin-tool-card tool-teal">
+        <span class="tool-icon">🗓️</span><span class="tool-copy"><b>Beschikbaarheid</b><small>Vaste vrije dagen, uitzonderingen en maandtemplate.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="alarmLogBtn" class="admin-tool-card tool-orange">
+        <span class="tool-icon">📕</span><span class="tool-copy"><b>Alarm logboek</b><small>Problemen, responstijd en afhandeling.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="appUsageBtn" class="admin-tool-card tool-blue">
+        <span class="tool-icon">📱</span><span class="tool-copy"><b>App gebruik</b><small>Zie wie CableCrew al geopend en gebruikt heeft.</small></span><span class="tool-arrow">›</span>
       </button>
       <button id="backupsBtn" class="admin-tool-card tool-purple">
         <span class="tool-icon">💾</span><span class="tool-copy"><b>Back-ups</b><small>Maak en herstel veilige back-ups.</small></span><span class="tool-arrow">›</span>
@@ -2493,6 +3557,12 @@ body.contract-manager #contractsBtn{grid-column:1}
   <div class="student-manage-tools">
     <input id="studentNewName" type="text" placeholder="Nieuwe student">
     <input id="studentNewPhone" type="tel" placeholder="Gsm-nummer (optioneel)">
+    <div class="student-new-zones">
+      <span>Zones</span>
+      <label><input type="checkbox" value="PRO"> PRO</label>
+      <label><input type="checkbox" value="ROOKIE"> ROOKIE</label>
+      <label><input type="checkbox" value="VERHUUR"> VERHUUR</label>
+    </div>
     <button id="studentAddPersonBtn" class="primary" type="button">+ Toevoegen</button>
   </div>
   <div id="studentManageList" class="student-manage-list"></div>
@@ -2633,12 +3703,73 @@ body.contract-manager #contractsBtn{grid-column:1}
 
 
 
+
+<div id="availabilityModal" class="modalback">
+  <div class="modal availability-modal">
+    <div class="year-head">
+      <div><h2>🗓️ Beschikbaarheid & maandplanning</h2><div class="year-sub">Vaste vrije dagen, uitzonderingen en een voorstel voor een nieuwe maand.</div></div>
+      <button id="closeAvailabilityBtn" type="button">Sluiten</button>
+    </div>
+
+    <div class="availability-tabs">
+      <button id="availabilityCrewTab" class="availability-tab active" type="button">Crew</button>
+      <button id="availabilityStudentTab" class="availability-tab" type="button">Jobstudenten</button>
+      <button id="availabilityTemplateTab" class="availability-tab" type="button">Maandtemplate</button>
+    </div>
+
+    <section id="availabilityPeoplePanel">
+      <div class="availability-explain">Vink per persoon de <b>vaste vrije dagen</b> aan. Een gewone shift op zo'n dag vraagt eerst bevestiging als uitzondering.</div>
+      <div id="availabilityPeopleList" class="availability-people-list"></div>
+
+      <div class="availability-exception-box">
+        <h3>Uitzondering voor één datum</h3>
+        <div class="availability-exception-form">
+          <select id="availabilityExceptionPerson"></select>
+          <input id="availabilityExceptionDate" type="date">
+          <select id="availabilityExceptionMode">
+            <option value="work">✅ Toch werken</option>
+            <option value="off">⛔ Extra vrije dag</option>
+          </select>
+          <input id="availabilityExceptionNote" type="text" placeholder="Opmerking (optioneel)">
+          <button id="addAvailabilityExceptionBtn" class="primary" type="button">Toevoegen</button>
+        </div>
+        <div id="availabilityExceptionsList" class="availability-exceptions-list"></div>
+      </div>
+
+      <div class="modalactions"><button id="saveAvailabilityBtn" class="success" type="button">Vaste vrije dagen opslaan</button></div>
+    </section>
+
+    <section id="availabilityTemplatePanel" style="display:none">
+      <div class="availability-explain">CableCrew zoekt per persoon en weekdag het meest voorkomende schema in de bronmaand en maakt daarmee een <b>voorstel</b> voor de nieuwe maand. Bestaande shifts worden niet overschreven en vrije dagen worden overgeslagen.</div>
+      <div class="month-template-controls">
+        <label>Gebruik maand<input id="templateSourceMonth" type="month"></label>
+        <label>Maak planning voor<input id="templateTargetMonth" type="month"></label>
+        <label>Planning<select id="templateType"><option value="crew">Crew</option><option value="student">Jobstudenten</option><option value="both">Crew + jobstudenten</option></select></label>
+        <button id="buildMonthTemplateBtn" class="primary" type="button">Voorstel maken</button>
+      </div>
+
+      <div class="template-options-box">
+        <div>
+          <b>Wie wil je niet meenemen in deze nieuwe maand?</b>
+          <small>Handig als iemand minder of niet meer werkt. De vaste vrije dagen blijven wel gewoon bewaard.</small>
+        </div>
+        <div id="templateExcludePeople" class="template-exclude-people"></div>
+        <button id="rebuildMonthTemplateBtn" type="button">🔄 Nieuw voorstel met vervangers</button>
+      </div>
+
+      <div id="monthTemplateSummary" class="month-template-summary"></div>
+      <div id="monthTemplatePreview" class="month-template-preview"></div>
+      <div class="modalactions"><button id="applyMonthTemplateBtn" class="success" type="button" disabled>Voorstel toepassen</button></div>
+    </section>
+  </div>
+</div>
+
 <div id="hoursReportModal" class="modalback admin-data-modal"><div class="modal">
 <div class="year-head"><div><h2>📊 Urenrapport</h2><div class="year-sub">Alleen zichtbaar voor Nick en Arno.</div></div><button id="closeHoursReportBtn">Sluiten</button></div>
 <div class="report-controls"><label>Van<input id="reportFrom" type="date"></label><label>Tot en met<input id="reportTo" type="date"></label><button id="refreshReportBtn" class="primary">Berekenen</button><button id="exportReportBtn">CSV exporteren</button></div><div id="hoursReportContent"></div>
 </div></div>
 <div id="backupsModal" class="modalback admin-data-modal"><div class="modal">
-<div class="year-head"><div><h2>💾 Back-ups</h2><div class="year-sub">Dagelijkse snapshots van crewplanning, jobstudenten, medewerkers en contracten.</div></div><button id="closeBackupsBtn">Sluiten</button></div>
+<div class="year-head"><div><h2>💾 Back-ups</h2><div class="year-sub">Dagelijkse snapshots van crewplanning, jobstudenten, medewerkers, contracten en de to-do lijst.</div></div><button id="closeBackupsBtn">Sluiten</button></div>
 <div class="backup-actions"><button id="createBackupBtn" class="primary">Nu back-up maken</button><span id="backupStatus" class="small"></span></div><div id="backupList" class="backup-list"></div>
 </div></div>
 
@@ -2781,6 +3912,18 @@ body.contract-manager #contractsBtn{grid-column:1}
     <button id="contractStudentsTab" class="contract-tab active">Jobstudenten <span id="studentContractBadge"></span></button>
     <button id="contractCrewTab" class="contract-tab">Medewerkers <span id="crewContractBadge"></span></button>
   </div>
+  <div id="contractNotifyPanel" class="contract-notify-panel">
+    <div class="contract-notify-copy">
+      <b>🔔 Meldingen voor Ann-Sophy</b>
+      Nieuwe contracten, contractwijzigingen en periodes die bijna eindigen.
+    </div>
+    <div class="contract-notify-actions">
+      <button id="contractBrowserNotifyBtn" type="button">🔔 Browsermelding</button>
+      <a id="contractEmailAnnSophy" href="mailto:annsophy@lakesideparadise.be">✉️ E-mail</a>
+      <a id="contractWhatsAppAnnSophy" href="#" style="display:none">💬 WhatsApp</a>
+    </div>
+  </div>
+  <div id="contractEventList" class="contract-event-list"></div>
   <div id="contractHelp" class="contract-help"></div>
   <div id="contractList" class="contract-list"></div>
 </div></div>
@@ -2864,7 +4007,7 @@ const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHO
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
 let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewDirectory=new Map(), crewContactsUnsub=null,
 studentShifts=[], studentDirectory=new Map(), studentShiftUnsub=null, studentDirectoryUnsub=null,
-studentEditing=null, studentView="day";
+studentEditing=null, studentView="day", availabilityExceptions=[], availabilityViewType="crew", monthTemplateDraft=[], monthTemplateExcluded=new Set();
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -2896,6 +4039,268 @@ function initDateOptions(){
  let chosen=old&&dates.includes(old)?old:(dates.includes(today)?today:dates[0]);
  $("date").value=chosen;
 }
+
+const WEEKDAY_LABELS=[{d:1,label:"Ma"},{d:2,label:"Di"},{d:3,label:"Wo"},{d:4,label:"Do"},{d:5,label:"Vr"},{d:6,label:"Za"},{d:0,label:"Zo"}];
+
+function fixedDaysOff(type,name){
+ const src=type==="student"?studentDirectory:crewDirectory;
+ const d=src.get(name)?.daysOff;
+ return Array.isArray(d)?d.map(Number):[];
+}
+function availabilityException(type,name,date){
+ return availabilityExceptions.find(x=>x.personType===type&&normalizedPersonName(x.person)===normalizedPersonName(name)&&x.date===date)||null;
+}
+function availabilityStatus(type,name,date){
+ const ex=availabilityException(type,name,date);
+ if(ex?.mode==="work")return {available:true,label:"uitzondering: werkt toch"};
+ if(ex?.mode==="off")return {available:false,label:"extra vrije dag"};
+ const dow=new Date(date+"T12:00:00").getDay();
+ if(fixedDaysOff(type,name).includes(dow))return {available:false,label:"vaste vrije dag"};
+ return {available:true,label:"beschikbaar"};
+}
+async function ensureWorkException(type,name,date){
+ if(availabilityException(type,name,date)?.mode==="work")return;
+ try{await addDoc(collection(db,"availabilityExceptions"),{personType:type,person:name,date,mode:"work",note:"Automatisch bij planning op vaste vrije dag",createdAt:new Date().toISOString(),createdBy:user?.email||""})}catch(e){console.warn(e)}
+}
+async function confirmAvailabilityOverride(type,name,date){
+ const s=availabilityStatus(type,name,date);
+ if(s.available)return true;
+ if(!confirm(`⚠️ ${name} is op ${label(date)} niet beschikbaar (${s.label}).\n\nToch inplannen als uitzondering?`))return false;
+ await ensureWorkException(type,name,date);
+ return true;
+}
+function availabilityNames(type){
+ return type==="student"
+  ?[...studentDirectory.entries()].filter(([n,d])=>d?.active!==false).map(([n])=>n).sort((a,b)=>a.localeCompare(b,"nl"))
+  :people();
+}
+function renderAvailabilityPeople(){
+ const names=availabilityNames(availabilityViewType);
+ $("availabilityPeopleList").innerHTML=names.length?names.map(name=>{
+   const off=new Set(fixedDaysOff(availabilityViewType,name));
+   return `<div class="availability-person-row" data-avail-person="${esc(name)}"><div class="availability-person-name">${esc(name)}</div><div class="weekday-checks">${WEEKDAY_LABELS.map(w=>`<label class="weekday-check"><input type="checkbox" value="${w.d}"${off.has(w.d)?" checked":""}> ${w.label}</label>`).join("")}</div></div>`;
+ }).join(""):'<div class="empty">Geen actieve personen gevonden.</div>';
+ $("availabilityExceptionPerson").innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+ renderAvailabilityExceptions();
+}
+function renderAvailabilityExceptions(){
+ const rows=availabilityExceptions.filter(x=>x.personType===availabilityViewType).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+ $("availabilityExceptionsList").innerHTML=rows.length?rows.map(x=>`<div class="availability-exception-row ${esc(x.mode||"off")}"><div><b>${esc(x.person)}</b> · ${esc(contractDate(x.date))} · ${x.mode==="work"?"✅ toch werken":"⛔ extra vrij"}${x.note?` · ${esc(x.note)}`:""}</div><button type="button" data-remove-avail="${esc(x._id||"")}">Verwijderen</button></div>`).join(""):'<div class="empty">Geen uitzonderingen ingesteld.</div>';
+ document.querySelectorAll("[data-remove-avail]").forEach(btn=>btn.onclick=async()=>{if(!isPlannerAdmin()||!confirm("Deze uitzondering verwijderen?"))return;try{await deleteDoc(doc(db,"availabilityExceptions",btn.dataset.removeAvail))}catch(e){alert("Verwijderen mislukt: "+e.message)}})
+}
+function sourceMonthDefault(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
+function nextMonthDefault(){const d=new Date();d.setMonth(d.getMonth()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
+function monthDateKeys(mv){if(!/^\d{4}-\d{2}$/.test(mv||""))return [];const [y,m]=mv.split("-").map(Number),last=new Date(y,m,0).getDate(),out=[];for(let d=1;d<=last;d++)out.push(`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`);return out}
+function weeklyPatternFromMonth(type,sourceMonth){
+ const src=(type==="student"?studentShifts:normalCrewShifts()).filter(x=>x.date?.startsWith(sourceMonth+"-")).filter(x=>type==="student"||x.zone!=="VERLOF"),map=new Map();
+ [...new Set(src.map(x=>x.employee).filter(Boolean))].forEach(name=>{
+   for(let dow=0;dow<7;dow++){
+     const dates=[...new Set(src.filter(x=>x.employee===name&&new Date(x.date+"T12:00:00").getDay()===dow).map(x=>x.date))],counts=new Map();
+     dates.forEach(date=>{
+       const rows=src.filter(x=>x.employee===name&&x.date===date).map(x=>({zone:x.zone,start:x.start,end:x.end,note:x.note||""})).sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.zone||"").localeCompare(b.zone||""));
+       if(rows.length){const sig=JSON.stringify(rows);counts.set(sig,(counts.get(sig)||0)+1)}
+     });
+     if(counts.size)map.set(`${name}||${dow}`,JSON.parse([...counts.entries()].sort((a,b)=>b[1]-a[1])[0][0]));
+   }
+ });
+ return map;
+}
+function buildTemplateForType(type,sourceMonth,targetMonth){
+ const pattern=weeklyPatternFromMonth(type,sourceMonth),existing=type==="student"?studentShifts:normalCrewShifts(),out=[];
+ availabilityNames(type).forEach(name=>monthDateKeys(targetMonth).forEach(date=>{
+   const rows=pattern.get(`${name}||${new Date(date+"T12:00:00").getDay()}`);if(!rows?.length)return;
+   const st=availabilityStatus(type,name,date);
+   if(!st.available){out.push({type,name,date,status:"skip",rows:[]});return}
+   if(existing.some(x=>x.employee===name&&x.date===date)){out.push({type,name,date,status:"existing",rows:[]});return}
+   out.push({type,name,date,status:"ready",rows:rows.map(r=>({...r,date,employee:name}))});
+ }));
+ return out;
+}
+
+function templateCandidateNames(type,excluded){
+ return availabilityNames(type).filter(n=>!excluded.has(`${type}||${n}`));
+}
+function personHasOverlap(type,name,date,start,end){
+ const src=type==="student"?studentShifts:normalCrewShifts();
+ return src.some(x=>x.employee===name&&x.date===date&&mins(start)<mins(x.end)&&mins(end)>mins(x.start));
+}
+function personCanWorkZone(type,name,zone){
+ if(type==="student"){
+   const z=studentZones(name);
+   return !z.length || z.includes(zone);
+ }
+ // Crew heeft momenteel geen harde zonekoppeling; bronplanning bepaalt ervaring.
+ return true;
+}
+function sourceZoneExperience(type,name,zone,sourceMonth){
+ const src=type==="student"?studentShifts:normalCrewShifts();
+ return src.filter(x=>x.employee===name&&x.zone===zone&&x.date?.startsWith(sourceMonth+"-")).length;
+}
+function pickTemplateReplacement(type,removedName,row,date,sourceMonth,alreadyPicked){
+ const candidates=templateCandidateNames(type,monthTemplateExcluded)
+   .filter(name=>name!==removedName)
+   .filter(name=>availabilityStatus(type,name,date).available)
+   .filter(name=>personCanWorkZone(type,name,row.zone))
+   .filter(name=>!personHasOverlap(type,name,date,row.start,row.end))
+   .filter(name=>!alreadyPicked.some(x=>x.employee===name&&x.date===date&&mins(row.start)<mins(x.end)&&mins(row.end)>mins(x.start)));
+
+ if(!candidates.length)return null;
+
+ // Geef voorrang aan iemand die in de bronmaand al in dezelfde zone werkte.
+ candidates.sort((a,b)=>{
+   const be=sourceZoneExperience(type,b,row.zone,sourceMonth);
+   const ae=sourceZoneExperience(type,a,row.zone,sourceMonth);
+   if(be!==ae)return be-ae;
+
+   // Daarna degene met het minste aantal bestaande shifts op de doeldatum.
+   const src=type==="student"?studentShifts:normalCrewShifts();
+   const ac=src.filter(x=>x.employee===a&&x.date===date).length;
+   const bc=src.filter(x=>x.employee===b&&x.date===date).length;
+   if(ac!==bc)return ac-bc;
+   return a.localeCompare(b,"nl");
+ });
+ return candidates[0];
+}
+
+function applyTemplateExclusionsAndReplacements(baseDraft,sourceMonth){
+ const out=[], picked=[];
+
+ baseDraft.forEach(item=>{
+   const key=`${item.type}||${item.name}`;
+   if(!monthTemplateExcluded.has(key)){
+     out.push(item);
+     if(item.status==="ready")picked.push(...item.rows);
+     return;
+   }
+
+   // De persoon zelf niet inplannen. Voor elke voorgestelde shift zoeken we een vervanger.
+   if(item.status!=="ready"){
+     out.push({...item,status:"excluded",rows:[],reason:"niet meegenomen"});
+     return;
+   }
+
+   item.rows.forEach(row=>{
+     const replacement=pickTemplateReplacement(item.type,item.name,row,item.date,sourceMonth,picked);
+     if(replacement){
+       const newRow={...row,employee:replacement};
+       picked.push(newRow);
+       out.push({
+         type:item.type,
+         name:replacement,
+         originalName:item.name,
+         date:item.date,
+         status:"replacement",
+         reason:`vervangt ${item.name}`,
+         rows:[newRow]
+       });
+     }else{
+       out.push({
+         type:item.type,
+         name:item.name,
+         originalName:item.name,
+         date:item.date,
+         status:"unfilled",
+         reason:`geen geschikte vervanger gevonden voor ${row.zone} ${row.start}–${row.end}`,
+         rows:[row]
+       });
+     }
+   });
+ });
+
+ return out;
+}
+
+function renderTemplateExcludePeople(type){
+ const wrap=$("templateExcludePeople");
+ if(!wrap)return;
+
+ const types=type==="both"?["crew","student"]:[type];
+ const people=types.flatMap(t=>availabilityNames(t).map(name=>({type:t,name})));
+
+ wrap.innerHTML=people.map(p=>{
+   const key=`${p.type}||${p.name}`;
+   return `<label class="template-exclude-person">
+     <input type="checkbox" data-template-exclude="${esc(key)}"${monthTemplateExcluded.has(key)?" checked":""}>
+     ${p.type==="student"?"🎓":"👤"} ${esc(p.name)}
+   </label>`;
+ }).join("");
+
+ wrap.querySelectorAll("[data-template-exclude]").forEach(c=>c.onchange=()=>{
+   if(c.checked)monthTemplateExcluded.add(c.dataset.templateExclude);
+   else monthTemplateExcluded.delete(c.dataset.templateExclude);
+ });
+}
+
+function buildFullMonthTemplate(){
+ const source=$("templateSourceMonth").value;
+ const target=$("templateTargetMonth").value;
+ const type=$("templateType").value;
+
+ if(!source||!target){
+   alert("Kies bron- en doelmaand.");
+   return false;
+ }
+ if(source===target){
+   alert("Kies twee verschillende maanden.");
+   return false;
+ }
+
+ let base=[];
+ if(type==="crew"||type==="both")base.push(...buildTemplateForType("crew",source,target));
+ if(type==="student"||type==="both")base.push(...buildTemplateForType("student",source,target));
+
+ monthTemplateDraft=applyTemplateExclusionsAndReplacements(base,source);
+ renderMonthTemplateDraft();
+ return true;
+}
+
+function renderMonthTemplateDraft(){
+ const ready=monthTemplateDraft.filter(x=>x.status==="ready");
+ const replacements=monthTemplateDraft.filter(x=>x.status==="replacement");
+ const skip=monthTemplateDraft.filter(x=>x.status==="skip");
+ const existing=monthTemplateDraft.filter(x=>x.status==="existing");
+ const excluded=monthTemplateDraft.filter(x=>x.status==="excluded");
+ const unfilled=monthTemplateDraft.filter(x=>x.status==="unfilled");
+ const shiftsN=ready.reduce((n,x)=>n+x.rows.length,0)+replacements.reduce((n,x)=>n+x.rows.length,0);
+
+ $("monthTemplateSummary").innerHTML=
+   `<b>${shiftsN} voorgestelde shifts</b> · `+
+   `${replacements.length} vervangingen voorgesteld · `+
+   `${skip.length} vrije dagen overgeslagen · `+
+   `${existing.length} dagen bestaan al`+
+   `${excluded.length?` · ${excluded.length} dagen niet meegenomen`:""}`+
+   `${unfilled.length?` · <b>${unfilled.length} nog niet ingevuld</b>`:""}`;
+ const groups=new Map();monthTemplateDraft.forEach(x=>{const k=`${x.type}||${x.name}`;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(x)});
+ $("monthTemplatePreview").innerHTML=[...groups.entries()].map(([k,rows])=>{
+   const [type,name]=k.split("||");
+   const r=rows.filter(x=>x.status==="ready");
+   const rep=rows.filter(x=>x.status==="replacement");
+   const s=rows.filter(x=>x.status==="skip");
+   const e=rows.filter(x=>x.status==="existing");
+   const ex=rows.filter(x=>x.status==="excluded");
+   const uf=rows.filter(x=>x.status==="unfilled");
+   const n=r.reduce((a,x)=>a+x.rows.length,0)+rep.reduce((a,x)=>a+x.rows.length,0);
+   const excludedPerson=monthTemplateExcluded.has(`${type}||${name}`);
+
+   return `<div class="template-person ${excludedPerson?"excluded":""}">
+     <div class="template-person-head">
+       <span>${type==="student"?"🎓":"👤"} ${esc(name)}${excludedPerson?" · niet meenemen":""}</span>
+       <span>${n} shifts</span>
+     </div>
+     <div class="template-person-body">
+       ${r.map(x=>`<span class="template-day-chip template-ready">${esc(contractDate(x.date))}</span>`).join("")}
+       ${rep.map(x=>`<span class="template-day-chip template-replacement">${esc(contractDate(x.date))} · vervangt ${esc(x.originalName||"")}</span>`).join("")}
+       ${s.map(x=>`<span class="template-day-chip template-skip">${esc(contractDate(x.date))} · vrij</span>`).join("")}
+       ${e.map(x=>`<span class="template-day-chip template-existing">${esc(contractDate(x.date))} · bestaat</span>`).join("")}
+       ${ex.map(x=>`<span class="template-day-chip template-skip">${esc(contractDate(x.date))} · niet meegenomen</span>`).join("")}
+       ${uf.map(x=>`<span class="template-day-chip template-unfilled">${esc(contractDate(x.date))} · nog invullen</span>`).join("")}
+     </div>
+   </div>`;
+ }).join("")||'<div class="empty">Geen herhaalbaar patroon gevonden in de bronmaand.</div>';
+
+ $("applyMonthTemplateBtn").disabled=!(ready.length||replacements.length);
+}
+
 function people(){
  const shiftNames=[...new Set(normalCrewShifts().map(x=>x.employee).filter(Boolean))];
  const activeDirectory=[...crewDirectory.entries()]
@@ -3387,6 +4792,7 @@ async function saveMultiShifts(){
  if(!rows.length)return alert("Voeg minstens één shiftregel toe.");
  if(rows.some(r=>!r.date||!r.start||!r.end||!r.zone))return alert("Vul bij elke shift datum, startuur, einduur en zone in.");
  if(rows.some(r=>mins(r.end)<=mins(r.start)))return alert("Bij elke shift moet het einduur na het startuur liggen.");
+ for(const r of rows){if(!await confirmAvailabilityOverride("crew",employee,r.date))return}
 
  // Controleer overlap met bestaande planning én onderling in deze reeks.
  const conflicts=[];
@@ -3685,6 +5091,8 @@ $("saveShift").onclick=async()=>{
    return;
  }
 
+ if(v.zone!=="VERLOF" && !await confirmAvailabilityOverride("crew",v.employee,v.date))return;
+
  try{
    if(v.zone==="VERLOF" && !editing){
      const endDate=$("leaveEndDate").value||v.date;
@@ -3905,15 +5313,817 @@ $("doWeekCopy").onclick=async()=>{
 $("printBtn").onclick=()=>window.print();
 
 
+
+
+let appUsageRecords=[];
+let appUsageView="crew";
+let zoneAlerts=[];
+let alarmReportEditing=null;
+let lastSeenZoneAlertId="";
+
+function currentTimeMinutes(){
+ const n=new Date();
+ return n.getHours()*60+n.getMinutes();
+}
+
+function currentActiveCrewShiftsFor(name){
+ if(!name)return [];
+ const today=realTodayKey();
+ const now=currentTimeMinutes();
+ return normalCrewShifts()
+   .filter(x=>x.employee===name && x.date===today && x.zone!=="VERLOF")
+   .filter(x=>mins(x.start)<=now && mins(x.end)>now)
+   .sort((a,b)=>(a.start||"").localeCompare(b.start||""));
+}
+
+function alarmCanBeActivatedNow(){
+ if($("studentMain")?.classList.contains("active"))return false;
+ const person=alertPersonName();
+ if(!person)return false;
+ return currentActiveCrewShiftsFor(person).length>0;
+}
+
+function updateZoneAlertButtonState(){
+ const btn=$("zoneAlertBtn");
+ if(!btn)return;
+
+ const studentMode=$("studentMain")?.classList.contains("active");
+ if(studentMode){
+   btn.style.display="none";
+   return;
+ }
+ btn.style.display="";
+
+ const person=alertPersonName();
+ const active=currentActiveCrewShiftsFor(person);
+ const enabled=!!person && active.length>0;
+
+ btn.disabled=!enabled;
+
+ if(!person){
+   btn.title="Kies eerst je naam bij Mijn planning";
+ }else if(!enabled){
+   btn.title="Alarm is alleen actief tijdens je ingeplande shift";
+ }else{
+   const zones=[...new Set(active.map(x=>x.zone))];
+   btn.title=`Alarm actief · ${zones.join(", ")}`;
+ }
+}
+
+function currentScheduledZonesFor(name){
+ return currentActiveCrewShiftsFor(name)
+   .map(x=>x.zone)
+   .filter((z,i,a)=>a.indexOf(z)===i);
+}
+function todayScheduledZonesFor(name){
+ const today=realTodayKey();
+ return normalCrewShifts()
+   .filter(x=>x.employee===name && x.date===today && x.zone!=="VERLOF")
+   .map(x=>x.zone)
+   .filter((z,i,a)=>a.indexOf(z)===i);
+}
+function alertPersonName(){
+ return ($("myEmployee")?.value||"").trim();
+}
+function alertZoneOptions(person){
+ const current=currentScheduledZonesFor(person);
+ const fallback=todayScheduledZonesFor(person);
+ const zones=current.length?current:fallback;
+ return zones;
+}
+function openZoneAlert(){
+ if($("studentMain")?.classList.contains("active")){
+   alert("De alarmfunctie is alleen beschikbaar voor crewleden.");
+   return;
+ }
+
+ const person=alertPersonName();
+ if(!person){
+   alert("Kies eerst je eigen naam bij 'Mijn planning'.");
+   updateZoneAlertButtonState();
+   return;
+ }
+
+ const active=currentActiveCrewShiftsFor(person);
+ if(!active.length){
+   alert("De alarmknop kan alleen gebruikt worden tijdens je ingeplande shift.");
+   updateZoneAlertButtonState();
+   return;
+ }
+
+ // Bij overlap nemen we de eerst startende actieve shift.
+ const zone=active[0].zone;
+ const now=new Date();
+ if(!alarmCanBeActivatedNow()){
+   updateZoneAlertButtonState();
+   return alert("Het alarm kan alleen tijdens je actieve crewshift gebruikt worden.");
+ }
+
+ const data={
+   person,
+   zone,
+   urgency:"urgent",
+   date:realTodayKey(),
+   timeLabel:now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"}),
+   createdAt:now.toISOString(),
+   active:true
+ };
+
+ const msg=zoneAlertMessage(data);
+
+ // Meteen WhatsApp openen; interne melding wordt op de achtergrond opgeslagen.
+ window.open(whatsappShareUrl(msg),"_blank","noopener");
+ addDoc(collection(db,"zoneAlerts"),data).catch(e=>console.warn("Zone-alert kon niet worden opgeslagen:",e));
+}
+function zonesForAlertFallback(){
+ return ["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS"];
+}
+function zoneAlertMessage(data){
+ return `🚨 ALERT PROBLEEM\nZone: ${data.zone}\n${data.person} heeft hulp nodig.\nTijd: ${data.timeLabel}\n\nWie kan komen helpen?`;
+}
+function whatsappShareUrl(message){
+ return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+async function sendZoneAlert(){
+ const person=$("zoneAlertPerson").value.trim();
+ const zone=$("zoneAlertZone").value;
+ const note=$("zoneAlertNote").value.trim();
+ const urgency=$("zoneAlertUrgency").value;
+ if(!person||!zone)return alert("Melder en zone ontbreken.");
+
+ const now=new Date();
+ const data={
+   person,zone,note,urgency,
+   date:realTodayKey(),
+   timeLabel:now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"}),
+   createdAt:new Date().toISOString(),
+   active:true
+ };
+
+ try{
+   await addDoc(collection(db,"zoneAlerts"),data);
+   $("zoneAlertModal").classList.remove("show");
+
+   // WhatsApp Web/App kan officieel niet automatisch rechtstreeks naar een specifieke
+   // groep posten. We openen daarom WhatsApp met de melding reeds ingevuld; de gebruiker
+   // kiest enkel nog "Lakeside Operators" en drukt op verzenden.
+   const msg=zoneAlertMessage(data);
+   window.open(whatsappShareUrl(msg),"_blank","noopener");
+ }catch(e){
+   alert("Alarm kon niet worden opgeslagen: "+e.message);
+ }
+}
+
+
+
+
+
+function dailyPlanningPreferenceKey(identity){
+ if(!identity)return "";
+ return `cc_daily_planning_enabled_${identity.type}_${normalizedPersonName(identity.name)}`;
+}
+function dailyPlanningEnabled(identity=dailyPopupPerson()){
+ if(!identity)return false;
+ return localStorage.getItem(dailyPlanningPreferenceKey(identity))==="1";
+}
+function setDailyPlanningEnabled(enabled,identity=dailyPopupPerson()){
+ if(!identity)return false;
+ localStorage.setItem(dailyPlanningPreferenceKey(identity),enabled?"1":"0");
+ updateDailyPlanningPreferenceUI();
+ return true;
+}
+function updateDailyPlanningPreferenceUI(){
+ const identity=dailyPopupPerson();
+ const enabled=dailyPlanningEnabled(identity);
+ const btn=$("dailyPlanningToggleBtn");
+ if(btn){
+   btn.disabled=!identity;
+   btn.classList.toggle("enabled",enabled);
+   btn.textContent=enabled?"☀️ Dagplanning om 7u: aan":"☀️ Dagplanning om 7u: uit";
+   btn.title=identity
+     ?(enabled?"Tik om de dagelijkse planning uit te zetten":"Tik om de dagelijkse planning aan te zetten")
+     :"Kies eerst je naam";
+ }
+ const check=$("dailyPlanningPopupPref");
+ if(check)check.checked=enabled;
+}
+
+function dailyPopupPerson(){
+ const studentMode=$("studentMain")?.classList.contains("active");
+ if(studentMode){
+   const name=($("studentPerson")?.value||"").trim();
+   return name?{type:"student",name}:null;
+ }
+ const name=($("myEmployee")?.value||"").trim();
+ return name?{type:"crew",name}:null;
+}
+function dailyPopupRows(identity){
+ if(!identity)return [];
+ const source=identity.type==="student"?studentShifts:normalCrewShifts();
+ return source.filter(x=>x.employee===identity.name&&x.date===realTodayKey()&&x.zone!=="VERLOF")
+   .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.zone||"").localeCompare(b.zone||""));
+}
+function renderDailyPlanningPopup(identity){
+ const rows=dailyPopupRows(identity);
+ const today=new Date(realTodayKey()+"T12:00:00");
+ $("dailyPlanningDate").textContent=new Intl.DateTimeFormat("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(today);
+ $("dailyPlanningContent").innerHTML=rows.length?rows.map(x=>`
+   <div class="daily-planning-shift">
+     <div class="daily-planning-time">${esc(x.start||"")}–${esc(x.end||"")}</div>
+     <div><div class="daily-planning-zone">${esc(x.zone||"")}</div>${x.note?`<div class="daily-planning-note">${esc(x.note)}</div>`:""}</div>
+   </div>`).join(""):`<div class="daily-planning-empty">Geen shift ingepland voor vandaag.<div class="daily-planning-free">Vrije dag</div></div>`;
+}
+function shouldShowDailyPlanningPopup(){
+ const identity=dailyPopupPerson();
+ if(!identity||!dailyPlanningEnabled(identity))return false;
+ const now=new Date(),today=realTodayKey();
+ const storageKey=`cc_daily_popup_${identity.type}_${normalizedPersonName(identity.name)}_${today}`;
+ if(now.getHours()<7||localStorage.getItem(storageKey)==="1")return false;
+ localStorage.setItem(storageKey,"1");
+ renderDailyPlanningPopup(identity);
+ $("dailyPlanningModal").classList.add("show");
+ return true;
+}
+function scheduleDailyPlanningPopup(){
+ const now=new Date(),next=new Date(now);
+ if(now.getHours()<7)next.setHours(7,0,0,0);
+ else{next.setDate(next.getDate()+1);next.setHours(7,0,0,0)}
+ setTimeout(()=>{shouldShowDailyPlanningPopup();scheduleDailyPlanningPopup()},Math.max(1000,next-now));
+}
+function appUsageKey(type,name){
+ return `${type}__${String(name||"").trim().toLowerCase().replace(/[^a-z0-9à-ÿ]+/gi,"_")}`;
+}
+function currentAppIdentity(){
+ const studentMode=$("studentMain")?.classList.contains("active");
+ if(studentMode){
+   const name=($("studentPerson")?.value||"").trim();
+   return name?{type:"student",name}:null;
+ }
+ const name=($("myEmployee")?.value||"").trim();
+ return name?{type:"crew",name}:null;
+}
+async function recordAppUsage(type,name,reason="open"){
+ if(!type||!name)return;
+ const id=appUsageKey(type,name);
+ const now=new Date().toISOString();
+ const existing=appUsageRecords.find(x=>x._id===id);
+
+ // Per browser/tab-sessie maar één echte "opening" tellen voor dezelfde persoon.
+ const sessionKey=`cc_usage_session_${id}`;
+ const alreadyCounted=sessionStorage.getItem(sessionKey)==="1";
+ const shouldIncrement=reason==="open" && !alreadyCounted;
+ if(shouldIncrement)sessionStorage.setItem(sessionKey,"1");
+
+ try{
+   await setDoc(doc(db,"appUsage",id),{
+     personType:type,
+     person:name,
+     firstSeen:existing?.firstSeen||now,
+     lastSeen:now,
+     lastAction:reason,
+     openCount:(Number(existing?.openCount)||0)+(shouldIncrement?1:0),
+     updatedAt:now
+   },{merge:true});
+ }catch(e){
+   console.warn("App usage kon niet worden opgeslagen:",e);
+ }
+}
+function usageRecord(type,name){
+ return appUsageRecords.find(x=>
+   x.personType===type &&
+   normalizedPersonName(x.person)===normalizedPersonName(name)
+ )||null;
+}
+function usageDateTime(iso){
+ if(!iso)return "–";
+ const d=new Date(iso);
+ if(isNaN(d))return "–";
+ return new Intl.DateTimeFormat("nl-BE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(d);
+}
+function appUsageNames(type){
+ return type==="student"
+   ?[...studentDirectory.entries()].filter(([n,d])=>d?.active!==false).map(([n])=>n).sort((a,b)=>a.localeCompare(b,"nl"))
+   :people();
+}
+function renderAppUsage(){
+ const names=appUsageNames(appUsageView);
+ const used=names.filter(n=>!!usageRecord(appUsageView,n)).length;
+
+ $("appUsageCrewTab").classList.toggle("active",appUsageView==="crew");
+ $("appUsageStudentTab").classList.toggle("active",appUsageView==="student");
+ $("appUsageStats").innerHTML=
+   `<span class="app-usage-stat">${used}/${names.length} gebruikt</span>`+
+   `<span class="app-usage-stat">${Math.max(0,names.length-used)} nog niet geopend</span>`;
+
+ $("appUsageList").innerHTML=names.length?names.map(name=>{
+   const r=usageRecord(appUsageView,name);
+   return `<div class="app-usage-row ${r?"used":"not-used"}">
+     <div class="app-usage-name">${esc(name)}</div>
+     <div class="app-usage-meta">
+       ${r?`Eerste gebruik: ${esc(usageDateTime(r.firstSeen))}<br>Laatst actief: ${esc(usageDateTime(r.lastSeen))}${r.openCount?` · ${r.openCount}x geopend`:""}`:"Nog geen gebruik geregistreerd."}
+     </div>
+     <div class="app-usage-status">${r?"✅ Gebruikt":"Nog niet"}</div>
+   </div>`;
+ }).join(""):'<div class="empty">Geen personen gevonden.</div>';
+}
+
+function updateAlarmVisibilityForRole(){
+ const studentMode=$("studentMain")?.classList.contains("active");
+ document.body.classList.toggle("student-mode",!!studentMode);
+ updateZoneAlertButtonState();
+}
+
+function alarmCurrentPerson(){
+ return zoneAlertHelperName() || alertPersonName() || "";
+}
+function alarmCanReport(data){
+ const me=normalizedPersonName(alarmCurrentPerson());
+ return !!me && (me===normalizedPersonName(data?.person) || me===normalizedPersonName(data?.acknowledgedBy));
+}
+function alarmDurationMinutes(data){
+ const start=data?.createdAt?new Date(data.createdAt):null;
+ const end=data?.resolvedAt?new Date(data.resolvedAt):(data?.acknowledgedAt?new Date(data.acknowledgedAt):null);
+ if(!start||!end||isNaN(start)||isNaN(end))return null;
+ return Math.max(0,Math.round((end-start)/60000));
+}
+function alarmDurationLabel(data){
+ const min=alarmDurationMinutes(data);
+ if(min===null)return "–";
+ if(min<60)return `${min} min`;
+ const h=Math.floor(min/60),m=min%60;
+ return `${h}u${m?` ${m}m`:""}`;
+}
+function openAlarmReport(data){
+ if(!data||!alarmCanReport(data)){
+   alert("Alleen de melder of de persoon die hulp heeft overgenomen kan dit rapport invullen.");
+   return;
+ }
+ alarmReportEditing=data;
+ $("alarmReportProblem").value=data.reportProblem||"";
+ $("alarmReportAction").value=data.reportAction||"";
+ $("alarmReportStatus").value=data.reportStatus||"resolved";
+ $("alarmReportNote").value=data.reportNote||"";
+ $("alarmReportSummary").innerHTML=
+   `<b>${esc(data.zone)}</b> · alarm door ${esc(data.person||"")}`+
+   `${data.acknowledgedBy?` · hulp door ${esc(data.acknowledgedBy)}`:""}`+
+   `<br>Melding: ${esc(data.timeLabel||"")} · tijd tot nu: <b>${esc(alarmDurationLabel(data))}</b>`;
+ $("alarmReportModal").classList.add("show");
+}
+async function saveAlarmReport(){
+ const data=alarmReportEditing;
+ if(!data||!alarmCanReport(data))return;
+ const problem=$("alarmReportProblem").value.trim();
+ const action=$("alarmReportAction").value.trim();
+ const status=$("alarmReportStatus").value;
+ const note=$("alarmReportNote").value.trim();
+ if(!problem)return alert("Vul kort in wat het probleem was.");
+ if(!action)return alert("Vul kort in wat er werd gedaan.");
+
+ const now=new Date();
+ const patch={
+   reportProblem:problem,reportAction:action,reportStatus:status,reportNote:note,
+   reportBy:alarmCurrentPerson(),reportUpdatedAt:now.toISOString()
+ };
+ if(status==="resolved"){
+   patch.resolvedAt=data.resolvedAt||now.toISOString();
+   patch.resolvedTime=data.resolvedTime||now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"});
+ }else{
+   patch.resolvedAt="";
+   patch.resolvedTime="";
+ }
+ try{
+   await updateDoc(doc(db,"zoneAlerts",data._id),patch);
+   $("alarmReportModal").classList.remove("show");
+   alarmReportEditing=null;
+ }catch(e){alert("Rapport opslaan mislukt: "+e.message)}
+}
+function renderAlarmLog(){
+ const rows=[...zoneAlerts].sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+ const resolved=rows.filter(x=>x.reportStatus==="resolved").length;
+ const follow=rows.filter(x=>x.reportStatus==="followup").length;
+ const open=rows.filter(x=>x.active).length;
+ $("alarmLogStats").innerHTML=
+   `<span class="alarm-log-stat">${rows.length} meldingen</span>`+
+   `<span class="alarm-log-stat">${resolved} opgelost</span>`+
+   `${follow?`<span class="alarm-log-stat">${follow} opvolging</span>`:""}`+
+   `${open?`<span class="alarm-log-stat">${open} actief</span>`:""}`;
+
+ $("alarmLogList").innerHTML=rows.length?rows.map(x=>{
+   const cls=x.active?"open":x.reportStatus==="resolved"?"resolved":x.reportStatus==="followup"?"followup":"";
+   const canReport=alarmCanReport(x);
+   return `<div class="alarm-log-row ${cls}">
+     <div class="alarm-log-head">
+       <div>
+         <div class="alarm-log-title">🚨 ${esc(x.zone||"")} · ${esc(x.date||"")}</div>
+         <div class="alarm-log-meta">
+           Gemeld door ${esc(x.person||"")} om ${esc(x.timeLabel||"")}`+
+           `${x.acknowledgedBy?` · hulp door ${esc(x.acknowledgedBy)} om ${esc(x.acknowledgedTime||"")}`:""}`+
+           `${x.reportBy?` · rapport door ${esc(x.reportBy)}`:""}
+         </div>
+       </div>
+       <div class="alarm-log-duration">${esc(alarmDurationLabel(x))}</div>
+     </div>
+     <div class="alarm-log-body">
+       ${x.reportProblem?`<div><b>Probleem:</b> ${esc(x.reportProblem)}</div>`:"<div><b>Rapport:</b> nog niet ingevuld</div>"}
+       ${x.reportAction?`<div><b>Actie:</b> ${esc(x.reportAction)}</div>`:""}
+       ${x.reportStatus==="resolved"?`<div><b>Afgehandeld:</b> ${esc(x.resolvedTime||"")} · totale tijd ${esc(alarmDurationLabel(x))}</div>`:""}
+       ${x.reportStatus==="followup"?`<div><b>Status:</b> opvolging nodig</div>`:""}
+       ${x.reportNote?`<div><b>Opmerking:</b> ${esc(x.reportNote)}</div>`:""}
+     </div>
+     ${canReport?`<div class="alarm-log-actions"><button type="button" data-alarm-report="${esc(x._id||"")}">${x.reportProblem?"Rapport aanpassen":"Rapport invullen"}</button></div>`:""}
+   </div>`;
+ }).join(""):'<div class="empty">Nog geen alarmmeldingen.</div>';
+
+ document.querySelectorAll("[data-alarm-report]").forEach(btn=>btn.onclick=()=>{
+   const x=zoneAlerts.find(a=>a._id===btn.dataset.alarmReport);
+   if(x)openAlarmReport(x);
+ });
+}
+
+function zoneAlertHelperName(){
+ if($("studentMain")?.classList.contains("active"))return "";
+ return ($("myEmployee")?.value||"").trim();
+}
+
+
+function zoneAlertResolvedMessage(data,helper,timeLabel){
+ return `✅ HULP ONDERWEG\nZone: ${data.zone}\n${helper} komt helpen.\nTijd: ${timeLabel}\n\nAlarm afgesloten.`;
+}
+
+async function acknowledgeZoneAlert(id,data){
+ const helper=zoneAlertHelperName();
+ if(!helper){
+   alert("Kies eerst je eigen naam in de planning, zodat iedereen weet wie komt helpen.");
+   return;
+ }
+
+ if(!confirm(`Kom jij ${data.person} helpen bij ${data.zone}?`))return;
+
+ const now=new Date();
+ const timeLabel=now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"});
+ const msg=zoneAlertResolvedMessage(data,helper,timeLabel);
+
+ // Meteen WhatsApp openen vanuit de klikactie zodat mobiele browsers dit niet blokkeren.
+ // De medewerker kiest daarna enkel nog de groep "Lakeside Operators" en verzendt.
+ window.open(whatsappShareUrl(msg),"_blank","noopener");
+
+ try{
+   await updateDoc(doc(db,"zoneAlerts",id),{
+     active:false,
+     acknowledged:true,
+     acknowledgedBy:helper,
+     acknowledgedAt:now.toISOString(),
+     acknowledgedTime:timeLabel
+   });
+ }catch(e){
+   alert("WhatsApp is geopend, maar de alarmstatus kon niet worden bijgewerkt: "+e.message);
+ }
+}
+
+function showZoneHelpConfirmation(data){
+ const old=document.getElementById("zoneHelpConfirmation");
+ if(old)old.remove();
+
+ const div=document.createElement("div");
+ div.id="zoneHelpConfirmation";
+ div.className="zone-help-confirmation";
+
+ const text=document.createElement("div");
+ text.textContent=`✅ ${data.acknowledgedBy||"Iemand"} komt helpen bij ${data.zone}${data.acknowledgedTime?` om ${data.acknowledgedTime}`:""}. Alarm afgesloten.`;
+ div.appendChild(text);
+
+ if(alarmCanReport(data)){
+   const btn=document.createElement("button");
+   btn.type="button";
+   btn.textContent="📝 Rapport invullen";
+   btn.onclick=()=>openAlarmReport(data);
+   div.appendChild(btn);
+ }
+
+ document.body.appendChild(div);
+ setTimeout(()=>div.remove(),12000);
+}
+
+
+let zoneAlarmAudioCtx=null;
+let zoneAlarmTimer=null;
+let zoneAlarmPlaying=false;
+
+function ensureZoneAlarmAudio(){
+ try{
+   if(!zoneAlarmAudioCtx){
+     zoneAlarmAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
+   }
+   if(zoneAlarmAudioCtx.state==="suspended")zoneAlarmAudioCtx.resume().catch(()=>{});
+ }catch(e){}
+}
+
+function zoneAlarmBeep(startOffset=0,duration=.22,freq=1040){
+ try{
+   ensureZoneAlarmAudio();
+   if(!zoneAlarmAudioCtx||zoneAlarmAudioCtx.state!=="running")return;
+   const ctx=zoneAlarmAudioCtx;
+   const t=ctx.currentTime+startOffset;
+   const osc=ctx.createOscillator();
+   const gain=ctx.createGain();
+
+   osc.type="square";
+   osc.frequency.setValueAtTime(freq,t);
+   gain.gain.setValueAtTime(0.0001,t);
+   gain.gain.exponentialRampToValueAtTime(0.38,t+.015);
+   gain.gain.setValueAtTime(0.38,t+Math.max(.03,duration-.035));
+   gain.gain.exponentialRampToValueAtTime(0.0001,t+duration);
+
+   osc.connect(gain);
+   gain.connect(ctx.destination);
+   osc.start(t);
+   osc.stop(t+duration+.02);
+ }catch(e){}
+}
+
+function playZoneAlarmPattern(){
+ if(!zoneAlarmPlaying)return;
+ // Duidelijk dubbel alarmsignaal, daarna korte pauze.
+ zoneAlarmBeep(0,.24,1120);
+ zoneAlarmBeep(.34,.24,1120);
+ zoneAlarmBeep(.68,.34,860);
+}
+
+function startZoneAlarmSound(){
+ if(zoneAlarmPlaying)return;
+ zoneAlarmPlaying=true;
+ ensureZoneAlarmAudio();
+ playZoneAlarmPattern();
+ zoneAlarmTimer=setInterval(playZoneAlarmPattern,2400);
+
+ // Het alarmsignaal stopt automatisch na maximaal 20 seconden.
+ // De rode alarmmelding blijft wel zichtbaar totdat iemand ze overneemt.
+ setTimeout(()=>{
+   if(zoneAlarmPlaying)stopZoneAlarmSound();
+ },20000);
+}
+
+function stopZoneAlarmSound(){
+ zoneAlarmPlaying=false;
+ if(zoneAlarmTimer){
+   clearInterval(zoneAlarmTimer);
+   zoneAlarmTimer=null;
+ }
+}
+
+// iPhone/Safari vereist minstens één gebruikersinteractie voordat een webapp
+// zelfstandig geluid mag afspelen. We activeren de audio-engine bij de eerste tik.
+["pointerdown","touchstart","click"].forEach(ev=>{
+ document.addEventListener(ev,ensureZoneAlarmAudio,{once:true,passive:true});
+});
+
+function showZoneAlertBanner(data,id){
+ if(!data||!data.active)return;
+
+ const existing=document.getElementById("liveZoneAlert");
+ if(existing)existing.remove();
+
+ const div=document.createElement("div");
+ div.id="liveZoneAlert";
+ div.className="live-zone-alert";
+ div.dataset.alertId=id;
+
+ div.innerHTML=`
+   <div>🚨</div>
+   <div>
+     <strong>${esc(data.zone)} · Hulp nodig</strong>
+     <small>Gemeld door ${esc(data.person)} · ${esc(data.timeLabel||"")}</small>
+     <span class="alert-sound-status">🔊 ALARM ACTIEF</span>
+   </div>
+   <div class="live-zone-alert-actions">
+     <button type="button" class="alert-help-btn">✅ Ik kom helpen + WhatsApp</button>
+     <button type="button" class="alert-close-btn">Verbergen</button>
+   </div>`;
+
+ div.querySelector(".alert-help-btn").onclick=()=>acknowledgeZoneAlert(id,data);
+
+ document.body.appendChild(div);
+ startZoneAlarmSound();
+
+ if("Notification" in window && Notification.permission==="granted"){
+   try{
+     new Notification(`🚨 ${data.zone} · hulp nodig`,{
+       body:`${data.person} heeft hulp nodig. Open CableCrew om de melding over te nemen.`
+     });
+   }catch(e){}
+ }
+}
+
+let todoTasks=[];
+let todoEditing=null;
+let todoDraftPhotos=[];
+
+function todoCurrentPerson(){
+ return ($("myEmployee")?.value||"").trim();
+}
+function todoCanUse(){
+ // Iedereen die de app kan openen mag de gedeelde to-do gebruiken.
+ return true;
+}
+function todoCanManage(){
+ const name=todoCurrentPerson().toLowerCase();
+ return isPlannerAdmin() || name==="simon";
+}
+function todoIsOwnTask(x){
+ const name=todoCurrentPerson();
+ if(!name)return false;
+ return normalizedPersonName(x?.createdByName)===normalizedPersonName(name);
+}
+function todoAudienceLabel(v){
+ return v==="crew"?"Crew":v==="students"?"Jobstudenten":"Iedereen";
+}
+function todoPriorityLabel(v){
+ return v==="high"?"Belangrijk":v==="low"?"Als er tijd is":"Normaal";
+}
+function todoRows(){
+ const filter=$("todoAudienceFilter")?.value||"all";
+ return todoTasks
+   .filter(x=>x.active!==false)
+   .filter(x=>filter==="all" || x.audience==="all" || x.audience===filter)
+   .sort((a,b)=>{
+     const doneA=a.done?1:0,doneB=b.done?1:0;
+     if(doneA!==doneB)return doneA-doneB;
+     const p={high:0,normal:1,low:2};
+     const pa=p[a.priority]??1,pb=p[b.priority]??1;
+     if(pa!==pb)return pa-pb;
+     const da=a.due||"9999-12-31",db=b.due||"9999-12-31";
+     if(da!==db)return da.localeCompare(db);
+     return (a.title||"").localeCompare(b.title||"","nl");
+   });
+}
+function renderTodo(){
+ const rows=todoRows();
+ const open=rows.filter(x=>!x.done).length;
+ const done=rows.filter(x=>x.done).length;
+ $("todoAddBtn").style.display=todoCanUse()?"inline-block":"none";
+ const manager=todoCanManage();
+ $("todoStats").innerHTML=`<span class="todo-stat">${open} open</span>${done?`<span class="todo-stat">${done} afgewerkt</span>`:""}${manager?`<span class="todo-stat">Beheerder to-do</span>`:""}`;
+ $("todoList").innerHTML=rows.length?rows.map(x=>{
+   const audienceClass=x.audience==="crew"?"todo-audience-crew":x.audience==="students"?"todo-audience-students":"todo-audience-all";
+   return `<article class="todo-item ${esc(x.priority||"normal")} ${x.done?"done":""}">
+     <div>
+       <div class="todo-title">${x.done?"✓ ":""}${esc(x.title||"Taak")}</div>
+       <div class="todo-meta">
+         <span class="todo-chip ${audienceClass}">${esc(todoAudienceLabel(x.audience||"all"))}</span>
+         <span class="todo-chip">${esc(todoPriorityLabel(x.priority||"normal"))}</span>
+         ${x.zone?`<span class="todo-chip">📍 ${esc(x.zone)}</span>`:""}
+         ${x.due?`<span class="todo-chip">📅 ${esc(contractDate(x.due))}</span>`:""}
+       </div>
+       ${x.note?`<div class="todo-note">${esc(x.note)}</div>`:""}
+     ${Array.isArray(x.photos)&&x.photos.length?`<div class="todo-photos">${x.photos.map((p,i)=>`<button type="button" class="todo-photo-thumb" data-todo-photo="${esc(x._id||"")}" data-photo-index="${i}"><img src="${p}" alt="Foto bij ${esc(x.title||"taak")}"></button>`).join("")}</div>`:""}
+     ${x.createdByName?`<div class="todo-by">Toegevoegd door ${esc(x.createdByName)}${["nick","arno","simon"].includes(normalizedPersonName(x.createdByName))?`<span class="todo-manager-badge">beheer</span>`:""}</div>`:""}
+     </div>
+     <div class="todo-actions">
+       <button data-todo-toggle="${esc(x._id||"")}">${x.done?"Opnieuw openen":"✓ Klaar"}</button>
+       ${(todoCanManage()||todoIsOwnTask(x))?`<button data-todo-edit="${esc(x._id||"")}">Bewerken</button>`:""}
+     </div>
+   </article>`;
+ }).join(""):`<div class="todo-empty">Er staan momenteel geen taken op de lijst.</div>`;
+
+ document.querySelectorAll("[data-todo-toggle]").forEach(btn=>btn.onclick=async()=>{
+   const x=todoTasks.find(t=>t._id===btn.dataset.todoToggle);if(!x||!todoCanUse())return;
+   try{await updateDoc(doc(db,"todoTasks",x._id),{done:!x.done,doneAt:!x.done?new Date().toISOString():"",doneBy:!x.done?(user?.email||""):""})}
+   catch(e){alert("Taak aanpassen mislukt: "+e.message)}
+ });
+ document.querySelectorAll("[data-todo-edit]").forEach(btn=>btn.onclick=()=>{
+   const x=todoTasks.find(t=>t._id===btn.dataset.todoEdit);if(x&&(todoCanManage()||todoIsOwnTask(x)))openTodoEdit(x)
+ });
+ document.querySelectorAll("[data-todo-photo]").forEach(btn=>btn.onclick=()=>{
+   const x=todoTasks.find(t=>t._id===btn.dataset.todoPhoto);
+   const photo=x?.photos?.[Number(btn.dataset.photoIndex)];
+   if(photo){
+     $("todoPhotoViewerImg").src=photo;
+     $("todoPhotoViewer").classList.add("show");
+   }
+ });
+}
+function openTodoEdit(x=null){
+ if(!todoCanUse())return;
+ if(x && !todoCanManage() && !todoIsOwnTask(x))return;
+ todoEditing=x;
+ todoDraftPhotos=Array.isArray(x?.photos)?[...x.photos]:[];
+ $("todoEditTitle").textContent=x?"Taak bewerken":"Taak toevoegen";
+ $("todoTitleInput").value=x?.title||"";
+ $("todoAudienceInput").value=x?.audience||"all";
+ $("todoPriorityInput").value=x?.priority||"normal";
+ $("todoZoneInput").value=x?.zone||"";
+ $("todoDueInput").value=x?.due||"";
+ $("todoNoteInput").value=x?.note||"";
+ $("todoPhotoInput").value="";
+ renderTodoPhotoPreview();
+ $("todoDeleteBtn").style.display=(x&&(todoCanManage()||todoIsOwnTask(x)))?"inline-block":"none";
+ $("todoEditModal").classList.add("show");
+}
+
+function renderTodoPhotoPreview(){
+ const wrap=$("todoPhotoPreview");
+ if(!wrap)return;
+ wrap.innerHTML=todoDraftPhotos.map((p,i)=>`
+   <div class="todo-photo-thumb">
+     <img src="${p}" alt="Foto ${i+1}">
+     <button class="todo-photo-remove" type="button" data-remove-todo-photo="${i}" title="Foto verwijderen">×</button>
+   </div>`).join("");
+ wrap.querySelectorAll("[data-remove-todo-photo]").forEach(btn=>btn.onclick=()=>{
+   todoDraftPhotos.splice(Number(btn.dataset.removeTodoPhoto),1);
+   renderTodoPhotoPreview();
+ });
+ wrap.querySelectorAll("img").forEach((img,i)=>img.onclick=()=>{
+   $("todoPhotoViewerImg").src=todoDraftPhotos[i];
+   $("todoPhotoViewer").classList.add("show");
+ });
+}
+async function compressTodoPhoto(file){
+ return new Promise((resolve,reject)=>{
+   const reader=new FileReader();
+   reader.onerror=()=>reject(new Error("Foto kon niet worden gelezen."));
+   reader.onload=()=>{
+     const img=new Image();
+     img.onerror=()=>reject(new Error("Foto kon niet worden verwerkt."));
+     img.onload=()=>{
+       const maxDim=1280;
+       let w=img.naturalWidth,h=img.naturalHeight;
+       const scale=Math.min(1,maxDim/Math.max(w,h));
+       w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));
+       const canvas=document.createElement("canvas");
+       canvas.width=w;canvas.height=h;
+       const ctx=canvas.getContext("2d");
+       ctx.drawImage(img,0,0,w,h);
+
+       // Klein genoeg houden voor Firestore + volledige back-up.
+       let quality=.78;
+       let data=canvas.toDataURL("image/jpeg",quality);
+       while(data.length>300000 && quality>.38){
+         quality-=.08;
+         data=canvas.toDataURL("image/jpeg",quality);
+       }
+       resolve(data);
+     };
+     img.src=reader.result;
+   };
+   reader.readAsDataURL(file);
+ });
+}
+async function addTodoPhotos(files){
+ const remaining=Math.max(0,2-todoDraftPhotos.length);
+ if(!remaining)return alert("Maximaal 2 foto's per taak.");
+ const chosen=[...files].slice(0,remaining);
+ try{
+   for(const file of chosen){
+     if(!file.type.startsWith("image/"))continue;
+     todoDraftPhotos.push(await compressTodoPhoto(file));
+   }
+   renderTodoPhotoPreview();
+ }catch(e){alert(e.message)}
+}
+
+async function saveTodo(){
+ if(!todoCanUse())return;
+ if(todoEditing && !todoCanManage() && !todoIsOwnTask(todoEditing))return;
+ const v={
+   title:$("todoTitleInput").value.trim(),
+   audience:$("todoAudienceInput").value,
+   priority:$("todoPriorityInput").value,
+   zone:$("todoZoneInput").value.trim(),
+   due:$("todoDueInput").value,
+   note:$("todoNoteInput").value.trim(),
+   photos:[...todoDraftPhotos],
+   active:true,
+   updatedAt:new Date().toISOString(),
+   updatedBy:user?.email||""
+ };
+ if(!v.title)return alert("Geef de taak een naam.");
+ try{
+   if(todoEditing){
+     await updateDoc(doc(db,"todoTasks",todoEditing._id),v);
+   }else{
+     await addDoc(collection(db,"todoTasks"),{
+       ...v,
+       done:false,
+       createdAt:new Date().toISOString(),
+       createdBy:user?.email||"",
+       createdByName:todoCurrentPerson()||"Onbekend"
+     });
+   }
+   $("todoEditModal").classList.remove("show");
+ }catch(e){alert("Taak opslaan mislukt: "+e.message)}
+}
+
+
 let contractRecords=[];
 let contractView="student";
 let contractEditing=null;
 
 
 const CREW_CONTRACT_RULES={
- "simon":{kind:"fixed",label:"Vast contract"},
- "nick":{kind:"fixed",label:"Vast contract"},
- "arno":{kind:"fixed",label:"Vast contract"},
+ "simon":{kind:"fixed",label:"Contract van onbepaalde duur"},
+ "nick":{kind:"fixed",label:"Contract van onbepaalde duur"},
+ "arno":{kind:"fixed",label:"Contract van onbepaalde duur"},
+ "axel":{kind:"fixed",label:"Contract van onbepaalde duur"},
 
  "bas":{kind:"covered",start:"2026-01-01",end:"2026-10-31",label:"Contract gekend t.e.m. 31 oktober"},
  "guy g":{kind:"covered",start:"2026-01-01",end:"2026-10-31",label:"Contract gekend t.e.m. 31 oktober"},
@@ -3946,11 +6156,38 @@ function ibeReviewDue(){
 }
 
 function plannedContractPeriods(type,name){
- const source=type==="student"?studentShifts:shifts;
+ const source=type==="student"?studentShifts:normalCrewShifts();
  const dates=[...new Set(source.filter(x=>x.employee===name&&x.date).map(x=>x.date))].sort();
- const months={};
- dates.forEach(d=>(months[d.slice(0,7)]||(months[d.slice(0,7)]=[])).push(d));
- return Object.entries(months).sort().map(([month,ds])=>({month,start:ds[0],end:ds[ds.length-1],dates:ds}));
+ if(!dates.length)return [];
+
+ // Eén werkperiode blijft doorlopen zolang er maximaal 7 dagen tussen
+ // twee geplande werkdagen zitten. Zo kan een periode netjes van juli
+ // doorlopen in augustus zonder automatisch op 31 juli te stoppen.
+ const periods=[];
+ let current=[dates[0]];
+
+ for(let i=1;i<dates.length;i++){
+   const prev=new Date(dates[i-1]+"T12:00:00");
+   const next=new Date(dates[i]+"T12:00:00");
+   const gap=Math.round((next-prev)/86400000);
+
+   if(gap<=7){
+     current.push(dates[i]);
+   }else{
+     periods.push(current);
+     current=[dates[i]];
+   }
+ }
+ periods.push(current);
+
+ return periods.map(ds=>({
+   start:ds[0],
+   end:ds[ds.length-1],
+   dates:ds,
+   label:ds[0].slice(0,7)===ds[ds.length-1].slice(0,7)
+     ?ds[0].slice(0,7)
+     :`${ds[0].slice(0,7)} → ${ds[ds.length-1].slice(0,7)}`
+ }));
 }
 function contractCovers(type,name,date){
  if(type==="crew"){
@@ -3972,7 +6209,7 @@ function contractOverview(type){
  names.forEach(name=>{
    const rule=type==="crew"?crewContractRule(name):null;
 
-   // Simon, Nick en Arno hebben een vast contract en hoeven niet in de actielijst te staan.
+   // Vaste medewerkers met contract van onbepaalde duur hoeven niet in de actielijst te staan.
    if(type==="crew" && rule?.kind==="fixed")return;
 
    plannedContractPeriods(type,name).forEach(period=>{
@@ -3988,6 +6225,136 @@ function contractOverview(type){
  return rows.sort((a,b)=>a.period.start.localeCompare(b.period.start)||a.name.localeCompare(b.name));
 }
 function contractDate(d){return d?new Intl.DateTimeFormat("nl-BE",{day:"numeric",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):""}
+
+const ANN_SOPHY_EMAIL="annsophy@lakesideparadise.be";
+let contractEvents=[];
+let lastContractAlertFingerprint="";
+
+function annSophyPhone(){
+ return crewPhone("Ann-Sophy") || crewPhone("Ann Sophy") || crewPhone("Annsophy") || "";
+}
+function contractBrowserAlertsEnabled(){
+ return Notification.permission==="granted" && localStorage.getItem("cc_contract_notify_annsophy")==="1";
+}
+function contractDaysBetween(a,b){
+ const da=new Date(a+"T12:00:00"),db=new Date(b+"T12:00:00");
+ return Math.round((db-da)/86400000);
+}
+function lastPlannedDateFor(type,name){
+ const src=type==="student"?studentShifts:normalCrewShifts();
+ return src.filter(x=>x.employee===name&&x.date).map(x=>x.date).sort().at(-1)||"";
+}
+function buildContractEvents(){
+ const today=realTodayKey();
+ const result=[];
+
+ ["student","crew"].forEach(type=>{
+   contractOverview(type).forEach(r=>{
+     if(r.needs){
+       result.push({
+         key:`need|${type}|${r.name}|${r.period.start}`,
+         kind:"urgent",
+         title:`Nieuw contract nodig · ${r.name}`,
+         body:`Eerste geplande werkdag: ${contractDate(r.period.start)}.`,
+         person:r.name,type
+       });
+       return;
+     }
+
+     if(r.reviewDue){
+       result.push({
+         key:`review|${type}|${r.name}`,
+         kind:"soon",
+         title:`Contract nakijken · ${r.name}`,
+         body:`Herinnering om de contractperiode te controleren.`,
+         person:r.name,type
+       });
+     }
+
+     const end=r.contract?.end;
+     if(end && end!=="2999-12-31"){
+       const days=contractDaysBetween(today,end);
+       const lastPlan=lastPlannedDateFor(type,r.name);
+       if(days>=0 && days<=7 && (!lastPlan || lastPlan<=end)){
+         result.push({
+           key:`ending|${type}|${r.name}|${end}`,
+           kind:"soon",
+           title:`Contract bijna afgelopen · ${r.name}`,
+           body:`Contract eindigt ${contractDate(end)}${lastPlan?` · laatste geplande werkdag ${contractDate(lastPlan)}`:""}.`,
+           person:r.name,type
+         });
+       }
+     }
+   });
+ });
+
+ return result;
+}
+function contractMessageForAnnSophy(ev){
+ return `${ev.title}\n${ev.body}\n\nCableCrew contractbeheer`;
+}
+function renderContractEvents(){
+ contractEvents=buildContractEvents();
+ const list=$("contractEventList");
+ if(list){
+   list.innerHTML=contractEvents.length?contractEvents.map(ev=>{
+     const msg=encodeURIComponent(contractMessageForAnnSophy(ev));
+     const mail=`mailto:${ANN_SOPHY_EMAIL}?subject=${encodeURIComponent(ev.title)}&body=${msg}`;
+     const phone=whatsappDigits(annSophyPhone());
+     const wa=phone?`https://wa.me/${phone}?text=${msg}`:"";
+     return `<div class="contract-event ${ev.kind}">
+       <div class="contract-event-text"><b>${esc(ev.title)}</b><span>${esc(ev.body)}</span></div>
+       <div class="contract-event-actions">
+         <a href="${mail}">✉️ Mail</a>
+         ${wa?`<a href="${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>`:""}
+       </div>
+     </div>`;
+   }).join(""):"";
+ }
+
+ const waTop=$("contractWhatsAppAnnSophy");
+ if(waTop){
+   const phone=whatsappDigits(annSophyPhone());
+   if(phone){
+     waTop.style.display="inline-flex";
+     waTop.href=`https://wa.me/${phone}?text=${encodeURIComponent("CableCrew contractbeheer openen: er zijn contractmeldingen om na te kijken.")}`;
+     waTop.target="_blank";waTop.rel="noopener";
+   }else{
+     waTop.style.display="none";
+   }
+ }
+
+ const emailTop=$("contractEmailAnnSophy");
+ if(emailTop){
+   emailTop.href=`mailto:${ANN_SOPHY_EMAIL}?subject=${encodeURIComponent("CableCrew contractmeldingen")}&body=${encodeURIComponent(contractEvents.map(e=>contractMessageForAnnSophy(e)).join("\n\n")||"Momenteel geen open contractmeldingen.")}`;
+ }
+
+ const btn=$("contractBrowserNotifyBtn");
+ if(btn){
+   btn.textContent=contractBrowserAlertsEnabled()?"🔔 Browsermeldingen aan":"🔔 Browsermelding";
+ }
+}
+function maybeNotifyAnnSophyContractEvents(){
+ contractEvents=buildContractEvents();
+ const fp=contractEvents.map(e=>e.key).sort().join("||");
+ if(!fp || fp===lastContractAlertFingerprint)return;
+ const previous=localStorage.getItem("cc_contract_alert_fingerprint")||"";
+ lastContractAlertFingerprint=fp;
+ localStorage.setItem("cc_contract_alert_fingerprint",fp);
+
+ // Alleen Ann-Sophy krijgt deze lokale browsermelding.
+ if((user?.email||"").toLowerCase()!==ANN_SOPHY_EMAIL)return;
+ if(!contractBrowserAlertsEnabled())return;
+
+ const fresh=contractEvents.filter(e=>!previous.includes(e.key));
+ const notices=fresh.length?fresh:contractEvents;
+ const first=notices[0];
+ if(!first)return;
+
+ const more=notices.length>1?` (+${notices.length-1} andere)`:"";
+ showLocalNotice(`📄 ${first.title}${more}`,first.body,"important");
+}
+
 function updateContractBadge(){
  const studentRows=contractOverview("student");
  const crewRows=contractOverview("crew");
@@ -4005,56 +6372,165 @@ function renderContracts(){
  $("contractStudentsTab").classList.toggle("active",contractView==="student");
  $("contractCrewTab").classList.toggle("active",contractView==="crew");
  $("contractHelp").innerHTML=contractView==="student"
-  ?'Per kalendermaand wordt gecontroleerd of de <b>eerste ingeplande werkdag</b> gedekt is door een geregistreerde contractperiode. Komt iemand later opnieuw nadat het geregistreerde contract verlopen is, dan verschijnt opnieuw <b>Contract nodig</b>.'
-  :'Simon, Nick en Arno zijn vaste medewerkers en worden niet als contractactie getoond. Bas, Guy G en Guy zijn als gedekt ingesteld t.e.m. 31 oktober 2026. Stefanie is gedekt t.e.m. 1 september 2026. Voor Ibe verschijnt vanaf eind augustus een extra herinnering om zijn contract na te kijken.';
+  ?'Per werkperiode wordt gecontroleerd of de <b>eerste ingeplande werkdag</b> gedekt is door een geregistreerde contractperiode. Een periode loopt door zolang er maximaal 7 dagen tussen geplande werkdagen zit. Komt iemand later opnieuw nadat het geregistreerde contract verlopen is, dan verschijnt opnieuw <b>Contract nodig</b>.'
+  :'Simon, Nick, Arno en Axel hebben een contract van onbepaalde duur en worden niet als contractactie getoond. Bas, Guy G en Guy zijn als gedekt ingesteld t.e.m. 31 oktober 2026. Stefanie is gedekt t.e.m. 1 september 2026. Voor Ibe verschijnt vanaf eind augustus een extra herinnering om zijn contract na te kijken.';
  $("contractList").innerHTML=rows.length?rows.map(r=>{
    const builtIn=!!r.contract?.builtIn;
    const ibeReminder=!r.needs&&r.reviewDue;
-   const rowClass=r.needs?"needs":ibeReminder?"review":"ok";
+   const contractEndingSoon=!!(r.contract?.end && r.contract.end!=="2999-12-31" && contractDaysBetween(realTodayKey(),r.contract.end)>=0 && contractDaysBetween(realTodayKey(),r.contract.end)<=7);
+   const rowClass=r.needs?"needs":ibeReminder?"review":contractEndingSoon?"ending":"ok";
 
    let status="";
    if(r.needs){
      status=`🔴 Contract nodig vóór ${contractDate(r.period.start)}`;
    }else if(ibeReminder){
      status=`🟠 Contract nakijken eind augustus`;
+   }else if(contractEndingSoon){
+     status=`🟠 Contract loopt bijna af: ${contractDate(r.contract.end)}`;
    }else if(builtIn){
-     status=`✅ ${esc(r.contract.note||"Contract gekend")} · tot ${contractDate(r.contract.end)}`;
+     status=r.contract.end==="2999-12-31"?`✅ ${esc(r.contract.note||"Contract gekend")}`:`✅ ${esc(r.contract.note||"Contract gekend")} · tot ${contractDate(r.contract.end)}`;
    }else{
      status=`✅ In orde: ${contractDate(r.contract.start)} – ${contractDate(r.contract.end)}`;
    }
 
    const action=builtIn && !ibeReminder
      ?`<span class="contract-known">Geen actie nodig</span>`
-     :`<button data-contract="${r.type}" data-person="${esc(r.name)}" data-start="${r.period.start}">${r.needs?"Registreren":ibeReminder?"Nakijken / registreren":"Aanpassen"}</button>`;
+     :`<button data-contract="${r.type}" data-person="${esc(r.name)}" data-start="${r.period.start}" data-end="${r.period.end}">${r.needs?"Registreren":ibeReminder?"Nakijken / registreren":"Aanpassen"}</button>`;
 
    return `<div class="contract-row ${rowClass}">
-     <div><div class="contract-person">${esc(r.name)}</div><div class="contract-meta">${r.period.dates.length} geplande dag${r.period.dates.length===1?"":"en"} · ${esc(r.period.month)}</div></div>
+     <div><div class="contract-person">${esc(r.name)}</div><div class="contract-meta">${r.period.dates.length} geplande dag${r.period.dates.length===1?"":"en"} · ${esc(r.period.label||r.period.start.slice(0,7))}</div></div>
      <div class="contract-status">${status}<div class="contract-meta">Planning: ${contractDate(r.period.start)} – ${contractDate(r.period.end)}</div></div>
      <div class="contract-actions">${action}</div>
    </div>`;
  }).join(""):'<div class="empty">Geen ingeplande personen gevonden.</div>';
- document.querySelectorAll("[data-contract]").forEach(b=>b.onclick=()=>openContractEdit(b.dataset.contract,b.dataset.person,b.dataset.start));
  updateContractBadge();
+ renderContractEvents();
 }
-function openContractEdit(type,name,start){
+function openContractEdit(type,name,start,end=""){
  contractEditing={type,name};
- $("contractPerson").value=name;$("contractStart").value=start;
- const d=new Date(start+"T12:00:00");$("contractEnd").value=ymd(new Date(d.getFullYear(),d.getMonth()+1,0));
- $("contractNote").value="";$("contractEditTitle").textContent=`Contract registreren · ${name}`;$("contractEditModal").classList.add("show");
+ $("contractPerson").value=name;
+ $("contractStart").value=start;
+
+ // Standaard nemen we de laatste ingeplande dag van deze werkperiode.
+ // Als die ontbreekt, vallen we terug op het einde van de startmaand.
+ if(end){
+   $("contractEnd").value=end;
+ }else{
+   const d=new Date(start+"T12:00:00");
+   $("contractEnd").value=ymd(new Date(d.getFullYear(),d.getMonth()+1,0));
+ }
+
+ $("contractNote").value="";
+ $("contractEditTitle").textContent=`Contract registreren · ${name}`;
+ $("contractEditModal").classList.add("show");
 }
 async function saveContractRecord(){
  if(!contractEditing)return;
  const start=$("contractStart").value,end=$("contractEnd").value,note=$("contractNote").value.trim();
  if(!start||!end)return alert("Vul begin- en einddatum in.");if(end<start)return alert("Einddatum moet na begindatum liggen.");
- try{await addDoc(collection(db,"contracts"),{type:contractEditing.type,person:contractEditing.name,start,end,note,updatedAt:new Date().toISOString(),updatedBy:user?.email||""});$("contractEditModal").classList.remove("show")}
- catch(e){alert("Opslaan mislukt: "+e.message)}
+ try{
+   await addDoc(collection(db,"contracts"),{
+     type:contractEditing.type,
+     person:contractEditing.name,
+     start,end,note,
+     updatedAt:new Date().toISOString(),
+     updatedBy:user?.email||""
+   });
+   $("contractEditModal").classList.remove("show");
+   setTimeout(()=>{
+     updateContractBadge();
+     if($("contractsModal")?.classList.contains("show"))renderContracts();
+   },80);
+ }catch(e){alert("Opslaan mislukt: "+e.message)}
 }
+
+
+
+
+$("dailyPlanningToggleBtn").onclick=()=>{
+ const identity=dailyPopupPerson();
+ if(!identity)return alert("Kies eerst je eigen naam.");
+ const enabled=!dailyPlanningEnabled(identity);
+ setDailyPlanningEnabled(enabled,identity);
+ if(enabled){
+   alert("Dagplanning om 07:00 staat aan op dit toestel.");
+   setTimeout(shouldShowDailyPlanningPopup,150);
+ }
+};
+$("dailyPlanningPopupPref").onchange=e=>{
+ const identity=dailyPopupPerson();
+ if(identity)setDailyPlanningEnabled(e.target.checked,identity);
+};
+
+$("closeDailyPlanningBtn").onclick=()=>$("dailyPlanningModal").classList.remove("show");
+$("openMyPlanningBtn").onclick=()=>{
+ $("dailyPlanningModal").classList.remove("show");
+ setPlannerTab("crew");
+ if($("myBtn"))$("myBtn").click();
+};
+$("appUsageBtn").onclick=()=>{appUsageView="crew";renderAppUsage();$("appUsageModal").classList.add("show")};
+$("closeAppUsageBtn").onclick=()=>$("appUsageModal").classList.remove("show");
+$("appUsageCrewTab").onclick=()=>{appUsageView="crew";renderAppUsage()};
+$("appUsageStudentTab").onclick=()=>{appUsageView="student";renderAppUsage()};
+$("alarmLogBtn").onclick=()=>{renderAlarmLog();$("alarmLogModal").classList.add("show")};
+$("closeAlarmLogBtn").onclick=()=>$("alarmLogModal").classList.remove("show");
+$("cancelAlarmReportBtn").onclick=()=>{$("alarmReportModal").classList.remove("show");alarmReportEditing=null};
+$("saveAlarmReportBtn").onclick=saveAlarmReport;
+$("zoneAlertBtn").onclick=openZoneAlert;
+$("cancelZoneAlertBtn").onclick=()=>$("zoneAlertModal").classList.remove("show");
+$("sendZoneAlertBtn").onclick=sendZoneAlert;
+
+$("todoAudienceFilter").onchange=renderTodo;
+$("todoAddBtn").onclick=()=>openTodoEdit();
+$("todoPhotoInput").onchange=e=>{addTodoPhotos(e.target.files);e.target.value=""};
+$("closeTodoPhotoViewer").onclick=()=>$("todoPhotoViewer").classList.remove("show");
+$("todoCancelBtn").onclick=()=>$("todoEditModal").classList.remove("show");
+$("todoSaveBtn").onclick=saveTodo;
+$("todoDeleteBtn").onclick=async()=>{
+ if(!todoEditing||(!todoCanManage()&&!todoIsOwnTask(todoEditing)))return;
+ if(!confirm("Deze taak verwijderen?"))return;
+ try{
+   await updateDoc(doc(db,"todoTasks",todoEditing._id),{active:false,updatedAt:new Date().toISOString(),updatedBy:user?.email||""});
+   $("todoEditModal").classList.remove("show");
+ }catch(e){alert("Taak verwijderen mislukt: "+e.message)}
+};
+
+
+$("contractBrowserNotifyBtn").onclick=async()=>{
+ if((user?.email||"").toLowerCase()!==ANN_SOPHY_EMAIL){
+   return alert("Deze browsermeldingen zijn bedoeld voor Ann-Sophy. Zij moet met haar eigen account inloggen om ze op haar toestel aan te zetten.");
+ }
+ if(!("Notification" in window))return alert("Deze browser ondersteunt geen meldingen.");
+ if(contractBrowserAlertsEnabled()){
+   localStorage.setItem("cc_contract_notify_annsophy","0");
+   renderContractEvents();
+   return;
+ }
+ const p=await Notification.requestPermission();
+ if(p==="granted"){
+   localStorage.setItem("cc_contract_notify_annsophy","1");
+   renderContractEvents();
+   showLocalNotice("Contractmeldingen actief","Ann-Sophy krijgt op dit toestel meldingen wanneer CableCrew nieuwe contractaandacht detecteert.","important");
+ }else{
+   alert("Meldingen zijn niet toegestaan op dit toestel.");
+ }
+};
+
 $("contractsBtn").onclick=()=>{contractView="student";renderContracts();$("contractsModal").classList.add("show")};
 $("closeContractsBtn").onclick=()=>$("contractsModal").classList.remove("show");
 $("contractStudentsTab").onclick=()=>{contractView="student";renderContracts()};
 $("contractCrewTab").onclick=()=>{contractView="crew";renderContracts()};
 $("cancelContractEdit").onclick=()=>$("contractEditModal").classList.remove("show");
 $("saveContractEdit").onclick=saveContractRecord;
+
+document.addEventListener("click",e=>{
+ const btn=e.target.closest("[data-contract]");
+ if(!btn)return;
+ e.preventDefault();
+ e.stopPropagation();
+ openContractEdit(btn.dataset.contract,btn.dataset.person,btn.dataset.start,btn.dataset.end||"");
+});
+
 
 $("loginBtn").onclick=()=>{
  $("loginModal").classList.add("show");
@@ -4178,9 +6654,60 @@ ensureAnonymousAuth().catch(err=>{
   console.warn("Anonymous auth kon niet onmiddellijk herstellen:",err);
 });
 
+onSnapshot(collection(db,"appUsage"),snap=>{
+ appUsageRecords=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ if($("appUsageModal")?.classList.contains("show"))renderAppUsage();
+});
+onSnapshot(collection(db,"availabilityExceptions"),snap=>{
+ availabilityExceptions=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ if($("availabilityModal")?.classList.contains("show"))renderAvailabilityPeople();
+});
+onSnapshot(collection(db,"zoneAlerts"),snap=>{
+ const previousById=new Map(zoneAlerts.map(x=>[x._id,x]));
+
+ zoneAlerts=snap.docs.map(d=>({_id:d.id,...d.data()}))
+   .sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+ if($("alarmLogModal")?.classList.contains("show"))renderAlarmLog();
+
+ // Zoek het nieuwste nog actieve alarm.
+ const activeAlert=zoneAlerts.find(x=>x.active);
+
+ // Als een alarm dat voordien actief was nu geclaimd is:
+ // rood alarm overal verwijderen en kort tonen wie komt helpen.
+ zoneAlerts.forEach(x=>{
+   const prev=previousById.get(x._id);
+   if(prev?.active && x.active===false && x.acknowledgedBy){
+     const banner=document.getElementById("liveZoneAlert");
+     if(banner?.dataset.alertId===x._id)banner.remove();
+     stopZoneAlarmSound();
+     showZoneHelpConfirmation(x);
+   }
+ });
+
+ if(activeAlert){
+   const banner=document.getElementById("liveZoneAlert");
+   if(!banner || banner.dataset.alertId!==activeAlert._id){
+     showZoneAlertBanner(activeAlert,activeAlert._id);
+   }
+   lastSeenZoneAlertId=activeAlert._id;
+ }else{
+   const banner=document.getElementById("liveZoneAlert");
+   if(banner)banner.remove();
+   stopZoneAlarmSound();
+   lastSeenZoneAlertId="";
+ }
+});
+
+onSnapshot(collection(db,"todoTasks"),snap=>{
+ todoTasks=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ if($("todoMain")?.classList.contains("active"))renderTodo();
+});
+
 onSnapshot(collection(db,"contracts"),snap=>{
  contractRecords=snap.docs.map(d=>({_id:d.id,...d.data()}));
  updateContractBadge();
+ renderContractEvents();
+ maybeNotifyAnnSophyContractEvents();
  if($("contractsModal")?.classList.contains("show"))renderContracts();
 });
 
@@ -4461,7 +6988,7 @@ function startCrewContactsListener(){
  if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null}
  if(!isAdminUser())return;
  crewContactsUnsub=onSnapshot(collection(db,"crewContacts"),snap=>{
-   crewDirectory=new Map(snap.docs.map(d=>[d.id,{name:d.data().name||d.id,phone:d.data().phone||"",active:d.data().active!==false}]));
+   crewDirectory=new Map(snap.docs.map(d=>[d.id,{name:d.data().name||d.id,phone:d.data().phone||"",daysOff:Array.isArray(d.data().daysOff)?d.data().daysOff.map(Number):[],active:d.data().active!==false}]));
    crewContacts=new Map([...crewDirectory.entries()].filter(([n,d])=>d.active!==false).map(([n,d])=>[n,d.phone||""]));
    fillPeople();
    if($("crewContactsModal").classList.contains("show"))renderCrewContacts();
@@ -4485,6 +7012,7 @@ $("addCrewContactBtn").onclick=async()=>{
    await setDoc(doc(db,"crewContacts",name),{
      name,
      phone,
+     daysOff:[],
      active:true,
      updatedAt:serverTimestamp(),
      updatedBy:user.email||""
@@ -4537,6 +7065,7 @@ $("saveCrewContactsBtn").onclick=async()=>{
      batch.set(doc(db,"crewContacts",newName),{
        name:newName,
        phone,
+       daysOff:fixedDaysOff("crew",oldName),
        active:true,
        updatedAt:serverTimestamp(),
        updatedBy:user.email||""
@@ -4612,6 +7141,7 @@ async function createPlanningBackup(auto=false,reason=""){
    _id:id,
    name:data?.name||id,
    phone:data?.phone||"",
+   daysOff:Array.isArray(data?.daysOff)?data.daysOff:[],
    active:data?.active!==false
  }));
 
@@ -4619,10 +7149,16 @@ async function createPlanningBackup(auto=false,reason=""){
    _id:id,
    name:data?.name||id,
    phone:data?.phone||"",
+   zones:Array.isArray(data?.zones)?data.zones:[],
+   daysOff:Array.isArray(data?.daysOff)?data.daysOff:[],
    active:data?.active!==false
  }));
 
  const contractPayload=contractRecords.map(({_id,...x})=>x);
+ const todoPayload=todoTasks.map(({_id,...x})=>x);
+ const zoneAlertPayload=zoneAlerts.map(({_id,...x})=>x);
+ const availabilityPayload=availabilityExceptions.map(({_id,...x})=>x);
+ const appUsagePayload=appUsageRecords.map(({_id,...x})=>x);
 
  try{
    await addDoc(collection(db,"planningBackups"),{
@@ -4640,13 +7176,21 @@ async function createPlanningBackup(auto=false,reason=""){
        studentShiftPayload.length+
        crewDirectoryPayload.length+
        studentDirectoryPayload.length+
-       contractPayload.length,
+       contractPayload.length+
+       todoPayload.length+
+       zoneAlertPayload.length+
+       availabilityPayload.length+
+       appUsagePayload.length,
 
      shifts:crewShiftPayload,
      studentShifts:studentShiftPayload,
      crewDirectory:crewDirectoryPayload,
      studentDirectory:studentDirectoryPayload,
-     contracts:contractPayload
+     contracts:contractPayload,
+     todoTasks:todoPayload,
+     zoneAlerts:zoneAlertPayload,
+     availabilityExceptions:availabilityPayload,
+     appUsage:appUsagePayload
    });
 
    localStorage.setItem("cc_last_backup_day",backupDayKey());
@@ -4707,7 +7251,8 @@ async function ensureDailyBackup(){if(!isAdminUser()||!shiftsInitialized||localS
 function startBackupListener(){if(backupUnsub){backupUnsub();backupUnsub=null}if(!isAdminUser())return;const q=query(collection(db,"planningBackups"),orderBy("createdAt","desc"),limit(30));backupUnsub=onSnapshot(q,snap=>{$("backupList").innerHTML=snap.empty?'<div class="empty">Nog geen back-ups.</div>':snap.docs.map(d=>{const x={_id:d.id,...d.data()},when=x.createdAt?.toDate?.().toLocaleString("nl-BE")||"zojuist";return `<div class="backup-item"><div><b>${esc(when)}</b><div class="backup-meta">${esc(x.createdBy||"")} · ${x.backupVersion>=2?`${x.totalItems||x.count||0} items · volledige back-up`:`${x.count||0} shifts · oude back-up`}${x.automatic?" · automatisch":""}${x.reason?` · ${esc(x.reason)}`:""}</div></div><button data-restore-backup="${x._id}">Herstellen</button></div>`}).join("");$("backupList").querySelectorAll("[data-restore-backup]").forEach(btn=>btn.onclick=async()=>{const found=snap.docs.find(d=>d.id===btn.dataset.restoreBackup),data=found?.data();if(!isAdminUser()||!data?.shifts)return;
  const full=data.backupVersion>=2;
  const restoreText=full
-   ?`Volledige back-up herstellen?\n\nCrewplanning: ${data.shifts?.length||0}\nJobstudent-shifts: ${data.studentShifts?.length||0}\nMedewerkers: ${data.crewDirectory?.length||0}\nJobstudenten: ${data.studentDirectory?.length||0}\nContracten: ${data.contracts?.length||0}`
+   ?`Volledige back-up herstellen?\n\nCrewplanning: ${data.shifts?.length||0}\nJobstudent-shifts: ${data.studentShifts?.length||0}\nMedewerkers: ${data.crewDirectory?.length||0}\nJobstudenten: ${data.studentDirectory?.length||0}\nContracten: ${data.contracts?.length||0}
+To do: ${data.todoTasks?.length||0}\nZone-alerts: ${data.zoneAlerts?.length||0}\nBeschikbaarheidsuitzonderingen: ${data.availabilityExceptions?.length||0}\nApp-gebruik: ${data.appUsage?.length||0}`
    :`Dit is een oudere back-up met ${data.shifts.length} crewshifts. Alleen de crewplanning kan hiermee worden hersteld.`;
  if(!confirm(restoreText))return;
  if(!confirm(full?"De huidige gegevens uit deze onderdelen worden overschreven. Zeker?":"De huidige crewplanning wordt volledig overschreven. Zeker?"))return;
@@ -4726,6 +7271,10 @@ function startBackupListener(){if(backupUnsub){backupUnsub();backupUnsub=null}if
          await backupReplaceNamedCollection("crewContacts",crewDirectory,data.crewDirectory||[]);
          await backupReplaceNamedCollection("students",studentDirectory,data.studentDirectory||[]);
          await backupReplaceAutoIdCollection("contracts",contractRecords,data.contracts||[]);
+         await backupReplaceAutoIdCollection("todoTasks",todoTasks,data.todoTasks||[]);
+         await backupReplaceAutoIdCollection("zoneAlerts",zoneAlerts,data.zoneAlerts||[]);
+         await backupReplaceAutoIdCollection("availabilityExceptions",availabilityExceptions,data.availabilityExceptions||[]);
+         await backupReplaceAutoIdCollection("appUsage",appUsageRecords,data.appUsage||[]);
        }
 
        alert(full?"Volledige back-up hersteld.":"Oude back-up hersteld: alleen de crewplanning.");
@@ -4749,6 +7298,31 @@ function studentActiveNames(){
  return [...new Set([...fromDirectory,...fromPlanning])].sort((a,b)=>a.localeCompare(b,"nl"));
 }
 function studentPhone(name){return studentDirectory.get(name)?.phone||""}
+function studentZones(name){
+ const z=studentDirectory.get(name)?.zones;
+ return Array.isArray(z)?z:[];
+}
+function studentNamesForZone(zone){
+ return [...studentDirectory.entries()]
+   .filter(([n,d])=>d?.active!==false)
+   .filter(([n,d])=>Array.isArray(d?.zones)&&d.zones.includes(zone))
+   .map(([n])=>n)
+   .sort((a,b)=>a.localeCompare(b,"nl"));
+}
+function fillStudentEditPeopleForZone(selected=""){
+ const zone=$("studentEditZone")?.value||"PRO";
+ const names=studentNamesForZone(zone);
+ const sel=$("studentEditPerson");
+ if(!sel)return;
+ const keep=selected||sel.value;
+ const opts=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`);
+ if(keep&&!names.includes(keep)){
+   opts.unshift(`<option value="${esc(keep)}">${esc(keep)} (niet gekoppeld aan ${esc(zone)})</option>`);
+ }
+ sel.innerHTML=opts.join("")||`<option value="">Geen jobstudenten gekoppeld aan ${esc(zone)}</option>`;
+ if(keep&&[...sel.options].some(o=>o.value===keep))sel.value=keep;
+ $("studentWhatsAppBtn").style.display=studentPhone(sel.value)?"inline-block":"none";
+}
 function studentVisibleShifts(){
  const n=$("studentPerson").value;
  return n?studentShifts.filter(x=>x.employee===n):studentShifts;
@@ -4773,8 +7347,7 @@ function studentFillPeople(){
  const names=studentActiveNames();
  $("studentPerson").innerHTML='<option value="">Iedereen</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
  if(current&&names.includes(current))$("studentPerson").value=current;
- const active=[...studentDirectory.entries()].filter(([n,d])=>d?.active!==false).map(([n])=>n).sort((a,b)=>a.localeCompare(b,"nl"));
- $("studentEditPerson").innerHTML=active.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+ fillStudentEditPeopleForZone($("studentEditPerson")?.value||"");
 }
 function studentShiftHtml(x){
  return `<div class="student-shift ${isAdminUser()?'editable':''}" data-student-shift="${esc(x._id||"")}">
@@ -4831,18 +7404,34 @@ function renderStudentAll(){
 function setPlannerTab(tab){
  if(tab==="students" && !isAdminUser())tab="crew";
  const student=tab==="students";
- $("crewPlannerTab").classList.toggle("active",!student);
+ const todo=tab==="todo";
+
+ $("crewPlannerTab").classList.toggle("active",tab==="crew");
  $("studentPlannerTab").classList.toggle("active",student);
- document.querySelector(".quickbar").style.display=student?"none":"";
- $("todayBar").style.display=student?"none":"";
+ $("todoPlannerTab").classList.toggle("active",todo);
+
+ document.querySelector(".quickbar").style.display=(student||todo)?"none":"";
+ $("todayBar").style.display=(student||todo)?"none":"";
  $("personalAlert").style.display="none";
- document.querySelector("main").style.display=student?"none":"";
+ document.querySelector("main").style.display=(student||todo)?"none":"";
  $("studentMain").classList.toggle("active",student);
+ $("todoMain").classList.toggle("active",todo);
+
+ // Dagkiezer niet tonen in de to-do lijst.
+ $("mobileTodayText").style.display=todo?"none":"";
+ $("mobileDayScroller").style.display=todo?"none":"";
+
  if(student)renderStudentAll();
+ if(todo)renderTodo();
+ updateAlarmVisibilityForRole();
+ const ident=currentAppIdentity();
+ if(ident)recordAppUsage(ident.type,ident.name,"open");
+ updateDailyPlanningPreferenceUI();
  renderMobileDayScroller();
 }
 $("crewPlannerTab").onclick=()=>setPlannerTab("crew");
 $("studentPlannerTab").onclick=()=>{if(isAdminUser())setPlannerTab("students")};
+$("todoPlannerTab").onclick=()=>setPlannerTab("todo");
 $("studentDashboardBtn").onclick=()=>{if(isAdminUser())setPlannerTab("students")};
 
 
@@ -4855,18 +7444,18 @@ $("studentWeekBtn").onclick=()=>{
  $("studentDayPanel").style.display="none";$("studentWeekPanel").style.display="block";
 };
 $("studentDate").onchange=()=>{renderStudentDay();renderStudentWeek()};
-$("studentPerson").onchange=()=>{renderStudentDay();renderStudentWeek()};
+$("studentPerson").onchange=()=>{recordAppUsage("student",$("studentPerson").value,"open");updateDailyPlanningPreferenceUI();renderStudentDay();renderStudentWeek()};
 
 function openStudentShift(x=null){
  if(!isAdminUser())return;
  studentEditing=x;
  $("studentShiftTitle").textContent=x?"Jobstudent shift aanpassen":"Nieuwe jobstudent shift";
  $("studentEditDate").value=x?.date||$("studentDate").value||realTodayKey();
- studentFillPeople();
- if(x?.employee)$("studentEditPerson").value=x.employee;
  $("studentEditStart").value=x?.start||"09:00";
  $("studentEditEnd").value=x?.end||"17:00";
  $("studentEditZone").value=x?.zone||"PRO";
+ studentFillPeople();
+ fillStudentEditPeopleForZone(x?.employee||"");
  $("studentEditNote").value=x?.note||"";
  $("studentDeleteShift").style.display=x?"inline-block":"none";
  $("studentWhatsAppBtn").style.display=x&&studentPhone(x.employee)?"inline-block":"none";
@@ -4876,6 +7465,7 @@ $("studentAddShiftBtn").onclick=()=>{
  if(!studentActiveNames().length)return alert("Voeg eerst minstens één actieve jobstudent toe via ‘Studenten beheren’.");
  openStudentShift();
 };
+$("studentEditZone").onchange=()=>fillStudentEditPeopleForZone();
 $("studentCancelShift").onclick=()=>$("studentShiftModal").classList.remove("show");
 $("studentEditPerson").onchange=()=>{
  $("studentWhatsAppBtn").style.display=studentPhone($("studentEditPerson").value)?"inline-block":"none";
@@ -4922,7 +7512,9 @@ $("studentWhatsAppBtn").onclick=()=>openStudentWhatsApp(studentForm(),studentEdi
 $("studentSaveShift").onclick=async()=>{
  if(!isAdminUser())return;
  const v=studentForm();
- if(!v.date||!v.employee||!v.start||!v.end)return alert("Vul datum, student en uren in.");
+ if(!v.employee)return alert("Er is geen jobstudent gekozen. Koppel eerst minstens één jobstudent aan deze zone.");
+ if(!v.date||!v.start||!v.end)return alert("Vul datum en uren in.");
+ if(!await confirmAvailabilityOverride("student",v.employee,v.date))return;
  try{
    if(studentEditing){
      await updateDoc(doc(db,"studentShifts",studentEditing._id),v);
@@ -4952,12 +7544,18 @@ document.addEventListener("click",e=>{
 function renderStudentManager(){
  if(!isAdminUser())return;
  const rows=[...studentDirectory.entries()].filter(([n,d])=>d?.active!==false).sort((a,b)=>a[0].localeCompare(b[0],"nl"));
- $("studentManageList").innerHTML=rows.length?rows.map(([name,d])=>`
-   <div class="student-manage-row" data-student-row="${esc(name)}">
+ $("studentManageList").innerHTML=rows.length?rows.map(([name,d])=>{
+   const z=Array.isArray(d.zones)?d.zones:[];
+   return `<div class="student-manage-row" data-student-row="${esc(name)}">
      <input data-student-name="${esc(name)}" value="${esc(name)}">
+     <div class="student-zone-assign">
+       <span>Zones</span>
+       ${STUDENT_ZONES.map(zone=>`<label><input type="checkbox" data-student-zone value="${esc(zone)}"${z.includes(zone)?" checked":""}> ${esc(zone)}</label>`).join("")}
+     </div>
      <input type="tel" data-student-phone="${esc(name)}" value="${esc(d.phone||"")}" placeholder="Gsm-nummer (optioneel)">
      <button class="danger" type="button" data-student-remove="${esc(name)}">Deactiveren</button>
-   </div>`).join(""):'<div class="empty">Nog geen actieve jobstudenten.</div>';
+   </div>`;
+ }).join(""):'<div class="empty">Nog geen actieve jobstudenten.</div>';
  $("studentManageList").querySelectorAll("[data-student-remove]").forEach(btn=>btn.onclick=()=>{
    const row=btn.closest("[data-student-row]");
    if(confirm(`${btn.dataset.studentRemove} uit de actieve studentenlijst verwijderen?\nHistorische shifts blijven behouden.`)){
@@ -4970,11 +7568,14 @@ $("studentManageCloseBtn").onclick=()=>$("studentManageModal").classList.remove(
 $("studentAddPersonBtn").onclick=async()=>{
  if(!isAdminUser())return;
  const name=$("studentNewName").value.trim(),phone=normalizeBelgianPhone($("studentNewPhone").value.trim());
+ const zones=[...document.querySelectorAll(".student-new-zones input:checked")].map(x=>x.value);
  if(!name)return alert("Vul een naam in.");
+ if(!zones.length)return alert("Kies minstens één zone voor deze jobstudent.");
  if(studentDirectory.get(name)?.active!==false)return alert("Deze student bestaat al.");
  try{
-   await setDoc(doc(db,"students",name),{name,phone,active:true,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true});
+   await setDoc(doc(db,"students",name),{name,phone,zones,daysOff:[],active:true,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true});
    $("studentNewName").value="";$("studentNewPhone").value="";
+   document.querySelectorAll(".student-new-zones input").forEach(x=>x.checked=false);
    if(phone && confirm(`${name} is toegevoegd. WhatsApp openen met de link naar de jobstudentenplanning?`)){
      const digits=whatsappDigits(phone);
      const msg=`🎓 Welkom bij de Lakeside jobstudentenplanning, ${name}!\n\nHier kan je de planning bekijken:\n${currentStudentShareLink()}`;
@@ -4995,10 +7596,11 @@ $("studentManageSaveBtn").onclick=async()=>{
      }
      const newName=row.querySelector("[data-student-name]")?.value.trim()||oldName;
      const phone=normalizeBelgianPhone(row.querySelector("[data-student-phone]")?.value.trim()||"");
+     const zones=[...row.querySelectorAll("[data-student-zone]:checked")].map(x=>x.value);
      if(newName!==oldName){
        batch.set(doc(db,"students",oldName),{name:oldName,active:false,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true});
      }
-     batch.set(doc(db,"students",newName),{name:newName,phone,active:true,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true});
+     batch.set(doc(db,"students",newName),{name:newName,phone,zones,daysOff:fixedDaysOff("student",oldName),active:true,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true});
    });
    await batch.commit();
    $("studentManageModal").classList.remove("show");
@@ -5063,7 +7665,13 @@ function startStudentDirectoryListener(){
  studentDirectory=new Map();
  if(!isAdminUser()){renderStudentAll();return}
  studentDirectoryUnsub=onSnapshot(collection(db,"students"),snap=>{
-   studentDirectory=new Map(snap.docs.map(d=>[d.id,{name:d.data().name||d.id,phone:d.data().phone||"",active:d.data().active!==false}]));
+   studentDirectory=new Map(snap.docs.map(d=>[d.id,{
+     name:d.data().name||d.id,
+     phone:d.data().phone||"",
+     zones:Array.isArray(d.data().zones)?d.data().zones:[],
+     daysOff:Array.isArray(d.data().daysOff)?d.data().daysOff.map(Number):[],
+     active:d.data().active!==false
+   }]));
    renderStudentAll();
    if($("studentManageModal").classList.contains("show"))renderStudentManager();
  },e=>console.warn("students:",e));
@@ -5186,6 +7794,18 @@ function installMobileSwipeNavigation(){
 window.addEventListener("resize",refreshSwipeModeClass);
 window.addEventListener("orientationchange",()=>setTimeout(refreshSwipeModeClass,120));
 setTimeout(()=>{installMobileSwipeNavigation();refreshSwipeModeClass()},0);
+setTimeout(updateAlarmVisibilityForRole,0);
+setTimeout(()=>{
+ const ident=currentAppIdentity();
+ if(ident)recordAppUsage(ident.type,ident.name,"open");
+},800);
+setTimeout(()=>{updateDailyPlanningPreferenceUI();shouldShowDailyPlanningPopup()},1400);
+scheduleDailyPlanningPopup();
+setInterval(updateZoneAlertButtonState,30000);
+document.addEventListener("visibilitychange",()=>{
+ if(!document.hidden)updateZoneAlertButtonState();
+});
+window.addEventListener("focus",updateZoneAlertButtonState);
 
 
 // =========================
@@ -5861,6 +8481,53 @@ function renderYearPlanner(){
  }
  $("yearGrid").innerHTML=html;
 }
+
+$("availabilityBtn").onclick=()=>{
+ if(!isPlannerAdmin())return;
+ availabilityViewType="crew";monthTemplateExcluded.clear();$("availabilityExceptionDate").value=realTodayKey();$("templateSourceMonth").value=sourceMonthDefault();$("templateTargetMonth").value=nextMonthDefault();
+ $("availabilityCrewTab").classList.add("active");$("availabilityStudentTab").classList.remove("active");$("availabilityTemplateTab").classList.remove("active");$("availabilityPeoplePanel").style.display="";$("availabilityTemplatePanel").style.display="none";
+ renderAvailabilityPeople();$("availabilityModal").classList.add("show");
+};
+$("closeAvailabilityBtn").onclick=()=>$("availabilityModal").classList.remove("show");
+function setAvailabilityTab(t){availabilityViewType=t;$("availabilityCrewTab").classList.toggle("active",t==="crew");$("availabilityStudentTab").classList.toggle("active",t==="student");$("availabilityTemplateTab").classList.remove("active");$("availabilityPeoplePanel").style.display="";$("availabilityTemplatePanel").style.display="none";renderAvailabilityPeople()}
+$("availabilityCrewTab").onclick=()=>setAvailabilityTab("crew");$("availabilityStudentTab").onclick=()=>setAvailabilityTab("student");
+$("availabilityTemplateTab").onclick=()=>{
+ $("availabilityCrewTab").classList.remove("active");
+ $("availabilityStudentTab").classList.remove("active");
+ $("availabilityTemplateTab").classList.add("active");
+ $("availabilityPeoplePanel").style.display="none";
+ $("availabilityTemplatePanel").style.display="";
+ renderTemplateExcludePeople($("templateType").value);
+};
+$("saveAvailabilityBtn").onclick=async()=>{
+ if(!isPlannerAdmin())return;
+ try{const batch=writeBatch(db),cn=availabilityViewType==="student"?"students":"crewContacts";document.querySelectorAll("[data-avail-person]").forEach(row=>{const name=row.dataset.availPerson,daysOff=[...row.querySelectorAll(".weekday-check input:checked")].map(x=>Number(x.value));batch.set(doc(db,cn,name),{name,daysOff,updatedAt:serverTimestamp(),updatedBy:user.email||""},{merge:true})});await batch.commit();alert("Vaste vrije dagen opgeslagen.")}catch(e){alert("Opslaan mislukt: "+e.message)}
+};
+$("addAvailabilityExceptionBtn").onclick=async()=>{
+ if(!isPlannerAdmin())return;
+ const person=$("availabilityExceptionPerson").value,date=$("availabilityExceptionDate").value,mode=$("availabilityExceptionMode").value,note=$("availabilityExceptionNote").value.trim();if(!person||!date)return alert("Kies persoon en datum.");
+ try{const old=availabilityException(availabilityViewType,person,date);if(old?._id)await deleteDoc(doc(db,"availabilityExceptions",old._id));await addDoc(collection(db,"availabilityExceptions"),{personType:availabilityViewType,person,date,mode,note,createdAt:new Date().toISOString(),createdBy:user.email||""});$("availabilityExceptionNote").value=""}catch(e){alert("Uitzondering opslaan mislukt: "+e.message)}
+};
+$("buildMonthTemplateBtn").onclick=()=>{
+ const type=$("templateType").value;
+ renderTemplateExcludePeople(type);
+ buildFullMonthTemplate();
+};
+$("templateType").onchange=()=>{
+ monthTemplateExcluded.clear();
+ renderTemplateExcludePeople($("templateType").value);
+ monthTemplateDraft=[];
+ $("monthTemplatePreview").innerHTML="";
+ $("monthTemplateSummary").innerHTML="";
+ $("applyMonthTemplateBtn").disabled=true;
+};
+$("rebuildMonthTemplateBtn").onclick=()=>buildFullMonthTemplate();
+$("applyMonthTemplateBtn").onclick=async()=>{
+ if(!isPlannerAdmin())return;
+ const rows=monthTemplateDraft.filter(x=>x.status==="ready"||x.status==="replacement").flatMap(x=>x.rows.map(r=>({...r,_type:x.type})));if(!rows.length||!confirm(`${rows.length} voorgestelde shifts toevoegen?\nBestaande shifts worden niet overschreven.`))return;
+ try{for(const type of ["crew","student"]){const rr=rows.filter(x=>x._type===type);for(let i=0;i<rr.length;i+=350){const batch=writeBatch(db);rr.slice(i,i+350).forEach(r=>{const c={...r};delete c._type;batch.set(doc(collection(db,type==="crew"?"shifts":"studentShifts")),c)});await batch.commit()}}alert(`${rows.length} shifts toegevoegd. Controleer de maand en pas uitzonderingen waar nodig aan.`);monthTemplateDraft=[];$("monthTemplatePreview").innerHTML="";$("monthTemplateSummary").innerHTML="";$("applyMonthTemplateBtn").disabled=true}catch(e){alert("Template toepassen mislukt: "+e.message)}
+};
+
 $("yearPlannerBtn").onclick=()=>{
  if(!isAdminUser())return;
  yearViewYear=new Date(($("date").value||key(new Date()))+"T12:00:00").getFullYear();
@@ -5908,6 +8575,187 @@ function weatherText(c){
  if([95,96,99].includes(c))return"Onweer";
  return"Wisselvallig";
 }
+
+const WINDGURU_DUINBERGEN_URL="https://www.windguru.cz/148105";
+const WINDGURU_DUINBERGEN_EMBED="https://www.windguru.cz/int/distr_iframe.php?c=1920102e0f&s=148105&u=848585";
+let windguruDaily=[null,null,null];
+
+function windguruDayKeyFromCell(text,yearHint){
+ const m=String(text||"").match(/(\d{1,2})\.\s*(?:Mo|Tu|We|Th|Fr|Sa|Su)?/i);
+ if(!m)return "";
+ const day=Number(m[1]);
+ const now=new Date();
+ // Windguru-iframe toont de komende dagen. Kies de maand rond vandaag.
+ let month=now.getMonth(),year=yearHint||now.getFullYear();
+ let d=new Date(year,month,day,12);
+ if((d-now)<-15*86400000)d=new Date(year,month+1,day,12);
+ if((d-now)>45*86400000)d=new Date(year,month-1,day,12);
+ return key(d);
+}
+
+function windDirArrow(deg){
+ const d=((Number(deg)||0)%360+360)%360;
+ // Meteorologische richting = waar de wind vandaan komt.
+ const dirs=[
+   ["N","↓"],["NO","↙"],["O","←"],["ZO","↖"],
+   ["Z","↑"],["ZW","↗"],["W","→"],["NW","↘"]
+ ];
+ return dirs[Math.round(d/45)%8];
+}
+
+function circularMeanDeg(values){
+ if(!values.length)return null;
+ let sx=0,sy=0;
+ values.forEach(v=>{
+   const r=Number(v)*Math.PI/180;
+   sx+=Math.sin(r);sy+=Math.cos(r);
+ });
+ let deg=Math.atan2(sx,sy)*180/Math.PI;
+ if(deg<0)deg+=360;
+ return deg;
+}
+
+function parseWindguruForecast(htmlText){
+ const docx=new DOMParser().parseFromString(htmlText,"text/html");
+ const rows=[...docx.querySelectorAll("tr")];
+ if(!rows.length)return [];
+
+ const windRow=rows.find(r=>/Wind speed\s*\(knots\)/i.test(r.textContent||""));
+ if(!windRow)return [];
+
+ let windCells=[...windRow.querySelectorAll("td,th")]
+   .map(c=>(c.textContent||"").trim())
+   .filter(v=>/^\d+(?:[.,]\d+)?$/.test(v))
+   .map(v=>Number(v.replace(",",".")));
+ if(!windCells.length)return [];
+
+ const windIndex=rows.indexOf(windRow);
+
+ // Windguru toont de richting meestal als pijltjes/rotatie in een rij vlak bij de windsnelheid.
+ // Lees zowel data-attributen/style-rotaties als tekstuele graden indien aanwezig.
+ let dirCells=[];
+ for(let i=Math.max(0,windIndex-3);i<=Math.min(rows.length-1,windIndex+3);i++){
+   if(i===windIndex)continue;
+   const cells=[...rows[i].querySelectorAll("td,th")];
+   const vals=cells.map(c=>{
+     const candidates=[
+       c.getAttribute("data-dir"),
+       c.getAttribute("data-direction"),
+       c.getAttribute("title"),
+       c.getAttribute("style"),
+       c.textContent
+     ].filter(Boolean).join(" ");
+     let m=candidates.match(/(?:rotate\(|dir(?:ection)?[=: ]+)?(-?\d{1,3}(?:\.\d+)?)\s*(?:deg|°)/i);
+     return m?Number(m[1]):null;
+   }).filter(v=>v!==null&&Number.isFinite(v));
+   if(vals.length>=Math.max(2,Math.floor(windCells.length/3))){
+     dirCells=vals;break;
+   }
+ }
+
+ // Datumrij met colspans.
+ let expandedDates=[];
+ const dateRow=rows.slice(Math.max(0,windIndex-5),windIndex)
+   .reverse()
+   .find(r=>[...r.querySelectorAll("td,th")].some(c=>/\d{1,2}\.\s*(?:Mo|Tu|We|Th|Fr|Sa|Su)/i.test((c.textContent||"").trim())));
+ if(dateRow){
+   [...dateRow.querySelectorAll("td,th")].forEach(c=>{
+     const txt=(c.textContent||"").trim();
+     if(!/\d{1,2}\./.test(txt))return;
+     const span=Math.max(1,Number(c.getAttribute("colspan")||1));
+     for(let j=0;j<span;j++)expandedDates.push(txt);
+   });
+ }
+
+ if(expandedDates.length&&expandedDates.length<windCells.length){
+   const filled=[], per=Math.ceil(windCells.length/expandedDates.length);
+   expandedDates.forEach(v=>{for(let i=0;i<per;i++)filled.push(v)});
+   expandedDates=filled.slice(0,windCells.length);
+ }
+
+ const groups=new Map();
+ windCells.forEach((speed,i)=>{
+   const label=expandedDates[i]||"";
+   let dateKey=windguruDayKeyFromCell(label,new Date().getFullYear());
+   if(!dateKey)dateKey=key(new Date(Date.now()+Math.floor(i/8)*86400000));
+   if(!groups.has(dateKey))groups.set(dateKey,{speeds:[],dirs:[]});
+   groups.get(dateKey).speeds.push(speed);
+   if(Number.isFinite(dirCells[i]))groups.get(dateKey).dirs.push(dirCells[i]);
+ });
+
+ return [...groups.entries()].sort().map(([date,g])=>{
+   const deg=circularMeanDeg(g.dirs);
+   const dir=deg===null?null:windDirArrow(deg);
+   return {
+     date,
+     min:Math.round(Math.min(...g.speeds)),
+     max:Math.round(Math.max(...g.speeds)),
+     avg:Math.round(g.speeds.reduce((a,b)=>a+b,0)/g.speeds.length),
+     direction:dir?.[0]||"",
+     arrow:dir?.[1]||""
+   };
+ });
+}
+async function loadWindguruForecast(){
+ const urls=[
+   WINDGURU_DUINBERGEN_EMBED,
+   "https://api.allorigins.win/raw?url="+encodeURIComponent(WINDGURU_DUINBERGEN_EMBED)
+ ];
+ for(const url of urls){
+   try{
+     const r=await fetch(url,{cache:"no-store"});
+     if(!r.ok)continue;
+     const txt=await r.text();
+     const parsed=parseWindguruForecast(txt);
+     if(parsed.length){
+       const today=realTodayKey();
+       windguruDaily=[0,1,2].map(offset=>{
+         const target=mobileAddDays(today,offset);
+         return parsed.find(x=>x.date===target)||parsed[offset]||null;
+       });
+       if(window.lastWeatherData)renderThreeDayWeather(window.lastWeatherData);
+       return;
+     }
+   }catch(e){}
+ }
+ windguruDaily=[null,null,null];
+}
+
+function windguruInline(i){
+ const w=windguruDaily[i];
+ const dir=w?.direction?` ${w.direction}${w.arrow?` ${w.arrow}`:""}`:"";
+ const text=w?`💨 ${w.min}–${w.max} kt${dir}`:"💨 Windguru ↗";
+ const title=w?`Windguru Duinbergen · wind ${w.min}–${w.max} knopen${w.direction?` · uit ${w.direction}`:""}`:"Windguru Duinbergen";
+ return `<span class="windguru-inline"><a href="${WINDGURU_DUINBERGEN_URL}" target="_blank" rel="noopener" title="${title}">${text}</a></span>`;
+}
+
+
+function recommendedOutfit(temp){
+ const t=Number(temp);
+ if(!Number.isFinite(t))return "";
+ if(t>=25)return "😎 tanktop + short";
+ if(t>=20)return "👕 T-shirt + short";
+ if(t>=15)return "🧥 hoodie + lange broek";
+ return "🥶 jas + lange broek";
+}
+
+function recommendedWetsuit(temp){
+ const t=Number(temp);
+ if(!Number.isFinite(t))return "";
+ // Dit is een praktische Lakeside-richtlijn, geen veiligheidsnorm.
+ if(t>=20)return "🏄 shorty";
+ if(t>=17)return "🏄 3/2 mm";
+ if(t>=13)return "🏄 4/3 mm";
+ return "🏄 5/4 mm";
+}
+
+function weatherFunInline(temp){
+ const outfit=recommendedOutfit(temp);
+ const wetsuit=recommendedWetsuit(temp);
+ if(!outfit&&!wetsuit)return "";
+ return `<span class="weather-fun-tip"><span class="outfit">· ${outfit}</span><span class="wetsuit"> · ${wetsuit}</span></span>`;
+}
+
 function renderThreeDayWeather(d){
  const box=$("scheduleWeatherForecast");
  if(!box)return;
@@ -5923,19 +8771,95 @@ function renderThreeDayWeather(d){
      <div class="schedule-weather-copy">
        <strong>${labels[i]||new Date(date+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"short"})}</strong>
        <span class="schedule-weather-temp">${hi==null?"–":Math.round(hi)+"°C"}</span>
-       <small>${weatherText(code)}${lo==null?"":" · min "+Math.round(lo)+"°"}</small>
+       <small>${weatherText(code)}${lo==null?"":" · min "+Math.round(lo)+"°"}${windguruInline(i)}${weatherFunInline(hi)}</small>
      </div>
    </div>`;
  }).join("") || '<div class="schedule-weather-loading">Weer tijdelijk niet beschikbaar</div>';
 }
+
+let latestWaterTemp=null;
+let latestWaterLabel="";
+
+function extractWaterTemperature(text){
+ const clean=String(text||"").replace(/\s+/g," ");
+ const m=clean.match(/Watertemperatuur:\s*([0-9]+(?:[.,][0-9]+)?)\s*°?C\s*(?:\(([^)]+)\))?/i);
+ if(!m)return null;
+ return {
+   value:Number(m[1].replace(",",".")),
+   label:(m[2]||"").trim()
+ };
+}
+
+function updateWaterTempUI(){
+ const water=latestWaterTemp==null?"–":latestWaterTemp.toFixed(1).replace(".",",")+"°C";
+ const suffix=latestWaterLabel?` · ${latestWaterLabel}`:"";
+
+ const weatherEl=$("weather");
+ if(weatherEl){
+   let chip=$("weatherWaterTemp");
+   if(!chip){
+     chip=document.createElement("span");
+     chip.id="weatherWaterTemp";
+     chip.className="water-temp-inline";
+     weatherEl.appendChild(chip);
+   }
+   chip.textContent=`💧 water ${water}`;
+ }
+
+ if($("mobileHeaderWeather")){
+   const base=$("mobileHeaderWeather").dataset.airWeather||$("mobileHeaderWeather").textContent.split(" · 💧")[0];
+   $("mobileHeaderWeather").textContent=`${base} · 💧 ${water}`;
+ }
+
+ const forecast=$("scheduleWeatherForecast");
+ if(forecast){
+   let strip=$("scheduleWaterStrip");
+   if(!strip){
+     strip=document.createElement("div");
+     strip.id="scheduleWaterStrip";
+     strip.className="schedule-water-strip";
+     forecast.appendChild(strip);
+   }
+   strip.textContent=`💧 Watertemperatuur Duinenwater: ${water}${suffix}`;
+ }
+}
+
+async function loadWaterTemperature(){
+ const source="https://www.lakesideparadise.be/test-temperatuur/";
+ const urls=[
+   source,
+   "https://api.allorigins.win/raw?url="+encodeURIComponent(source)
+ ];
+
+ for(const url of urls){
+   try{
+     const r=await fetch(url,{cache:"no-store"});
+     if(!r.ok)continue;
+     const text=await r.text();
+     const found=extractWaterTemperature(text);
+     if(found){
+       latestWaterTemp=found.value;
+       latestWaterLabel=found.label;
+       updateWaterTempUI();
+       return;
+     }
+   }catch(e){}
+ }
+
+ // Weer blijft werken als de externe watertemperatuur tijdelijk niet geladen kan worden.
+ latestWaterTemp=null;
+ latestWaterLabel="";
+ updateWaterTempUI();
+}
+
 async function loadWeather(){
  try{
    const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBrussels&forecast_days=3",{cache:"no-store"});
-   const d=await r.json(),c=d.current||{};let rain="";
+   const d=await r.json(),c=d.current||{};window.lastWeatherData=d;let rain="";
    if(d.hourly?.time?.length){let bi=0,bd=Infinity,now=new Date();d.hourly.time.forEach((t,i)=>{const z=Math.abs(new Date(t)-now);if(z<bd){bd=z;bi=i}});const ch=d.hourly.precipitation_probability?.[bi];if(ch!=null)rain=` · regen ${Math.round(ch)}%`}
    $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${Math.round(c.wind_speed_10m)} km/u${rain}</span>`;
-   if($("mobileHeaderWeather"))$("mobileHeaderWeather").textContent=`${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°C`;
-   renderThreeDayWeather(d);
+   if($("mobileHeaderWeather")){const air=`${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°C`;$("mobileHeaderWeather").dataset.airWeather=air;$("mobileHeaderWeather").textContent=air;}
+   renderThreeDayWeather(d);updateWaterTempUI();
  }catch(e){
    $("weather").textContent="Weer tijdelijk niet beschikbaar";
    if($("mobileHeaderWeather"))$("mobileHeaderWeather").textContent="Weer n/b";
@@ -5943,6 +8867,8 @@ async function loadWeather(){
  }
 }
 loadWeather();
+loadWindguruForecast();
+loadWaterTemperature();
 setTodayHeader();
 updateNotifyUI();
 updateAdminLoginVisibility();
@@ -6187,7 +9113,7 @@ document.addEventListener("visibilitychange",()=>{
   });
   window.addEventListener("resize",syncDesktopHeader);
   document.addEventListener("click",e=>{
-    if(e.target.closest("#crewPlannerTab,#studentPlannerTab,#studentDashboardBtn")){
+    if(e.target.closest("#crewPlannerTab,#studentPlannerTab,#todoPlannerTab,#studentDashboardBtn")){
       setTimeout(syncDesktopHeader,50);
       setTimeout(syncDesktopHeader,250);
     }
