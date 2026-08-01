@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13-ALERT-WHATSAPP-GROUP-2026-08-01">
+<meta name="cablecrew-version" content="V13-MOBILE-TABS-FIX-2026-08-01">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -9819,5 +9819,59 @@ document.addEventListener("visibilitychange",()=>{
   });
 })();
 </script>
+
+<style id="v13-mobile-tabs-order-fix">
+@media(max-width:720px){
+  /* Tabs altijd direct onder de weerkaart en boven de datumkiezer. */
+  .planner-tabs{
+    position:relative!important;
+    top:auto!important;
+    z-index:40!important;
+    width:100%!important;
+    margin:0!important;
+    padding:9px 12px!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:10px!important;
+    overflow:visible!important;
+    background:#fff!important;
+    border-top:0!important;
+    border-bottom:1px solid #edf1f4!important;
+  }
+  .planner-tab{
+    position:relative!important;
+    z-index:2!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+  }
+  #mobileDayScroller{
+    position:relative!important;
+    z-index:30!important;
+    margin:0!important;
+  }
+}
+</style>
+<script>
+/* V13: vaste mobiele volgorde: weer > tabs > datums. */
+(function(){
+  function fixMobilePlannerOrder(){
+    const weather=document.getElementById('scheduleOverviewHeader');
+    const tabs=document.querySelector('.planner-tabs');
+    const days=document.getElementById('mobileDayScroller');
+    if(!weather||!tabs||!days)return;
+    if(weather.nextElementSibling!==tabs){
+      weather.insertAdjacentElement('afterend',tabs);
+    }
+    if(tabs.nextElementSibling!==days){
+      tabs.insertAdjacentElement('afterend',days);
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fixMobilePlannerOrder);
+  else fixMobilePlannerOrder();
+  window.addEventListener('load',fixMobilePlannerOrder);
+  window.addEventListener('resize',fixMobilePlannerOrder);
+})();
+</script>
+
 </body>
 </html>
