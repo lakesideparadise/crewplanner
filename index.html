@@ -3233,6 +3233,34 @@ input:focus,select:focus,textarea:focus{
   #activityModal .activity-employee-choices,
   #activityModal .activity-zone-choices{max-height:150px}
 }
+
+/* ===== V13.1 ADMIN ACTIEBALK: PRIMAIRE ACTIE DUIDELIJKER ===== */
+.admin-actionbar{grid-template-columns:minmax(230px,1fr) minmax(0,2fr)!important}
+.admin-main-actions{align-items:flex-start!important}
+.admin-primary-action{display:flex;flex-direction:column;gap:6px;min-width:190px}
+.admin-primary-action .add-action{
+  width:100%;background:linear-gradient(135deg,#ffd35a,#f4b928)!important;
+  color:#102f49!important;border-color:#e4aa1f!important;
+  box-shadow:0 5px 14px rgba(220,156,16,.24)!important
+}
+.admin-primary-action .edit-hint{
+  display:block!important;width:100%!important;min-height:0!important;
+  padding:2px 4px!important;border:0!important;border-radius:0!important;
+  background:transparent!important;color:#fff!important;
+  text-align:center;font-size:11px!important;font-weight:750!important;
+  line-height:1.25;box-shadow:none!important
+}
+body.contract-manager .admin-primary-action .edit-hint{display:none!important}
+@media(max-width:1100px){
+  .admin-actionbar{grid-template-columns:1fr!important}
+  .admin-main-actions{grid-column:auto!important}
+}
+@media(max-width:720px){
+  .admin-main-actions{display:grid!important;grid-template-columns:1fr 1fr!important}
+  .admin-primary-action{grid-column:1/-1;min-width:0}
+  .admin-primary-action .add-action{grid-column:auto!important}
+  .admin-primary-action .edit-hint{font-size:10px!important}
+}
 </style>
 
 </head>
@@ -3521,10 +3549,11 @@ input:focus,select:focus,textarea:focus{
         </div>
       </div>
 
-      <span class="edit-hint">Klik op een shift om te bewerken</span>
-
       <div class="admin-main-actions">
-        <button id="addShiftBtn" class="admin-action add-action">＋ <span>Shift toevoegen</span></button>
+        <div class="admin-primary-action">
+          <button id="addShiftBtn" class="admin-action add-action">＋ <span>Shift toevoegen</span></button>
+          <span class="edit-hint">Klik op een shift om te bewerken</span>
+        </div>
         <button id="addActivityBtn" class="admin-action">🏫 <span>School / Splash</span></button>
         <button id="duplicateDayBtn" class="admin-action">📄 <span>Dag kopiëren</span></button>
         <button id="copyWeekBtn" class="admin-action">🗓️ <span>Week kopiëren</span></button>
@@ -3633,9 +3662,11 @@ input:focus,select:focus,textarea:focus{
         <span class="admin-avatar">🎓</span>
         <div><strong id="studentAdminWho">Jobstudenten</strong><small>Beheerder</small></div>
       </div>
-      <span class="edit-hint">Klik op een shift om te bewerken</span>
       <div class="admin-main-actions">
-        <button id="studentAddShiftBtn" class="admin-action add-action" type="button">＋ <span>Shift toevoegen</span></button>
+        <div class="admin-primary-action">
+          <button id="studentAddShiftBtn" class="admin-action add-action" type="button">＋ <span>Shift toevoegen</span></button>
+          <span class="edit-hint">Klik op een shift om te bewerken</span>
+        </div>
         <button id="studentCopyDayBtn" class="admin-action" type="button">📄 <span>Dag kopiëren</span></button>
         <button id="studentCopyWeekBtn" class="admin-action" type="button">🗓️ <span>Week kopiëren</span></button>
         <button id="studentManageBtn" class="admin-action" type="button">👤 <span>Studenten beheren</span></button>
