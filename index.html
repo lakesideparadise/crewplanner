@@ -8101,6 +8101,7 @@ function setPlannerTab(tab){
  updateDailyPlanningPreferenceUI();
  renderMobileDayScroller();
 }
+window.setPlannerTab=setPlannerTab;
 $("crewPlannerTab").onclick=()=>setPlannerTab("crew");
 $("studentPlannerTab").onclick=()=>setPlannerTab("students");
 $("todoPlannerTab").onclick=()=>setPlannerTab("todo");
@@ -10135,10 +10136,12 @@ document.addEventListener("visibilitychange",()=>{
     if(tabs&&days&&tabs.nextElementSibling!==days) tabs.insertAdjacentElement('afterend',days);
   }
   function openTab(id){
-    if(typeof window.setPlannerTab!=='function')return;
-    if(id==='crewPlannerTab')window.setPlannerTab('crew');
-    if(id==='studentPlannerTab')window.setPlannerTab('students');
-    if(id==='todoPlannerTab')window.setPlannerTab('todo');
+    const fn=(typeof window.setPlannerTab==='function')?window.setPlannerTab:
+      ((typeof setPlannerTab==='function')?setPlannerTab:null);
+    if(!fn)return;
+    if(id==='crewPlannerTab')fn('crew');
+    if(id==='studentPlannerTab')fn('students');
+    if(id==='todoPlannerTab')fn('todo');
   }
   function bindTabs(){
     ['crewPlannerTab','studentPlannerTab','todoPlannerTab'].forEach(function(id){
@@ -10167,5 +10170,30 @@ document.addEventListener("visibilitychange",()=>{
       if(card)card.scrollTop=0;
     }
   }).observe(modal,{attributes:true,attributeFilter:['class']});
+})();
+</script>
+
+<script id="v13-71-planner-tab-click-fix">
+(function(){
+  let last=0;
+  function activate(btn,e){
+    const now=Date.now();
+    if(now-last<250)return;
+    last=now;
+    const fn=(typeof window.setPlannerTab==='function')?window.setPlannerTab:null;
+    if(!fn)return;
+    if(e){e.preventDefault();e.stopPropagation();}
+    if(btn.id==='crewPlannerTab')fn('crew');
+    else if(btn.id==='studentPlannerTab')fn('students');
+    else if(btn.id==='todoPlannerTab')fn('todo');
+  }
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest&&e.target.closest('#crewPlannerTab,#studentPlannerTab,#todoPlannerTab');
+    if(btn)activate(btn,e);
+  },true);
+  document.addEventListener('touchend',function(e){
+    const btn=e.target.closest&&e.target.closest('#crewPlannerTab,#studentPlannerTab,#todoPlannerTab');
+    if(btn)activate(btn,e);
+  },{capture:true,passive:false});
 })();
 </script>
