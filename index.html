@@ -2087,7 +2087,7 @@ body.admin-active .shift:hover{background:#fff8e8}
 .contract-row{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(240px,1.3fr) auto;gap:10px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fff}
 .contract-row.needs{border-left:5px solid #d92d20}.contract-row.ok{border-left:5px solid #2b8a57}
 .contract-person{font-weight:900}.contract-meta{font-size:11px;color:var(--muted);margin-top:3px}.contract-status{font-size:12px;font-weight:850;line-height:1.4}
-.contract-actions button{padding:7px 9px;font-size:11px}
+.contract-actions{display:flex;gap:6px;flex-wrap:wrap}.contract-actions button{padding:7px 9px;font-size:11px}.contract-remove-btn{background:#fff0f0;color:#9b1c1c;border-color:#efb4b4}.contract-hidden-box{margin-top:12px;padding:10px 12px;border:1px dashed #c9d5de;border-radius:11px;background:#f8fafb}.contract-hidden-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.contract-hidden-list{display:grid;gap:6px;margin-top:8px}.contract-hidden-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:9px}.contract-hidden-row button{padding:6px 8px;font-size:11px}
 #contractsBtn.contract-alert::before{content:attr(data-count);position:absolute;right:9px;top:8px;z-index:2;min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:grid;place-items:center;background:#d92d20;color:#fff;font-size:10px;font-weight:900}
 body.contract-manager .admin-main-actions,body.contract-manager .admin-actionbar .edit-hint{display:none!important}
 body.contract-manager .admin-tool-card:not(#contractsBtn){display:none!important}
@@ -3137,6 +3137,104 @@ input:focus,select:focus,textarea:focus{
   .schedule-weather-wind{font-size:9px;white-space:normal;line-height:1.15}
 }
 </style>
+
+<style id="v13-modal-viewport-fix">
+/* V13: alle grote pop-ups blijven volledig binnen het zichtbare scherm. */
+.modalback{
+  padding:16px!important;
+  align-items:center!important;
+  overflow:hidden!important;
+}
+.modalback .modal{
+  max-height:calc(100dvh - 32px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-gutter:stable;
+}
+
+/* De School/Splash-popup uit de melding: ruimer op desktop, maar nooit hoger dan het scherm. */
+#activityModal .activity-modal{
+  width:min(920px,calc(100vw - 32px))!important;
+  max-height:calc(100dvh - 32px)!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+#activityModal .formgrid,
+#activityModal .activity-preview{
+  flex:0 0 auto;
+}
+#activityModal .activity-employee-choices,
+#activityModal .activity-zone-choices{
+  max-height:230px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-right:4px;
+}
+
+/* Actieknoppen blijven bereikbaar terwijl de inhoud scrolt. */
+.modalback .modal > .modalactions,
+.modalback .modal > .crew-contacts-footer,
+.modalback .modal > .student-manage-footer{
+  position:sticky!important;
+  bottom:-1px!important;
+  z-index:10!important;
+  background:#fff!important;
+  border-top:1px solid #e6edf2!important;
+  padding:12px 0 2px!important;
+  margin-top:14px!important;
+  box-shadow:0 -8px 16px rgba(255,255,255,.94);
+}
+
+/* Brede tabellen blijven bruikbaar zonder dat de volledige popup wordt afgesneden. */
+.report-table-wrap,
+.table-scroll,
+.contract-table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.report-table{min-width:680px}
+
+@media(max-width:720px){
+  .modalback{
+    align-items:flex-end!important;
+    padding:10px 10px calc(82px + env(safe-area-inset-bottom))!important;
+  }
+  .modalback .modal,
+  #activityModal .activity-modal{
+    width:100%!important;
+    max-height:calc(100dvh - 104px - env(safe-area-inset-bottom))!important;
+    border-radius:22px 22px 12px 12px!important;
+  }
+  #activityModal .activity-employee-choices,
+  #activityModal .activity-zone-choices{
+    max-height:none;
+  }
+  .modalback .modal > .modalactions{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  .modalback .modal > .modalactions button{
+    width:100%!important;
+    min-height:46px!important;
+  }
+}
+
+@media(max-height:650px) and (min-width:721px){
+  .modalback{padding:8px!important}
+  .modalback .modal,
+  #activityModal .activity-modal{
+    max-height:calc(100dvh - 16px)!important;
+  }
+  #activityModal .activity-employee-choices,
+  #activityModal .activity-zone-choices{max-height:150px}
+}
+</style>
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -3951,6 +4049,10 @@ input:focus,select:focus,textarea:focus{
   <div id="contractEventList" class="contract-event-list"></div>
   <div id="contractHelp" class="contract-help"></div>
   <div id="contractList" class="contract-list"></div>
+  <div class="contract-hidden-box">
+    <div class="contract-hidden-head"><b>Verborgen personen</b><button id="toggleHiddenContractsBtn" type="button">Tonen</button></div>
+    <div id="contractHiddenList" class="contract-hidden-list" style="display:none"></div>
+  </div>
 </div></div>
 
 <div id="contractEditModal" class="modalback"><div class="modal">
@@ -6154,6 +6256,7 @@ async function saveTodo(){
 
 
 let contractRecords=[];
+let contractHiddenPeople=[];
 let contractView="student";
 let contractEditing=null;
 
@@ -6239,6 +6342,9 @@ function contractCovers(type,name,date){
    c.start<=date && c.end>=date
  );
 }
+function isContractPersonHidden(type,name){
+ return contractHiddenPeople.some(x=>x.type===type && normalizedPersonName(x.person)===normalizedPersonName(name));
+}
 function contractOverview(type){
  const names=type==="student"
    ?[...new Set(studentShifts.map(x=>x.employee).filter(Boolean))]
@@ -6246,6 +6352,7 @@ function contractOverview(type){
 
  const rows=[];
  names.forEach(name=>{
+   if(isContractPersonHidden(type,name))return;
    const rule=type==="crew"?crewContractRule(name):null;
 
    // Vaste medewerkers met contract van onbepaalde duur hoeven niet in de actielijst te staan.
@@ -6432,9 +6539,10 @@ function renderContracts(){
      status=`✅ In orde: ${contractDate(r.contract.start)} – ${contractDate(r.contract.end)}`;
    }
 
-   const action=builtIn && !ibeReminder
+   const editAction=builtIn && !ibeReminder
      ?`<span class="contract-known">Geen actie nodig</span>`
      :`<button data-contract="${r.type}" data-person="${esc(r.name)}" data-start="${r.period.start}" data-end="${r.period.end}">${r.needs?"Registreren":ibeReminder?"Nakijken / registreren":"Aanpassen"}</button>`;
+   const action=`${editAction}<button class="contract-remove-btn" data-hide-contract-person="1" data-type="${r.type}" data-person="${esc(r.name)}">Verwijderen uit lijst</button>`;
 
    return `<div class="contract-row ${rowClass}">
      <div><div class="contract-person">${esc(r.name)}</div><div class="contract-meta">${r.period.dates.length} geplande dag${r.period.dates.length===1?"":"en"} · ${esc(r.period.label||r.period.start.slice(0,7))}</div></div>
@@ -6444,6 +6552,7 @@ function renderContracts(){
  }).join(""):'<div class="empty">Geen ingeplande personen gevonden.</div>';
  updateContractBadge();
  renderContractEvents();
+ renderHiddenContractPeople();
 }
 function openContractEdit(type,name,start,end=""){
  contractEditing={type,name};
@@ -6463,6 +6572,28 @@ function openContractEdit(type,name,start,end=""){
  $("contractEditTitle").textContent=`Contract registreren · ${name}`;
  $("contractEditModal").classList.add("show");
 }
+
+function renderHiddenContractPeople(){
+ const list=$("contractHiddenList");
+ if(!list)return;
+ const rows=contractHiddenPeople
+   .filter(x=>x.type===contractView)
+   .sort((a,b)=>String(a.person||"").localeCompare(String(b.person||""),"nl"));
+ list.innerHTML=rows.length?rows.map(x=>`<div class="contract-hidden-row"><span><b>${esc(x.person)}</b> · ${x.type==="student"?"Jobstudent":"Medewerker"}</span><button data-restore-contract-person="${esc(x._id||"")}">Terugzetten</button></div>`).join(""):'<div class="empty">Geen verborgen personen.</div>';
+}
+async function hideContractPerson(type,person){
+ if(!(isPlannerAdmin()||isContractManager()))return alert("Je hebt geen toegang om deze lijst aan te passen.");
+ if(!confirm(`${person} verwijderen uit de contractenlijst? De planning zelf wordt niet verwijderd.`))return;
+ try{
+   const existing=contractHiddenPeople.find(x=>x.type===type&&normalizedPersonName(x.person)===normalizedPersonName(person));
+   if(!existing)await addDoc(collection(db,"contractHiddenPeople"),{type,person,createdAt:new Date().toISOString(),createdBy:user?.email||""});
+ }catch(e){alert("Verwijderen uit de lijst mislukt: "+e.message)}
+}
+async function restoreContractPerson(id){
+ if(!(isPlannerAdmin()||isContractManager()))return alert("Je hebt geen toegang om deze lijst aan te passen.");
+ try{await deleteDoc(doc(db,"contractHiddenPeople",id))}catch(e){alert("Terugzetten mislukt: "+e.message)}
+}
+
 async function saveContractRecord(){
  if(!contractEditing)return;
  const start=$("contractStart").value,end=$("contractEnd").value,note=$("contractNote").value.trim();
@@ -6562,8 +6693,13 @@ $("contractStudentsTab").onclick=()=>{contractView="student";renderContracts()};
 $("contractCrewTab").onclick=()=>{contractView="crew";renderContracts()};
 $("cancelContractEdit").onclick=()=>$("contractEditModal").classList.remove("show");
 $("saveContractEdit").onclick=saveContractRecord;
+$("toggleHiddenContractsBtn").onclick=()=>{const list=$("contractHiddenList");const open=list.style.display!=="none";list.style.display=open?"none":"grid";$("toggleHiddenContractsBtn").textContent=open?"Tonen":"Verbergen";if(!open)renderHiddenContractPeople()};
 
 document.addEventListener("click",e=>{
+ const hideBtn=e.target.closest("[data-hide-contract-person]");
+ if(hideBtn){e.preventDefault();e.stopPropagation();hideContractPerson(hideBtn.dataset.type,hideBtn.dataset.person);return;}
+ const restoreBtn=e.target.closest("[data-restore-contract-person]");
+ if(restoreBtn){e.preventDefault();e.stopPropagation();restoreContractPerson(restoreBtn.dataset.restoreContractPerson);return;}
  const btn=e.target.closest("[data-contract]");
  if(!btn)return;
  e.preventDefault();
@@ -6741,6 +6877,13 @@ onSnapshot(collection(db,"zoneAlerts"),snap=>{
 onSnapshot(collection(db,"todoTasks"),snap=>{
  todoTasks=snap.docs.map(d=>({_id:d.id,...d.data()}));
  if($("todoMain")?.classList.contains("active"))renderTodo();
+});
+
+onSnapshot(collection(db,"contractHiddenPeople"),snap=>{
+ contractHiddenPeople=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ updateContractBadge();
+ renderContractEvents();
+ if($("contractsModal")?.classList.contains("show"))renderContracts();
 });
 
 onSnapshot(collection(db,"contracts"),snap=>{
@@ -7971,6 +8114,12 @@ $("mobileCalendarBtn").onclick=()=>{
  $("mobileDateCalendarModal").classList.add("show");
 };
 $("closeMobileDateCalendarBtn").onclick=()=>$("mobileDateCalendarModal").classList.remove("show");
+// Kalender sluiten wanneer je buiten het witte popupvenster op de donkere achtergrond klikt.
+$("mobileDateCalendarModal").addEventListener("click",event=>{
+  if(event.target === $("mobileDateCalendarModal")){
+    $("mobileDateCalendarModal").classList.remove("show");
+  }
+});
 $("mobileCalPrevMonth").onclick=()=>{
  mobileCalendarCursor=new Date(mobileCalendarCursor.getFullYear(),mobileCalendarCursor.getMonth()-1,1,12,0,0);
  renderMobileDateCalendar();
