@@ -10003,6 +10003,111 @@ document.addEventListener("visibilitychange",()=>{
 })();
 </script>
 
+
+
+<!-- V13.73: definitieve plannerwissel - toont jobstudentzones ook zonder ingeplande studenten -->
+<style id="v13-73-student-view-fix">
+@media(max-width:720px){
+  #studentMain.active{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    padding:10px 10px 100px!important;
+    margin:0!important;
+  }
+  #studentMain.active #studentDayPanel{display:block}
+  #studentMain.active .student-day-grid{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+  }
+  #studentMain.active .student-zone{display:block!important}
+}
+</style>
+<script id="v13-73-student-view-fix-script">
+(function(){
+  const original=window.setPlannerTab;
+
+  function ensureEmptyStudentZones(){
+    const grid=document.getElementById('studentDayGrid');
+    if(!grid)return;
+    if(grid.children.length)return;
+    const zones=[
+      ['PRO','pro'],
+      ['ROOKIE','rookie'],
+      ['VERHUUR','rental']
+    ];
+    grid.innerHTML=zones.map(function(item){
+      return '<section class="student-zone '+item[1]+'"><h2>'+item[0]+'</h2><div class="empty" style="padding:12px 14px">Geen planning</div></section>';
+    }).join('');
+  }
+
+  function forcePlannerView(tab){
+    const crew=tab==='crew';
+    const student=tab==='students';
+    const todo=tab==='todo';
+    const main=document.querySelector('main');
+    const studentMain=document.getElementById('studentMain');
+    const todoMain=document.getElementById('todoMain');
+
+    if(main){
+      main.style.display=crew?'':'none';
+      main.hidden=!crew;
+    }
+    if(studentMain){
+      studentMain.classList.toggle('active',student);
+      studentMain.style.display=student?'block':'none';
+      studentMain.hidden=!student;
+    }
+    if(todoMain){
+      todoMain.classList.toggle('active',todo);
+      todoMain.style.display=todo?'block':'none';
+      todoMain.hidden=!todo;
+    }
+
+    ['crewPlannerTab','studentPlannerTab','todoPlannerTab'].forEach(function(id){
+      const el=document.getElementById(id);
+      if(!el)return;
+      const on=(id==='crewPlannerTab'&&crew)||(id==='studentPlannerTab'&&student)||(id==='todoPlannerTab'&&todo);
+      el.classList.toggle('active',on);
+    });
+
+    if(student){
+      try{ if(typeof window.renderStudentAll==='function') window.renderStudentAll(); }
+      catch(e){ console.warn('Jobstudenten renderen:',e); }
+      try{ if(typeof renderStudentAll==='function') renderStudentAll(); }
+      catch(e){}
+      ensureEmptyStudentZones();
+      requestAnimationFrame(ensureEmptyStudentZones);
+      setTimeout(ensureEmptyStudentZones,100);
+      setTimeout(ensureEmptyStudentZones,500);
+    }
+  }
+
+  window.setPlannerTab=function(tab){
+    try{ if(typeof original==='function') original(tab); }catch(e){ console.warn('Plannerwissel:',e); }
+    forcePlannerView(tab);
+    requestAnimationFrame(function(){forcePlannerView(tab)});
+  };
+
+  function bindMobileSwitch(){
+    const bar=document.getElementById('mobilePlannerSwitchV72');
+    if(!bar)return;
+    bar.querySelectorAll('[data-mobile-plan]').forEach(function(btn){
+      btn.onpointerdown=function(e){
+        e.preventDefault();e.stopImmediatePropagation();
+        window.setPlannerTab(btn.dataset.mobilePlan);
+      };
+      btn.onclick=function(e){e.preventDefault();e.stopImmediatePropagation();};
+    });
+  }
+
+  function init(){bindMobileSwitch();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+  window.addEventListener('load',init);
+  setTimeout(init,300);setTimeout(init,1200);
+})();
+</script>
 </body>
 </html>
 
