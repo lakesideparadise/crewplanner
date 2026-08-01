@@ -3491,6 +3491,155 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   }
 }
 </style>
+
+<style id="v13-75-mobile-shift-edit-final">
+/* V13.75: definitieve mobiele shift-popup en betrouwbare tik om te bewerken. Desktop blijft ongewijzigd. */
+@media (max-width:720px){
+  #shiftModal{
+    padding:10px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    overflow:hidden!important;
+  }
+  #shiftModal.show{display:flex!important}
+  #shiftModal > .modal{
+    display:block!important;
+    position:relative!important;
+    width:calc(100vw - 20px)!important;
+    max-width:calc(100vw - 20px)!important;
+    min-width:0!important;
+    max-height:calc(100dvh - 20px)!important;
+    margin:0!important;
+    padding:16px!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    border-radius:18px!important;
+    box-sizing:border-box!important;
+  }
+  #shiftModal h2{margin:0 0 14px!important;font-size:21px!important}
+  #shiftModal .formgrid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:11px!important;
+    width:100%!important;
+  }
+  #shiftModal .formgrid > *{
+    grid-column:1!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  #shiftModal .formgrid label{
+    display:block!important;
+    margin:0!important;
+  }
+  #shiftModal input,
+  #shiftModal select,
+  #shiftModal textarea{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    height:auto!important;
+    min-height:50px!important;
+    max-height:none!important;
+    margin:5px 0 0!important;
+    padding:12px 13px!important;
+    border:1px solid var(--line)!important;
+    border-radius:11px!important;
+    background:#fff!important;
+    color:var(--text)!important;
+    font-size:16px!important;
+    font-weight:700!important;
+    line-height:1.2!important;
+    box-sizing:border-box!important;
+    -webkit-appearance:auto!important;
+    appearance:auto!important;
+  }
+  #shiftModal textarea{min-height:74px!important;resize:vertical!important}
+  #shiftModal input[type="date"],
+  #shiftModal input[type="time"]{
+    height:50px!important;
+    min-height:50px!important;
+    padding:0 12px!important;
+    line-height:normal!important;
+  }
+  #shiftModal input[type="date"]::-webkit-date-and-time-value,
+  #shiftModal input[type="time"]::-webkit-date-and-time-value{
+    min-height:0!important;
+    line-height:normal!important;
+    text-align:left!important;
+  }
+  #shiftModal .quicktimes{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+    width:100%!important;
+    margin:0!important;
+  }
+  #shiftModal .quicktimes span{grid-column:1/-1!important}
+  #shiftModal .quicktimes button{
+    width:100%!important;
+    min-width:0!important;
+    min-height:42px!important;
+    padding:8px 5px!important;
+  }
+  #shiftModal .modalactions{
+    position:static!important;
+    inset:auto!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+    margin:14px 0 0!important;
+    padding:12px 0 2px!important;
+    background:#fff!important;
+    border-top:1px solid #edf1f4!important;
+    z-index:auto!important;
+  }
+  #shiftModal .modalactions > button,
+  #shiftModal .modalactions > label{
+    position:static!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:46px!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  #shiftModal #whatsappAfterSaveWrap,
+  #shiftModal .keepadding,
+  #shiftModal #saveShift{grid-column:1/-1!important}
+  #shiftModal .shift-save-option,
+  #shiftModal .keepadding{
+    display:flex!important;
+    justify-content:flex-start!important;
+    padding:10px 12px!important;
+  }
+  #shiftModal .shift-save-option[style*="display: none"],
+  #shiftModal .keepadding[style*="display: none"]{display:none!important}
+  #shiftModal .shift-save-option input,
+  #shiftModal .keepadding input{
+    width:20px!important;
+    min-width:20px!important;
+    height:20px!important;
+    min-height:20px!important;
+    margin:0 8px 0 0!important;
+    padding:0!important;
+  }
+  body.admin-active .shift,
+  body.admin-mobile .shift,
+  body.admin-active .mini-shift,
+  body.admin-mobile .mini-shift{
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:rgba(15,75,109,.12);
+  }
+}
+</style>
+
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -9593,6 +9742,53 @@ loadWaterTemperature();
 setTodayHeader();
 updateNotifyUI();
 updateAdminLoginVisibility();
+
+// V13.76: uitsluitend mobiel — één tik op een crewshift opent betrouwbaar "Shift aanpassen".
+// Geen controle op pointerType, omdat iPhone/Safari dit niet altijd als "touch" rapporteert.
+// Desktopgedrag en desktop-CSS blijven volledig ongewijzigd.
+{
+  let mobileShiftTapStart=null;
+  let mobileShiftOpenedAt=0;
+
+  const openMobileCrewShift=(target,event)=>{
+    if(window.innerWidth>720 || !isPlannerAdmin())return false;
+    const row=target?.closest?.("[data-id]");
+    if(!row || target?.closest?.("[data-ack-shift]"))return false;
+    const shift=findShift(row.dataset.id);
+    if(!shift || shift.recordType==="activity")return false;
+    const now=Date.now();
+    if(now-mobileShiftOpenedAt<500)return true;
+    mobileShiftOpenedAt=now;
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    openShift(shift);
+    return true;
+  };
+
+  document.addEventListener("pointerdown",e=>{
+    if(window.innerWidth>720)return;
+    const row=e.target.closest?.("[data-id]");
+    if(!row)return;
+    mobileShiftTapStart={x:e.clientX,y:e.clientY,id:row.dataset.id};
+  },{passive:true,capture:true});
+
+  document.addEventListener("pointerup",e=>{
+    if(window.innerWidth>720 || !mobileShiftTapStart)return;
+    const start=mobileShiftTapStart;
+    mobileShiftTapStart=null;
+    if(Math.hypot(e.clientX-start.x,e.clientY-start.y)>14)return;
+    const row=e.target.closest?.("[data-id]");
+    if(!row || row.dataset.id!==start.id)return;
+    openMobileCrewShift(e.target,e);
+  },{capture:true});
+
+  // Click-fallback voor iOS-versies/PWA's waar pointerup niet betrouwbaar doorkomt.
+  document.addEventListener("click",e=>{
+    if(window.innerWidth>720)return;
+    openMobileCrewShift(e.target,e);
+  },{capture:true});
+}
+
 </script>
 
 <script>
