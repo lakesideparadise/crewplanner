@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="FINAL-FIXED-MOBILE-WEATHER-2026-08-01">
+<meta name="cablecrew-version" content="V13-ALERT-WHATSAPP-GROUP-2026-08-01">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -609,6 +609,10 @@ body.admin-active .shift:hover{background:#fff8e8}
 
 /* ===== V12.5 MOBILE APP EXPERIENCE ===== */
 .mobile-app-nav{display:none}
+.mobile-nav-alert{background:#d92d20!important;color:#fff!important;border-radius:14px!important}
+.mobile-nav-alert:disabled{background:#d9dee3!important;color:#8794a0!important;opacity:1!important}
+.mobile-nav-alert:not(:disabled){box-shadow:0 5px 14px rgba(217,45,32,.28)}
+.mobile-nav-alert .mobile-nav-icon{font-size:20px}
 
 @media(max-width:720px){
   html{background:#eef3f7}
@@ -774,7 +778,7 @@ body.admin-active .shift:hover{background:#fff8e8}
 
   .mobile-app-nav{
     position:fixed;left:8px;right:8px;bottom:8px;z-index:120;
-    display:grid;grid-template-columns:repeat(4,1fr);
+    display:grid;grid-template-columns:repeat(5,1fr);
     gap:4px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
     border:1px solid rgba(15,75,109,.09);
     border-radius:21px;
@@ -796,7 +800,7 @@ body.admin-active .shift:hover{background:#fff8e8}
     font-size:24px;box-shadow:0 4px 12px rgba(7,64,101,.24)
   }
   .mobile-nav-admin{display:none!important}
-  body.admin-mobile .mobile-app-nav{grid-template-columns:repeat(5,1fr)}
+  body.admin-mobile .mobile-app-nav{grid-template-columns:repeat(6,1fr)}
   body.admin-mobile .mobile-nav-admin{display:flex!important}
 }
 
@@ -929,10 +933,10 @@ body.admin-active .shift:hover{background:#fff8e8}
 
   /* Mobiele onderbalk */
   .mobile-app-nav{
-    grid-template-columns:repeat(4,1fr)!important;
+    grid-template-columns:repeat(5,1fr)!important;
     padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important
   }
-  body.admin-mobile .mobile-app-nav{grid-template-columns:repeat(5,1fr)!important}
+  body.admin-mobile .mobile-app-nav{grid-template-columns:repeat(6,1fr)!important}
   .mobile-nav-item{font-size:10px!important;min-height:50px!important}
   .mobile-nav-icon{font-size:19px!important}
 }
@@ -4665,6 +4669,15 @@ document.addEventListener("click",e=>{
  const x=findShift(el.dataset.id);if(x)openShift(x);
 });
 
+const LAKESIDE_OPERATORS_WHATSAPP_URL="https://chat.whatsapp.com/HNtNFVcIic90LXD2FufQFA?s=sw&p=i&ilr=2&amv=2";
+
+function openLakesideOperatorsGroup(message=""){
+ if(message && navigator.clipboard?.writeText){
+   navigator.clipboard.writeText(message).catch(()=>{});
+ }
+ window.open(LAKESIDE_OPERATORS_WHATSAPP_URL,"_blank","noopener");
+}
+
 function normalizeBelgianPhone(v){
  let s=String(v||"").replace(/[^\d+]/g,"");
  if(s.startsWith("00"))s="+"+s.slice(2);
@@ -4693,7 +4706,7 @@ function openWhatsAppShare(text){
 }
 $("whatsappGroupBtn").onclick=()=>{
  if(!isAdminUser())return;
- openWhatsAppShare(buildWhatsAppGroupText());
+ openLakesideOperatorsGroup(buildWhatsAppGroupText());
 };
 
 function crewPlannerDeepLink(v){
@@ -5348,29 +5361,40 @@ function alarmCanBeActivatedNow(){
 
 function updateZoneAlertButtonState(){
  const btn=$("zoneAlertBtn");
- if(!btn)return;
+ const mobileBtn=$("mobileNavAlert");
+ if(!btn && !mobileBtn)return;
 
  const person=alertPersonName();
 
  // Alleen crewleden zien de knop. Op mobiel blijft hij zichtbaar,
  // ook wanneer een ander tabblad openstaat.
  if(!person){
-   btn.style.display="none";
-   btn.disabled=true;
-   btn.title="Alarm is alleen beschikbaar voor crew";
+   if(btn){
+     btn.style.display="none";
+     btn.disabled=true;
+     btn.title="Alarm is alleen beschikbaar voor crew";
+   }
+   if(mobileBtn){
+     mobileBtn.disabled=true;
+     mobileBtn.title="Kies eerst je naam bij Mijn planning";
+   }
    return;
  }
- btn.style.display="";
+ if(btn)btn.style.display="";
 
  const active=currentActiveCrewShiftsFor(person);
  const enabled=active.length>0;
- btn.disabled=!enabled;
+ if(btn)btn.disabled=!enabled;
+ if(mobileBtn)mobileBtn.disabled=!enabled;
 
  if(!enabled){
-   btn.title="Alarm is alleen actief tijdens je ingeplande shift";
+   if(btn)btn.title="Alarm is alleen actief tijdens je ingeplande shift";
+   if(mobileBtn)mobileBtn.title="Alarm is alleen actief tijdens je ingeplande shift";
  }else{
    const zones=[...new Set(active.map(x=>x.zone))];
-   btn.title=`Alarm actief · ${zones.join(", ")}`;
+   const title=`Alarm actief · ${zones.join(", ")}`;
+   if(btn)btn.title=title;
+   if(mobileBtn)mobileBtn.title=title;
  }
 }
 
@@ -5431,7 +5455,7 @@ function openZoneAlert(){
  const msg=zoneAlertMessage(data);
 
  // Meteen WhatsApp openen; interne melding wordt op de achtergrond opgeslagen.
- window.open(whatsappShareUrl(msg),"_blank","noopener");
+ openLakesideOperatorsGroup(msg);
  addDoc(collection(db,"zoneAlerts"),data).catch(e=>console.warn("Zone-alert kon niet worden opgeslagen:",e));
 }
 function zonesForAlertFallback(){
@@ -5467,7 +5491,7 @@ async function sendZoneAlert(){
    // groep posten. We openen daarom WhatsApp met de melding reeds ingevuld; de gebruiker
    // kiest enkel nog "Lakeside Operators" en drukt op verzenden.
    const msg=zoneAlertMessage(data);
-   window.open(whatsappShareUrl(msg),"_blank","noopener");
+   openLakesideOperatorsGroup(msg);
  }catch(e){
    alert("Alarm kon niet worden opgeslagen: "+e.message);
  }
@@ -6475,6 +6499,7 @@ $("closeAlarmLogBtn").onclick=()=>$("alarmLogModal").classList.remove("show");
 $("cancelAlarmReportBtn").onclick=()=>{$("alarmReportModal").classList.remove("show");alarmReportEditing=null};
 $("saveAlarmReportBtn").onclick=saveAlarmReport;
 $("zoneAlertBtn").onclick=openZoneAlert;
+$("mobileNavAlert").onclick=openZoneAlert;
 $("cancelZoneAlertBtn").onclick=()=>$("zoneAlertModal").classList.remove("show");
 $("sendZoneAlertBtn").onclick=sendZoneAlert;
 
@@ -9063,6 +9088,9 @@ document.addEventListener("visibilitychange",()=>{
   </button>
   <button id="mobileNavAdminAdd" type="button" class="mobile-nav-item mobile-nav-admin" style="display:none">
     <span class="mobile-nav-plus">＋</span><span>Shift</span>
+  </button>
+  <button id="mobileNavAlert" type="button" class="mobile-nav-item mobile-nav-alert" disabled title="Alarm is alleen actief tijdens je ingeplande shift">
+    <span class="mobile-nav-icon">🚨</span><span>ALERT</span>
   </button>
 </nav>
 
