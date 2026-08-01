@@ -1842,6 +1842,14 @@ body.admin-active .shift:hover{background:#fff8e8}
   .selected-date-banner{margin:0 0 10px;padding:7px 10px;border-radius:9px;font-size:11px}
   .selected-date-banner strong{font-size:12px}
 }
+
+/* ===== V13.1 PLANNING PUBLICEREN VIA WHATSAPP ===== */
+.publish-planning-modal{width:min(620px,96vw);max-height:90vh;overflow:auto}
+.publish-period-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.publish-preview{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#f7fafc;white-space:pre-wrap;font-size:13px;line-height:1.45;max-height:260px;overflow:auto}
+.publish-help{font-size:12px;color:var(--muted);line-height:1.45;margin-top:7px}
+.publish-status{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:#eaf7ee;color:#176b3a;font-size:11px;font-weight:900}
+@media(max-width:620px){.publish-period-grid{grid-template-columns:1fr}}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -3263,6 +3271,67 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 }
 </style>
 
+
+<style id="v13-2-shift-modal-actions-fix">
+/* V13.2: de shift-popup houdt alle acties volledig zichtbaar op desktop en mobiel. */
+#shiftModal .modal{width:min(700px,calc(100vw - 32px))!important}
+#shiftModal .modalactions{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  align-items:stretch!important;
+  overflow:visible!important;
+}
+#shiftModal .modalactions button,
+#shiftModal .modalactions label{
+  min-width:0!important;
+  width:100%!important;
+}
+#shiftModal .modalactions button{white-space:normal!important}
+#shiftModal .shift-save-option,
+#shiftModal .keepadding{
+  min-height:44px;padding:8px 10px;border:1px solid #d7e0e7;border-radius:10px;
+  align-items:center;justify-content:center;gap:7px;text-align:left;
+  font-size:11px;font-weight:800;color:#51606b;background:#fff;
+}
+#shiftModal .shift-save-option input,
+#shiftModal .keepadding input{width:auto!important;flex:0 0 auto;margin:0}
+#shiftModal #saveShift{font-size:15px}
+
+@media(min-width:721px){
+  #shiftModal #deleteShift,
+  #shiftModal #duplicateShift,
+  #shiftModal #cancelShift{grid-row:1}
+  #shiftModal #whatsappAfterSaveWrap{grid-column:1/3;grid-row:2}
+  #shiftModal .keepadding{grid-column:3;grid-row:2}
+  #shiftModal #saveShift{grid-column:4;grid-row:2}
+}
+@media(max-width:720px){
+  #shiftModal .modalactions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #shiftModal #whatsappAfterSaveWrap,
+  #shiftModal .keepadding{grid-column:1/-1}
+  #shiftModal #saveShift{grid-column:1/-1;min-height:50px!important}
+}
+@media(max-width:390px){
+  #shiftModal .modalactions{grid-template-columns:1fr!important}
+  #shiftModal #whatsappAfterSaveWrap,
+  #shiftModal .keepadding,
+  #shiftModal #saveShift{grid-column:1!important}
+}
+</style>
+
+<style id="v13-6-whatsapp-change-markers">
+/* Shiftwijzigingen vallen op in dag- en weekweergave tot de medewerker ze aantikt. */
+.shift.has-planning-change{position:relative;background:#fff9df!important;box-shadow:inset 5px 0 0 #f2bd33}
+.shift.has-planning-change.is-changed{background:#eef6ff!important;box-shadow:inset 5px 0 0 #2d73a7}
+.change-badge{display:inline-flex!important;align-items:center;gap:5px}
+.change-dot,.mini-change-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2d73a7;box-shadow:0 0 0 3px rgba(45,115,167,.14)}
+.shift.is-new .change-dot{background:#e1a900;box-shadow:0 0 0 3px rgba(225,169,0,.15)}
+.mini-shift.has-planning-change{background:#eef6ff;border-radius:7px;padding:5px 6px!important;box-shadow:inset 3px 0 0 #2d73a7}
+.mini-change-dot{margin-right:5px;vertical-align:middle}
+.mini-change-label{display:inline-block;margin-left:4px;padding:2px 5px;border-radius:999px;background:#dceeff;color:#1f5e91;font-size:9px;font-weight:900;cursor:pointer}
+#whatsappAfterSaveWrap input:disabled{opacity:1}
+@media(max-width:720px){.change-badge{font-size:9px!important}.shift.has-planning-change{box-shadow:inset 4px 0 0 #2d73a7}}
+</style>
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -3596,7 +3665,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
         <span class="tool-icon">📱</span><span class="tool-copy"><b>WhatsApp nummers</b><small>Beheer namen en telefoonnummers.</small></span><span class="tool-arrow">›</span>
       </button>
       <button id="whatsappGroupBtn" class="admin-tool-card tool-teal">
-        <span class="tool-icon">💬</span><span class="tool-copy"><b>WhatsApp groep</b><small>Open WhatsApp en deel de planning.</small></span><span class="tool-arrow">›</span>
+        <span class="tool-icon">📣</span><span class="tool-copy"><b>Planning publiceren</b><small>Stuur één groepsbericht wanneer een periode klaar is.</small></span><span class="tool-arrow">›</span>
       </button>
       <button id="printBtn" class="admin-tool-card tool-slate">
         <span class="tool-icon">🖨️</span><span class="tool-copy"><b>Week afdrukken</b><small>Print de weekplanning of bewaar als PDF.</small></span><span class="tool-arrow">›</span>
@@ -4006,9 +4075,10 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   <div class="modalactions">
     <button id="deleteShift" class="danger">Verwijderen</button>
     <button id="duplicateShift">Dupliceren</button>
-    <button id="whatsappShiftBtn" type="button" style="display:none">💬 WhatsApp</button>
     <button id="cancelShift">Annuleren</button>
-    <label class="keepadding"><input id="keepAdding" type="checkbox"> Nog een shift toevoegen</label><button id="saveShift" class="success">Opslaan</button>
+    <label id="whatsappAfterSaveWrap" class="shift-save-option" style="display:none"><input id="whatsappAfterSave" type="checkbox"> Persoonlijk WhatsApp-bericht na opslaan</label>
+    <label class="keepadding"><input id="keepAdding" type="checkbox"> Nog een shift toevoegen</label>
+    <button id="saveShift" class="success">Opslaan</button>
   </div>
 </div></div>
 
@@ -4145,6 +4215,31 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   </div>
 </div></div>
 
+
+<div id="publishPlanningModal" class="modalback">
+  <div class="modal publish-planning-modal">
+    <div class="year-head">
+      <div>
+        <h2>📣 Planning publiceren</h2>
+        <div class="year-sub">Stuur pas één bericht naar de Lakeside Operators-groep wanneer de gekozen periode klaar is.</div>
+      </div>
+      <button id="closePublishPlanning" type="button">Sluiten</button>
+    </div>
+    <div class="publish-period-grid">
+      <label>Planning vanaf<input id="publishStartDate" type="date"></label>
+      <label>Planning klaar tot en met<input id="publishEndDate" type="date"></label>
+    </div>
+    <label style="display:block;margin-top:10px">Titel / extra boodschap
+      <input id="publishPlanningTitle" type="text" placeholder="bv. Nieuwe planning september" style="width:100%;margin-top:4px">
+    </label>
+    <div class="publish-help">Tijdens het opmaken van de planning worden geen berichten verstuurd. Gebruik deze knop pas wanneer bijvoorbeeld twee weken of een volledige maand afgewerkt is.</div>
+    <div id="publishPlanningPreview" class="publish-preview"></div>
+    <div class="modalactions">
+      <button id="cancelPublishPlanning" type="button">Annuleren</button>
+      <button id="sendPublishPlanning" class="success" type="button">💬 Open Operators-groep</button>
+    </div>
+  </div>
+</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -4571,8 +4666,9 @@ function activityBlockHtml(x,mini=false){
 
 function shiftHtml(x){
  const change=shiftChangeState(x._id);
- const badge=change?`<span class="change-badge ${change==="Gewijzigd"?"changed":""}" data-ack-shift="${esc(x._id||"")}">${change}</span>`:"";
- return `<div class="shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}">
+ const changedClass=change?` has-planning-change ${change==="Gewijzigd"?"is-changed":"is-new"}`:"";
+ const badge=change?`<span class="change-badge ${change==="Gewijzigd"?"changed":""}" data-ack-shift="${esc(x._id||"")}"><span class="change-dot"></span>${change}</span>`:"";
+ return `<div class="shift ${editMode?'editable':''}${changedClass}" data-id="${esc(x._id||'')}">
    <div><b>${esc(x.employee)}</b>${badge}</div>
    <div class="time">${esc(x.start)}–${esc(x.end)}${x.note?` <span class="note">📝 ${esc(x.note)}</span>`:""}</div></div>`;
 }
@@ -4704,7 +4800,7 @@ function renderWeek(){
          rows.length>0
        );
      }
-     if(rows.length||blocks.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${blocks.map(x=>activityBlockHtml(x,true)).join("")}${rows.map(x=>`<div class="mini-shift ${editMode?'editable':''}" data-id="${esc(x._id||'')}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("")}</div>`;
+     if(rows.length||blocks.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${blocks.map(x=>activityBlockHtml(x,true)).join("")}${rows.map(x=>{const ch=shiftChangeState(x._id);return `<div class="mini-shift ${editMode?'editable':''}${ch?' has-planning-change':''}" data-id="${esc(x._id||'')}"><b>${ch?'<span class="mini-change-dot"></span>':''}${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}${ch?` <span class="mini-change-label" data-ack-shift="${esc(x._id||'')}">${ch}</span>`:""}</div>`}).join("")}</div>`;
    });
    daysHtml+=`</section>`;
  }
@@ -4854,9 +4950,46 @@ function openWhatsAppShare(text){
  const url=`https://wa.me/?text=${encodeURIComponent(text)}`;
  window.open(url,"_blank","noopener");
 }
-$("whatsappGroupBtn").onclick=()=>{
+function monthStartKey(dateKey){
+ const d=parseKey(dateKey||realTodayKey());
+ return key(new Date(d.getFullYear(),d.getMonth(),1));
+}
+function buildPublishedPlanningText(){
+ const start=$("publishStartDate")?.value||monthStartKey($("date")?.value||realTodayKey());
+ const end=$("publishEndDate")?.value||($("date")?.value||realTodayKey());
+ const custom=($("publishPlanningTitle")?.value||"").trim();
+ const periodRows=shifts.filter(x=>x.date>=start&&x.date<=end&&x.zone!=="VERLOF");
+ const peopleCount=new Set(periodRows.map(x=>x.employee).filter(Boolean)).size;
+ const shiftCount=periodRows.length;
+ const title=custom||`Nieuwe planning beschikbaar`;
+ const period=start===end?label(start):`${label(start)} t.e.m. ${label(end)}`;
+ const link=`https://lakesideparadise.github.io/crewplanner/?tab=crew&date=${encodeURIComponent(start)}`;
+ return `📣 *${title}*\n\nDe planning is afgewerkt voor *${period}*.\n${shiftCount} shift${shiftCount===1?"":"s"} voor ${peopleCount} crewlid${peopleCount===1?"":"en"}.\n\nBekijk de planning hier:\n${link}\n\nControleer je eigen planning en meld eventuele fouten zo snel mogelijk.`;
+}
+function refreshPublishPlanningPreview(){
+ const el=$("publishPlanningPreview");
+ if(el)el.textContent=buildPublishedPlanningText();
+}
+function openPublishPlanningModal(){
  if(!isAdminUser())return;
- openLakesideOperatorsGroup(buildWhatsAppGroupText());
+ const selected=$("date")?.value||realTodayKey();
+ $("publishStartDate").value=monthStartKey(selected);
+ $("publishEndDate").value=selected;
+ const d=parseKey(selected);
+ $("publishPlanningTitle").value=`Nieuwe planning ${d.toLocaleDateString("nl-BE",{month:"long",year:"numeric"})}`;
+ refreshPublishPlanningPreview();
+ $("publishPlanningModal").classList.add("show");
+}
+$("whatsappGroupBtn").onclick=openPublishPlanningModal;
+$("closePublishPlanning").onclick=$("cancelPublishPlanning").onclick=()=>$("publishPlanningModal").classList.remove("show");
+["publishStartDate","publishEndDate","publishPlanningTitle"].forEach(id=>$(id)?.addEventListener("input",refreshPublishPlanningPreview));
+$("sendPublishPlanning").onclick=()=>{
+ const start=$("publishStartDate").value,end=$("publishEndDate").value;
+ if(!start||!end)return alert("Kies een begin- en einddatum.");
+ if(end<start)return alert("De einddatum moet op of na de begindatum liggen.");
+ const message=buildPublishedPlanningText();
+ openLakesideOperatorsGroup(message);
+ $("publishPlanningModal").classList.remove("show");
 };
 
 function crewPlannerDeepLink(v){
@@ -4874,20 +5007,42 @@ function buildWhatsAppText(v,kind="gewijzigd"){
  const note=v.note?`\nOpmerking: ${v.note}`:"";
  return `🔄 CableCrew – planning ${kind}\n${v.employee}, je shift op ${when} is ${kind}.\n${v.zone} · ${v.start}–${v.end}${note}\n\nOpen rechtstreeks in CableCrew:\n${link}`;
 }
-function openWhatsAppForShift(v,kind="gewijzigd"){
+function whatsappUrlForShift(v,kind="gewijzigd"){
  const phone=crewPhone(v.employee);
- if(!phone)return false;
+ if(!phone)return "";
  const digits=whatsappDigits(phone);
- if(!digits)return false;
- const url=`https://wa.me/${digits}?text=${encodeURIComponent(buildWhatsAppText(v,kind))}`;
+ if(!digits)return "";
+ return `https://wa.me/${digits}?text=${encodeURIComponent(buildWhatsAppText(v,kind))}`;
+}
+function buildMultiShiftWhatsAppText(employee,rows,kind="aangepast"){
+ const sorted=[...rows].sort((a,b)=>`${a.date} ${a.start}`.localeCompare(`${b.date} ${b.start}`));
+ const first=sorted[0]||{};
+ const action=kind==="gewijzigd"?"gewijzigd":kind==="toegevoegd"?"toegevoegd":"aangepast";
+ return `🟡 CableCrew – planning aangepast
+${employee}, er zijn meerdere shifts ${action} in je planning.
+
+Open de planner om de gemarkeerde shifts te bekijken:
+${crewPlannerDeepLink(first)}`;
+}
+function multiShiftWhatsAppUrl(employee,rows,kind="aangepast"){
+ const digits=whatsappDigits(crewPhone(employee));
+ if(!digits)return "";
+ return `https://wa.me/${digits}?text=${encodeURIComponent(buildMultiShiftWhatsAppText(employee,rows,kind))}`;
+}
+function openWhatsAppForShift(v,kind="gewijzigd"){
+ const url=whatsappUrlForShift(v,kind);
+ if(!url)return false;
  window.open(url,"_blank","noopener");
  return true;
 }
 function updateWhatsAppShiftButton(){
- const btn=$("whatsappShiftBtn");
- if(!btn)return;
+ const wrap=$("whatsappAfterSaveWrap");
+ const check=$("whatsappAfterSave");
+ if(!wrap||!check)return;
  const emp=$("editEmployee")?.value||editing?.employee||"";
- btn.style.display=isAdminUser() && !!crewPhone(emp) ? "inline-block" : "none";
+ const available=isAdminUser() && !!crewPhone(emp);
+ wrap.style.display=available ? "flex" : "none";
+ check.disabled=!available;
 }
 
 
@@ -4976,6 +5131,10 @@ async function saveMultiShifts(){
  });
  if(conflicts.length && !confirm(`⚠️ Er zijn overlappingen:\n\n${conflicts.slice(0,6).join("\n")}${conflicts.length>6?`\n… en nog ${conflicts.length-6}`:""}\n\nToch alles opslaan?`))return;
 
+ const sendWhatsApp=!!$("whatsappAfterSave")?.checked && !!multiShiftWhatsAppUrl(employee,rows,"toegevoegd");
+ let whatsappWindow=null;
+ if(sendWhatsApp)whatsappWindow=window.open("about:blank","_blank");
+
  try{
    const created=[];
    for(const r of rows){
@@ -4987,8 +5146,15 @@ async function saveMultiShifts(){
    $("shiftModal").classList.remove("show");
    setMultiShiftMode(false);
    $("multiShiftRows").innerHTML="";
-   alert(`${created.length} shifts voor ${employee} zijn opgeslagen.`);
- }catch(e){alert("Opslaan mislukt: "+e.message)}
+   if(whatsappWindow){
+     const url=multiShiftWhatsAppUrl(employee,created,"toegevoegd");
+     if(url)whatsappWindow.location.href=url; else whatsappWindow.close();
+   }
+   alert(`${created.length} shifts voor ${employee} zijn opgeslagen.${sendWhatsApp?" WhatsApp opent met één samengevoegd bericht.":""}`);
+ }catch(e){
+   if(whatsappWindow && !whatsappWindow.closed)whatsappWindow.close();
+   alert("Opslaan mislukt: "+e.message)
+ }
 }
 
 
@@ -5089,7 +5255,21 @@ function openShift(x=null){
  $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
  $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";updateLeaveFields();
  $("deleteShift").style.display=x?"inline-block":"none";$("duplicateShift").style.display=x?"inline-block":"none";
- $("keepAdding").checked=false;updateWhatsAppShiftButton();$("shiftModal").classList.add("show");
+ $("keepAdding").checked=false;updateWhatsAppShiftButton();
+ if($("whatsappAfterSaveWrap")){
+   $("whatsappAfterSaveWrap").style.display=x&&crewPhone($("editEmployee").value)?"flex":$("whatsappAfterSaveWrap").style.display;
+   if(x){
+     $("whatsappAfterSave").checked=true;
+     $("whatsappAfterSave").disabled=true;
+     const text=$("whatsappAfterSaveWrap").childNodes;
+     $("whatsappAfterSaveWrap").lastChild.textContent=" WhatsApp-bericht wordt automatisch geopend na opslaan";
+   }else{
+     $("whatsappAfterSave").disabled=false;
+     $("whatsappAfterSave").checked=false;
+     $("whatsappAfterSaveWrap").lastChild.textContent=" Persoonlijk WhatsApp-bericht na opslaan";
+   }
+ }
+ $("shiftModal").classList.add("show");
 }
 $("addShiftBtn").onclick=()=>openShift();
 $("addActivityBtn").onclick=()=>openActivity();
@@ -5242,14 +5422,6 @@ async function writeAudit(action,before,after){
  }catch(e){console.warn("Audit log:",e)}
 }
 
-$("whatsappShiftBtn").onclick=()=>{
- const v=formObj();
- const linked=editing?{...v,_id:editing._id}:v;
- if(!openWhatsAppForShift(linked,editing?"gewijzigd":"ingepland")){
-   alert("Voor deze medewerker is nog geen WhatsApp-nummer opgeslagen.");
- }
-};
-
 $("saveShift").onclick=async()=>{
  if(!editing && $("multiShiftMode")?.checked){await saveMultiShifts();return}
  const v=formObj();
@@ -5259,6 +5431,15 @@ $("saveShift").onclick=async()=>{
  }
 
  if(v.zone!=="VERLOF" && !await confirmAvailabilityOverride("crew",v.employee,v.date))return;
+
+ const sendWhatsApp=editing
+   ? !!whatsappUrlForShift(v,"gewijzigd")
+   : (!!$("whatsappAfterSave")?.checked && !!whatsappUrlForShift(v,"ingepland"));
+ let whatsappWindow=null;
+ if(sendWhatsApp){
+   // Open het tabblad rechtstreeks vanuit de klikactie; zo blokkeren mobiele browsers het minder snel.
+   whatsappWindow=window.open("about:blank","_blank");
+ }
 
  try{
    if(v.zone==="VERLOF" && !editing){
@@ -5281,6 +5462,10 @@ $("saveShift").onclick=async()=>{
      }));
 
      $("shiftModal").classList.remove("show");
+     if(whatsappWindow){
+       const url=whatsappUrlForShift(v,"ingepland");
+       if(url)whatsappWindow.location.href=url; else whatsappWindow.close();
+     }
      return;
    }
 
@@ -5290,16 +5475,22 @@ $("saveShift").onclick=async()=>{
 
    if(editing){
      if(!confirmZoneStillCovered(editing,v,"wijziging"))return;
-     await updateDoc(doc(db,"shifts",editing._id),v);
-     await writeAudit(v.zone==="VERLOF"?"Verlof gewijzigd":"Shift gewijzigd",before,v);
+     const changedValue={...v,planningChangedAt:Date.now(),planningChangedBy:(user?.email||"")};
+     await updateDoc(doc(db,"shifts",editing._id),changedValue);
+     await writeAudit(v.zone==="VERLOF"?"Verlof gewijzigd":"Shift gewijzigd",before,changedValue);
      $("shiftModal").classList.remove("show");
-     if(crewPhone(v.employee) && confirm(`Shift opgeslagen. WhatsApp-bericht openen voor ${v.employee}?`)){
-       openWhatsAppForShift({...v,_id:editing._id},"gewijzigd");
+     if(whatsappWindow){
+       const url=whatsappUrlForShift({...v,_id:editing._id},"gewijzigd");
+       if(url)whatsappWindow.location.href=url; else whatsappWindow.close();
      }
    }else{
      const createdRef=await addDoc(collection(db,"shifts"),v);
      const createdShift={...v,_id:createdRef.id};
      await writeAudit("Shift toegevoegd",null,v);
+     if(whatsappWindow){
+       const url=whatsappUrlForShift(createdShift,"ingepland");
+       if(url)whatsappWindow.location.href=url; else whatsappWindow.close();
+     }
      if($("keepAdding").checked){
        const keepDate=v.date, keepZone=v.zone;
        editing=null;
@@ -5312,12 +5503,12 @@ $("saveShift").onclick=async()=>{
        $("editEmployee").focus();
      }else{
        $("shiftModal").classList.remove("show");
-       if(crewPhone(v.employee) && confirm(`Shift opgeslagen. WhatsApp-bericht openen voor ${v.employee}?`)){
-         openWhatsAppForShift(createdShift,"ingepland");
-       }
      }
    }
- }catch(e){alert("Opslaan mislukt: "+e.message)}
+ }catch(e){
+   if(whatsappWindow && !whatsappWindow.closed)whatsappWindow.close();
+   alert("Opslaan mislukt: "+e.message)
+ }
 };
 $("deleteShift").onclick=async()=>{
  if(!editing)return;
@@ -7718,6 +7909,9 @@ function buildStudentWhatsAppGroupText(){
  return `🎓 Lakeside jobstudenten – planning ${label(d)}\n${summary}\n\nOpen de planning:\n${currentStudentShareLink()}`;
 }
 $("studentWhatsAppGroupBtn").onclick=()=>{
+ openPublishPlanningModal();
+ return;
+
  if(!isAdminUser())return;
  openWhatsAppShare(buildStudentWhatsAppGroupText());
 };
@@ -9383,6 +9577,23 @@ document.addEventListener("visibilitychange",()=>{
   });
 })();
 
+</script>
+<script>
+/* V13.1: alle pop-ups sluiten via achtergrondklik of Escape. */
+(function(){
+  function closeModalBackdrop(backdrop){
+    if(backdrop && backdrop.classList.contains("show"))backdrop.classList.remove("show");
+  }
+  document.addEventListener("click",function(e){
+    const backdrop=e.target.closest(".modalback");
+    if(backdrop && e.target===backdrop)closeModalBackdrop(backdrop);
+  });
+  document.addEventListener("keydown",function(e){
+    if(e.key!=="Escape")return;
+    const open=[...document.querySelectorAll(".modalback.show")].pop();
+    if(open)closeModalBackdrop(open);
+  });
+})();
 </script>
 </body>
 </html>
