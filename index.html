@@ -3120,6 +3120,23 @@ input:focus,select:focus,textarea:focus{
 <style id="weather-cleanup-final">
 .weather-fun-tip{display:none!important}
 </style>
+
+<style id="v13-weather-source-wind-fix">
+/* V13: 3-daags weer gebruikt exact dezelfde Open-Meteo respons als de header. */
+.schedule-weather-copy small{
+  white-space:normal!important;overflow:visible!important;text-overflow:clip!important;max-width:none!important;
+}
+.schedule-weather-details{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+.schedule-weather-condition{font-size:10px;color:rgba(255,255,255,.82)}
+.schedule-weather-wind{font-size:11px;font-weight:900;color:#fff;white-space:nowrap}
+@media(max-width:720px){
+  .schedule-weather-day{align-items:center!important}
+  .schedule-weather-copy{overflow:visible!important}
+  .schedule-weather-details{gap:2px}
+  .schedule-weather-condition{font-size:8px}
+  .schedule-weather-wind{font-size:9px;white-space:normal;line-height:1.15}
+}
+</style>
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -8760,37 +8777,55 @@ function compactWindDirection(deg){
  const i=Math.round((((Number(deg)||0)%360)+360)%360/45)%8;
  return {name:names[i],arrow:arrows[i]};
 }
-function windForecastInline(daily,i){
+function kmhToBft(kmh){
+ const v=Number(kmh);
+ if(!Number.isFinite(v))return null;
+ const limits=[1,6,12,20,29,39,50,62,75,89,103,118];
+ for(let b=0;b<limits.length;b++)if(v<limits[b])return b;
+ return 12;
+}
+function windForecastData(daily,i){
  const speed=daily.wind_speed_10m_max?.[i];
  const gust=daily.wind_gusts_10m_max?.[i];
  const deg=daily.wind_direction_10m_dominant?.[i];
- if(speed==null){
-   return `<span class="windguru-inline"><a href="${WINDGURU_DUINBERGEN_URL}" target="_blank" rel="noopener">💨 Windguru ↗</a></span>`;
- }
+ if(speed==null)return {text:"💨 Wind niet beschikbaar",title:"Windvoorspelling niet beschikbaar"};
  const dir=compactWindDirection(deg);
- const gustText=gust!=null?` · vlagen ${Math.round(gust)}`:"";
- return `<span class="windguru-inline"><a href="${WINDGURU_DUINBERGEN_URL}" target="_blank" rel="noopener" title="Windguru Duinbergen openen"> · 💨 ${Math.round(speed)} km/u ${dir.name} ${dir.arrow}${gustText}</a></span>`;
+ const bft=kmhToBft(speed);
+ const gustBft=gust==null?null:kmhToBft(gust);
+ const gustText=gustBft!=null&&gustBft>bft?` · vlagen ${gustBft} Bft`:"";
+ return {
+   text:`💨 ${bft} Bft · ${dir.name} ${dir.arrow}${gustText}`,
+   title:`Open-Meteo: maximaal ${Math.round(speed)} km/u, wind uit ${dir.name}${gust==null?"":`, vlagen ${Math.round(gust)} km/u`}`
+ };
 }
 
 function renderThreeDayWeather(d){
  const box=$("scheduleWeatherForecast");
  if(!box)return;
  const daily=d.daily||{};
+ const current=d.current||{};
  const days=daily.time||[];
  const labels=["Vandaag","Morgen","Overmorgen"];
  box.innerHTML=days.slice(0,3).map((date,i)=>{
-   const code=daily.weather_code?.[i];
-   const hi=daily.temperature_2m_max?.[i];
+   // Vandaag gebruikt bewust exact de huidige meting uit dezelfde API-respons als de header.
+   const code=i===0 && current.weather_code!=null ? current.weather_code : daily.weather_code?.[i];
+   const shownTemp=i===0 && current.temperature_2m!=null ? current.temperature_2m : daily.temperature_2m_max?.[i];
    const lo=daily.temperature_2m_min?.[i];
+   const wind=windForecastData(daily,i);
+   const tempLabel=i===0?`${Math.round(shownTemp)}°C`:(shownTemp==null?"–":Math.round(shownTemp)+"°C");
    return `<div class="schedule-weather-day">
      <span class="schedule-weather-icon">${weatherIcon(code)}</span>
      <div class="schedule-weather-copy">
        <strong>${labels[i]||new Date(date+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"short"})}</strong>
-       <span class="schedule-weather-temp">${hi==null?"–":Math.round(hi)+"°C"}</span>
-       <small>${weatherText(code)}${lo==null?"":" · min "+Math.round(lo)+"°"}${windForecastInline(daily,i)}</small>
+       <span class="schedule-weather-temp">${tempLabel}</span>
+       <div class="schedule-weather-details">
+         <span class="schedule-weather-condition">${weatherText(code)}${lo==null?"":" · min "+Math.round(lo)+"°"}</span>
+         <span class="schedule-weather-wind" title="${wind.title}">${wind.text}</span>
+       </div>
      </div>
    </div>`;
  }).join("") || '<div class="schedule-weather-loading">Weer tijdelijk niet beschikbaar</div>';
+ updateWaterTempUI();
 }
 
 let latestWaterTemp=null;
@@ -8902,8 +8937,9 @@ async function loadWeather(){
    const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=51.35&longitude=3.29&current=temperature_2m,weather_code,wind_speed_10m&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant&timezone=Europe%2FBrussels&forecast_days=3",{cache:"no-store"});
    const d=await r.json(),c=d.current||{};window.lastWeatherData=d;let rain="";
    if(d.hourly?.time?.length){let bi=0,bd=Infinity,now=new Date();d.hourly.time.forEach((t,i)=>{const z=Math.abs(new Date(t)-now);if(z<bd){bd=z;bi=i}});const ch=d.hourly.precipitation_probability?.[bi];if(ch!=null)rain=` · regen ${Math.round(ch)}%`}
-   $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${Math.round(c.wind_speed_10m)} km/u${rain}</span>`;
-   if($("mobileHeaderWeather")){const air=`${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°C`;$("mobileHeaderWeather").dataset.airWeather=air;$("mobileHeaderWeather").textContent=air;}
+   const currentBft=kmhToBft(c.wind_speed_10m);
+   $("weather").innerHTML=`<span class="weathericon">${weatherIcon(c.weather_code)}</span><span>${Math.round(c.temperature_2m)}°C · wind ${currentBft==null?"–":currentBft+" Bft"}${rain}</span>`;
+   if($("mobileHeaderWeather")){const air=`${weatherIcon(c.weather_code)} ${Math.round(c.temperature_2m)}°C · 💨 ${currentBft==null?"–":currentBft+" Bft"}`;$("mobileHeaderWeather").dataset.airWeather=air;$("mobileHeaderWeather").textContent=air;}
    renderThreeDayWeather(d);updateWaterTempUI();
  }catch(e){
    $("weather").textContent="Weer tijdelijk niet beschikbaar";
