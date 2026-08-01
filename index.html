@@ -3303,6 +3303,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 #shiftModal .shift-save-option input,
 #shiftModal .keepadding input{width:auto!important;flex:0 0 auto;margin:0}
 #shiftModal #saveShift{font-size:15px}
+#shiftModal .keepadding.active{border-color:#2b8a57;background:#eef9f3;color:#1f6f47;box-shadow:inset 0 0 0 1px #2b8a57}
 
 @media(min-width:721px){
   #shiftModal #deleteShift,
@@ -3416,6 +3417,57 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
     width:100%!important;
     min-width:0!important;
     margin:0!important;
+  }
+}
+</style>
+
+<style id="v13-63-mobile-shift-field-uniformity">
+/* V13.63: datum- en tijdvelden exact even groot als medewerker/zone op mobiel. */
+@media(max-width:720px){
+  #shiftModal #editDate,
+  #shiftModal #editStart,
+  #shiftModal #editEnd,
+  #shiftModal #leaveEndDate,
+  #shiftModal #editEmployee,
+  #shiftModal #editZone{
+    display:block!important;
+    width:100%!important;
+    height:58px!important;
+    min-height:58px!important;
+    max-height:58px!important;
+    padding:0 14px!important;
+    margin-top:6px!important;
+    border:1px solid var(--line)!important;
+    border-radius:12px!important;
+    background:#fff!important;
+    color:var(--text)!important;
+    font-size:16px!important;
+    font-weight:800!important;
+    line-height:58px!important;
+    box-sizing:border-box!important;
+  }
+  #shiftModal #editDate,
+  #shiftModal #editStart,
+  #shiftModal #editEnd,
+  #shiftModal #leaveEndDate{
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    text-align:left!important;
+  }
+  #shiftModal #editDate::-webkit-date-and-time-value,
+  #shiftModal #leaveEndDate::-webkit-date-and-time-value,
+  #shiftModal #editStart::-webkit-date-and-time-value,
+  #shiftModal #editEnd::-webkit-date-and-time-value{
+    text-align:left!important;
+    min-height:58px!important;
+    line-height:58px!important;
+  }
+  #shiftModal #editDate::-webkit-calendar-picker-indicator,
+  #shiftModal #leaveEndDate::-webkit-calendar-picker-indicator,
+  #shiftModal #editStart::-webkit-calendar-picker-indicator,
+  #shiftModal #editEnd::-webkit-calendar-picker-indicator{
+    opacity:1!important;
+    margin-left:auto!important;
   }
 }
 </style>
@@ -5378,7 +5430,16 @@ function openShift(x=null){
    }
  }
  $("shiftModal").classList.add("show");
+ syncKeepAddingUi();
 }
+function syncKeepAddingUi(){
+ const cb=$("keepAdding");
+ const wrap=cb?.closest("label");
+ if(!cb||!wrap)return;
+ wrap.classList.toggle("active",cb.checked);
+ $("saveShift").textContent=cb.checked?"Opslaan & volgende shift":"Opslaan";
+}
+$("keepAdding")?.addEventListener("change",syncKeepAddingUi);
 $("addShiftBtn").onclick=()=>openShift();
 $("addActivityBtn").onclick=()=>openActivity();
 $("cancelActivityBtn").onclick=()=>$("activityModal").classList.remove("show");
@@ -5598,12 +5659,13 @@ $("saveShift").onclick=async()=>{
        $("deleteShift").style.display="none";
        $("duplicateShift").style.display="none";
        $("editDate").value=v.date;
-       $("editEmployee").value=people()[0]||"";
+       $("editEmployee").value=v.employee;
        $("editStart").value=v.start;
        $("editEnd").value=v.end;
        $("editZone").value=v.zone;
        $("editNote").value="";
        $("keepAdding").checked=false;
+       syncKeepAddingUi();
        $("whatsappAfterSave").checked=false;
        $("whatsappAfterSaveWrap").lastChild.textContent=" Persoonlijk WhatsApp-bericht na opslaan";
        updateLeaveFields();
@@ -5629,9 +5691,13 @@ $("saveShift").onclick=async()=>{
        $("editStart").value=v.start;
        $("editEnd").value=v.end;
        $("editNote").value="";
-       $("editEmployee").focus();
+       $("keepAdding").checked=true;
+       syncKeepAddingUi();
+       $("editStart").focus();
      }else{
        $("shiftModal").classList.remove("show");
+       $("keepAdding").checked=false;
+       syncKeepAddingUi();
      }
    }
  }catch(e){
