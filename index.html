@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13-MOBILE-WHATSAPP-DIRECT-2026-08-01">
+<meta name="cablecrew-version" content="V13-MOBILE-PLANNING-FIRST-MOBILE-WHATSAPP-DIRECT-2026-08-01">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -10259,6 +10259,33 @@ document.addEventListener("visibilitychange",()=>{
   body[data-planner-view="crew"] main{display:block!important}
   body[data-planner-view="crew"] #studentMain,
   body[data-planner-view="crew"] #todoMain{display:none!important}
+}
+
+
+/* ===== V13.1 MOBIEL: PLANNING EERST, BEHEER ONDERAAN ===== */
+@media(max-width:720px){
+  main{
+    display:flex!important;
+    flex-direction:column!important;
+  }
+
+  /* Bediening voor de planning blijft bovenaan. */
+  main > .toolbar{order:1!important;}
+  main > #selectedDateBanner{order:2!important;}
+  main > #adminActionTop{order:3!important;}
+
+  /* Eerst de eigenlijke dag- of weekplanning tonen. */
+  main > #day,
+  main > #week{order:4!important;}
+
+  /* Jaarplanning, rapporten, contracten, back-ups enz. pas daarna. */
+  main > #adminBar{
+    order:5!important;
+    margin-top:20px!important;
+    margin-bottom:10px!important;
+  }
+
+  main > #messagesPanel{order:6!important;}
 }
 </style>
 <script id="v13-74-planner-switch-script">
