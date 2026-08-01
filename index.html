@@ -1854,6 +1854,14 @@ body.admin-active .shift:hover{background:#fff8e8}
 /* V13.1 School / Splash gecombineerde activiteit */
 .activity-block.school-splash,.mini-activity.school-splash{background:linear-gradient(135deg,#eaf4ff 0%,#eaf4ff 48%,#e8f8f5 52%,#e8f8f5 100%);border-left-color:#2387a5}
 .activity-zone-locked{opacity:.75;background:#eef6fb!important;border-color:#9fc9dc!important}
+
+/* ===== V13.1 JOBSTUDENTEN ALTIJD ZICHTBAAR ===== */
+#studentPlannerTab{display:inline-flex!important;pointer-events:auto!important;touch-action:manipulation;position:relative;z-index:2}
+@media(max-width:720px){
+  .planner-tabs{position:relative!important;z-index:95!important;overflow-x:auto!important}
+  #crewPlannerTab,#studentPlannerTab,#todoPlannerTab{pointer-events:auto!important;touch-action:manipulation!important}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -3519,7 +3527,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 
 <div class="planner-tabs">
   <button id="crewPlannerTab" class="planner-tab active" type="button">Crew</button>
-  <button id="studentPlannerTab" class="planner-tab" type="button" style="display:none">🎓 Jobstudenten</button>
+  <button id="studentPlannerTab" class="planner-tab" type="button">🎓 Jobstudenten</button>
   <button id="todoPlannerTab" class="planner-tab" type="button">✅ To do</button>
 </div>
 
@@ -7978,7 +7986,7 @@ function studentFillPeople(){
  fillStudentEditPeopleForZone($("studentEditPerson")?.value||"");
 }
 function studentShiftHtml(x){
- return `<div class="student-shift ${isAdminUser()?'editable':''}" data-student-shift="${esc(x._id||"")}">
+ return `<div class="student-shift ${isPlannerAdmin()?'editable':''}" data-student-shift="${esc(x._id||"")}">
    <div><b>${esc(x.employee)}</b>${x.note?` <span class="student-note">📝 ${esc(x.note)}</span>`:""}</div>
    <div class="time">${esc(x.start)}–${esc(x.end)}</div>
  </div>`;
@@ -8000,7 +8008,7 @@ function renderStudentWeek(){
      if(rows.length){
        const bg=z==="PRO"?"var(--pro)":z==="ROOKIE"?"var(--rookie)":"#dff3ea";
        html+=`<div class="student-mini-title" style="background:${bg}">${esc(z)}</div>`;
-       html+=rows.map(x=>`<div class="student-mini-row ${isAdminUser()?'editable':''}" data-student-shift="${esc(x._id||"")}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="student-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("");
+       html+=rows.map(x=>`<div class="student-mini-row ${isPlannerAdmin()?'editable':''}" data-student-shift="${esc(x._id||"")}"><b>${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="student-note">📝 ${esc(x.note)}</span>`:""}</div>`).join("");
      }
    });
    html+="</section>";
@@ -8008,20 +8016,15 @@ function renderStudentWeek(){
  $("studentWeekGrid").innerHTML=html;
 }
 function renderStudentAll(){
- const admin=isAdminUser();
- $("studentPlannerTab").style.display=admin?"inline-block":"none";
- $("studentAdminActionTop").classList.toggle("show",admin);
+ const admin=isPlannerAdmin();
+ $("studentPlannerTab").style.display="inline-flex";
+ const canEdit=isPlannerAdmin();
+ $("studentAdminActionTop").classList.toggle("show",canEdit);
  if($("studentWeather") && $("weather")) $("studentWeather").innerHTML=$("weather").innerHTML;
  if($("studentWorkingToday")){
    const today=realTodayKey();
    const names=[...new Set(studentShifts.filter(x=>x.date===today).map(x=>x.employee).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"nl"));
    $("studentWorkingToday").textContent=names.length?names.join(", "):"Geen jobstudenten ingepland";
- }
-
- if(!admin){
-   // Gewone crewleden krijgen de jobstudentenmodule nooit te zien.
-   if($("studentMain").classList.contains("active"))setPlannerTab("crew");
-   return;
  }
 
  studentInitDates();
@@ -8030,7 +8033,6 @@ function renderStudentAll(){
  renderStudentWeek();
 }
 function setPlannerTab(tab){
- if(tab==="students" && !isAdminUser())tab="crew";
  const student=tab==="students";
  const todo=tab==="todo";
 
@@ -8058,9 +8060,9 @@ function setPlannerTab(tab){
  renderMobileDayScroller();
 }
 $("crewPlannerTab").onclick=()=>setPlannerTab("crew");
-$("studentPlannerTab").onclick=()=>{if(isAdminUser())setPlannerTab("students")};
+$("studentPlannerTab").onclick=()=>setPlannerTab("students");
 $("todoPlannerTab").onclick=()=>setPlannerTab("todo");
-$("studentDashboardBtn").onclick=()=>{if(isAdminUser())setPlannerTab("students")};
+$("studentDashboardBtn").onclick=()=>setPlannerTab("students");
 
 
 $("studentDayBtn").onclick=()=>{
@@ -8075,7 +8077,7 @@ $("studentDate").onchange=()=>{renderStudentDay();renderStudentWeek()};
 $("studentPerson").onchange=()=>{recordAppUsage("student",$("studentPerson").value,"open");updateDailyPlanningPreferenceUI();renderStudentDay();renderStudentWeek()};
 
 function openStudentShift(x=null){
- if(!isAdminUser())return;
+ if(!isPlannerAdmin())return;
  studentEditing=x;
  $("studentShiftTitle").textContent=x?"Jobstudent shift aanpassen":"Nieuwe jobstudent shift";
  $("studentEditDate").value=x?.date||$("studentDate").value||realTodayKey();
@@ -8090,6 +8092,7 @@ function openStudentShift(x=null){
  $("studentShiftModal").classList.add("show");
 }
 $("studentAddShiftBtn").onclick=()=>{
+ if(!isPlannerAdmin())return alert("Alleen Nick en Arno kunnen de jobstudentenplanning aanpassen.");
  if(!studentActiveNames().length)return alert("Voeg eerst minstens één actieve jobstudent toe via ‘Studenten beheren’.");
  openStudentShift();
 };
@@ -8135,13 +8138,13 @@ $("studentWhatsAppGroupBtn").onclick=()=>{
  openPublishPlanningModal();
  return;
 
- if(!isAdminUser())return;
+ if(!isPlannerAdmin())return;
  openWhatsAppShare(buildStudentWhatsAppGroupText());
 };
 $("studentWhatsAppBtn").onclick=()=>openStudentWhatsApp(studentForm(),studentEditing?"gewijzigd":"ingepland");
 
 $("studentSaveShift").onclick=async()=>{
- if(!isAdminUser())return;
+ if(!isPlannerAdmin())return;
  const v=studentForm();
  if(!v.employee)return alert("Er is geen jobstudent gekozen. Koppel eerst minstens één jobstudent aan deze zone.");
  if(!v.date||!v.start||!v.end)return alert("Vul datum en uren in.");
@@ -8159,21 +8162,21 @@ $("studentSaveShift").onclick=async()=>{
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 };
 $("studentDeleteShift").onclick=async()=>{
- if(!isAdminUser()||!studentEditing)return;
+ if(!isPlannerAdmin()||!studentEditing)return;
  if(!confirm("Deze jobstudent-shift verwijderen?"))return;
  try{await deleteDoc(doc(db,"studentShifts",studentEditing._id));$("studentShiftModal").classList.remove("show")}
  catch(e){alert("Verwijderen mislukt: "+e.message)}
 };
 document.addEventListener("click",e=>{
  const el=e.target.closest?.("[data-student-shift]");
- if(!el||!isAdminUser())return;
+ if(!el||!isPlannerAdmin())return;
  const x=studentShifts.find(s=>s._id===el.dataset.studentShift);
  if(x)openStudentShift(x);
 });
 
 // Studenten beheren
 function renderStudentManager(){
- if(!isAdminUser())return;
+ if(!isPlannerAdmin())return;
  const rows=[...studentDirectory.entries()].filter(([n,d])=>d?.active!==false).sort((a,b)=>a[0].localeCompare(b[0],"nl"));
  $("studentManageList").innerHTML=rows.length?rows.map(([name,d])=>{
    const z=Array.isArray(d.zones)?d.zones:[];
@@ -8197,7 +8200,7 @@ function renderStudentManager(){
 $("studentManageBtn").onclick=()=>{renderStudentManager();$("studentManageModal").classList.add("show")};
 $("studentManageCloseBtn").onclick=()=>$("studentManageModal").classList.remove("show");
 $("studentAddPersonBtn").onclick=async()=>{
- if(!isAdminUser())return;
+ if(!isPlannerAdmin())return;
  const name=$("studentNewName").value.trim(),phone=normalizeBelgianPhone($("studentNewPhone").value.trim());
  const zones=[...document.querySelectorAll(".student-new-zones input:checked")].map(x=>x.value);
  if(!name)return alert("Vul een naam in.");
@@ -8215,7 +8218,7 @@ $("studentAddPersonBtn").onclick=async()=>{
  }catch(e){alert("Student toevoegen mislukt: "+e.message)}
 };
 $("studentManageSaveBtn").onclick=async()=>{
- if(!isAdminUser())return;
+ if(!isPlannerAdmin())return;
  const rows=[...document.querySelectorAll("[data-student-row]")];
  try{
    const batch=writeBatch(db);
@@ -8285,7 +8288,6 @@ $("studentWeekCopyDo").onclick=async()=>{
 function startStudentShiftListener(){
  if(studentShiftUnsub){studentShiftUnsub();studentShiftUnsub=null}
  studentShifts=[];
- if(!isAdminUser()){renderStudentAll();return}
  studentShiftUnsub=onSnapshot(collection(db,"studentShifts"),snap=>{
    studentShifts=sorted(snap.docs.map(d=>({_id:d.id,...d.data()})));
    renderStudentAll();
@@ -8294,7 +8296,6 @@ function startStudentShiftListener(){
 function startStudentDirectoryListener(){
  if(studentDirectoryUnsub){studentDirectoryUnsub();studentDirectoryUnsub=null}
  studentDirectory=new Map();
- if(!isAdminUser()){renderStudentAll();return}
  studentDirectoryUnsub=onSnapshot(collection(db,"students"),snap=>{
    studentDirectory=new Map(snap.docs.map(d=>[d.id,{
      name:d.data().name||d.id,
