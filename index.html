@@ -10197,3 +10197,156 @@ document.addEventListener("visibilitychange",()=>{
   },{capture:true,passive:false});
 })();
 </script>
+
+
+<!-- V13.72: aparte betrouwbare mobiele plannerkeuze + cacheverversing -->
+<style id="v13-72-mobile-planner-switch">
+  .mobile-planner-switch-v72{display:none}
+  @media(max-width:720px){
+    /* De oude mobiele tabrij wordt vervangen door één eenvoudige, onafhankelijke rij. */
+    .planner-tabs{display:none!important}
+    .mobile-planner-switch-v72{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:6px;
+      width:100%;
+      padding:8px 10px;
+      margin:0;
+      position:relative;
+      z-index:500;
+      isolation:isolate;
+      background:#fff;
+      border-bottom:1px solid #e5edf2;
+      pointer-events:auto;
+    }
+    .mobile-planner-switch-v72 button{
+      appearance:none;
+      -webkit-appearance:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-width:0;
+      min-height:42px;
+      padding:8px 4px;
+      border:0;
+      border-radius:11px;
+      background:transparent;
+      color:#526577;
+      font-size:11px;
+      font-weight:900;
+      line-height:1.15;
+      text-align:center;
+      touch-action:manipulation;
+      pointer-events:auto;
+      position:relative;
+      z-index:501;
+    }
+    .mobile-planner-switch-v72 button.active{
+      color:#0b4870;
+      background:#edf6fb;
+    }
+    body.jobstudent-viewer .mobile-planner-switch-v72 [data-mobile-plan="crew"]{display:none!important}
+    body.jobstudent-viewer .mobile-planner-switch-v72{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+</style>
+<script id="v13-72-mobile-planner-switch-script">
+(function(){
+  const SWITCH_ID='mobilePlannerSwitchV72';
+  let activeTab='crew';
+
+  function callPlanner(tab){
+    const fn=typeof window.setPlannerTab==='function' ? window.setPlannerTab : null;
+    if(!fn){ console.warn('CableCrew: setPlannerTab niet beschikbaar'); return; }
+    fn(tab);
+    activeTab=tab;
+    syncState();
+    requestAnimationFrame(syncState);
+  }
+
+  function makeSwitch(){
+    let bar=document.getElementById(SWITCH_ID);
+    if(bar)return bar;
+    bar=document.createElement('nav');
+    bar.id=SWITCH_ID;
+    bar.className='mobile-planner-switch-v72';
+    bar.setAttribute('aria-label','Planning kiezen');
+    bar.innerHTML=''
+      +'<button type="button" data-mobile-plan="crew">👤 Crew</button>'
+      +'<button type="button" data-mobile-plan="students">🎓 Jobstudenten</button>'
+      +'<button type="button" data-mobile-plan="todo">✅ To do</button>';
+
+    /* pointerdown werkt betrouwbaarder op iOS dan een combinatie van click/touchend. */
+    bar.addEventListener('pointerdown',function(e){
+      const btn=e.target.closest('[data-mobile-plan]');
+      if(!btn)return;
+      e.preventDefault();
+      e.stopPropagation();
+      callPlanner(btn.dataset.mobilePlan);
+    },true);
+    bar.addEventListener('click',function(e){
+      const btn=e.target.closest('[data-mobile-plan]');
+      if(!btn)return;
+      e.preventDefault();
+      e.stopPropagation();
+    },true);
+    return bar;
+  }
+
+  function placeSwitch(){
+    if(window.innerWidth>720)return;
+    const bar=makeSwitch();
+    const weather=document.getElementById('scheduleOverviewHeader');
+    const days=document.getElementById('mobileDayScroller');
+    if(weather && weather.nextElementSibling!==bar) weather.insertAdjacentElement('afterend',bar);
+    if(days && bar.nextElementSibling!==days) bar.insertAdjacentElement('afterend',days);
+    syncState();
+  }
+
+  function detectActive(){
+    if(document.getElementById('todoMain')?.classList.contains('active'))return 'todo';
+    if(document.getElementById('studentMain')?.classList.contains('active'))return 'students';
+    return 'crew';
+  }
+
+  function syncState(){
+    const bar=document.getElementById(SWITCH_ID);
+    if(!bar)return;
+    activeTab=detectActive();
+    bar.querySelectorAll('[data-mobile-plan]').forEach(function(btn){
+      const on=btn.dataset.mobilePlan===activeTab;
+      btn.classList.toggle('active',on);
+      btn.setAttribute('aria-current',on?'page':'false');
+    });
+    try{
+      if(typeof window.isJobstudentViewer==='function'){
+        document.body.classList.toggle('jobstudent-viewer',!!window.isJobstudentViewer());
+      }
+    }catch(_e){}
+  }
+
+  function init(){
+    placeSwitch();
+    const targets=['studentMain','todoMain'].map(id=>document.getElementById(id)).filter(Boolean);
+    const observer=new MutationObserver(syncState);
+    targets.forEach(el=>observer.observe(el,{attributes:true,attributeFilter:['class','style']}));
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+  else init();
+  window.addEventListener('load',placeSwitch);
+  window.addEventListener('resize',placeSwitch);
+  setTimeout(placeSwitch,250);
+  setTimeout(placeSwitch,1200);
+})();
+</script>
+<script id="v13-72-mobile-cache-refresh">
+/* Forceer op mobiele toestellen een controle op een oude PWA/service-worker-versie. */
+(function(){
+  if(!('serviceWorker' in navigator))return;
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(reg){ try{reg.update()}catch(_e){} });
+    }).catch(function(){});
+  });
+})();
+</script>
