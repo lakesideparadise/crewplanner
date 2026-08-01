@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13-MOBILE-MANDATORY-WHATSAPP-CHANGE-2026-08-01">
+<meta name="cablecrew-version" content="V13-MOBILE-WHATSAPP-DIRECT-2026-08-01">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -5350,7 +5350,20 @@ function multiShiftWhatsAppUrl(employee,rows,kind="aangepast"){
 function openWhatsAppForShift(v,kind="gewijzigd"){
  const url=whatsappUrlForShift(v,kind);
  if(!url)return false;
- window.open(url,"_blank","noopener");
+ if(window.matchMedia("(max-width: 720px)").matches){
+   window.location.assign(url);
+ }else{
+   window.open(url,"_blank","noopener");
+ }
+ return true;
+}
+function openWhatsAppUrlAfterSave(url){
+ if(!url)return false;
+ if(window.matchMedia("(max-width: 720px)").matches){
+   window.location.assign(url);
+ }else{
+   window.open(url,"_blank","noopener");
+ }
  return true;
 }
 function updateWhatsAppShiftButton(){
@@ -5470,7 +5483,6 @@ async function saveMultiShifts(){
    }
    alert(`${created.length} shifts voor ${employee} zijn opgeslagen.${sendWhatsApp?" WhatsApp opent met één samengevoegd bericht.":""}`);
  }catch(e){
-   if(whatsappWindow && !whatsappWindow.closed)whatsappWindow.close();
    alert("Opslaan mislukt: "+e.message)
  }
 }
@@ -5780,14 +5792,12 @@ $("saveShift").onclick=async()=>{
  const sendWhatsApp=editing
    ? !!whatsappUrlForShift(v,"gewijzigd")
    : (!!$("whatsappAfterSave")?.checked && !!whatsappUrlForShift(v,"ingepland"));
- let whatsappWindow=null;
+ const pendingWhatsAppUrl=sendWhatsApp
+   ? whatsappUrlForShift(v,editing?"gewijzigd":"ingepland")
+   : "";
  if(editing && !sendWhatsApp){
    alert(`Deze shift kan niet worden gewijzigd omdat er geen WhatsApp-nummer voor ${v.employee} is ingesteld. Voeg eerst een nummer toe bij WhatsApp nummers.`);
    return;
- }
- if(sendWhatsApp){
-   // Open het tabblad rechtstreeks vanuit de klikactie; zo blokkeren mobiele browsers het minder snel.
-   whatsappWindow=window.open("about:blank","_blank");
  }
 
  try{
@@ -5811,10 +5821,7 @@ $("saveShift").onclick=async()=>{
      }));
 
      $("shiftModal").classList.remove("show");
-     if(whatsappWindow){
-       const url=whatsappUrlForShift(v,"ingepland");
-       if(url)whatsappWindow.location.href=url; else whatsappWindow.close();
-     }
+     if(pendingWhatsAppUrl)openWhatsAppUrlAfterSave(pendingWhatsAppUrl);
      return;
    }
 
@@ -5828,10 +5835,8 @@ $("saveShift").onclick=async()=>{
      await updateDoc(doc(db,"shifts",editing._id),changedValue);
      await writeAudit(v.zone==="VERLOF"?"Verlof gewijzigd":"Shift gewijzigd",before,changedValue);
      const addAnother=$("keepAdding").checked;
-     if(whatsappWindow){
-       const url=whatsappUrlForShift({...v,_id:editing._id},"gewijzigd");
-       if(url)whatsappWindow.location.href=url; else whatsappWindow.close();
-     }
+     const changedWhatsAppUrl=whatsappUrlForShift({...v,_id:editing._id},"gewijzigd");
+     if(changedWhatsAppUrl)openWhatsAppUrlAfterSave(changedWhatsAppUrl);
      if(addAnother){
        // Na het wijzigen meteen een nieuwe shift kunnen invoeren met dezelfde basisgegevens.
        editing=null;
@@ -5858,10 +5863,7 @@ $("saveShift").onclick=async()=>{
      const createdRef=await addDoc(collection(db,"shifts"),v);
      const createdShift={...v,_id:createdRef.id};
      await writeAudit("Shift toegevoegd",null,v);
-     if(whatsappWindow){
-       const url=whatsappUrlForShift(createdShift,"ingepland");
-       if(url)whatsappWindow.location.href=url; else whatsappWindow.close();
-     }
+     if(pendingWhatsAppUrl)openWhatsAppUrlAfterSave(whatsappUrlForShift(createdShift,"ingepland"));
      if($("keepAdding").checked){
        const keepDate=v.date, keepZone=v.zone;
        editing=null;
