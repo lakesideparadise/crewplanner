@@ -3332,6 +3332,10 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 #whatsappAfterSaveWrap input:disabled{opacity:1}
 @media(max-width:720px){.change-badge{font-size:9px!important}.shift.has-planning-change{box-shadow:inset 4px 0 0 #2d73a7}}
 </style>
+<style id="v13-7-shift-options-fix">
+/* V13.7: WhatsApp bij shiftwijziging is optioneel; 'Nog een shift toevoegen' werkt ook na aanpassen. */
+#whatsappAfterSave:not(:disabled),#keepAdding:not(:disabled){cursor:pointer}
+</style>
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -5259,10 +5263,10 @@ function openShift(x=null){
  if($("whatsappAfterSaveWrap")){
    $("whatsappAfterSaveWrap").style.display=x&&crewPhone($("editEmployee").value)?"flex":$("whatsappAfterSaveWrap").style.display;
    if(x){
-     $("whatsappAfterSave").checked=true;
-     $("whatsappAfterSave").disabled=true;
-     const text=$("whatsappAfterSaveWrap").childNodes;
-     $("whatsappAfterSaveWrap").lastChild.textContent=" WhatsApp-bericht wordt automatisch geopend na opslaan";
+     // Bij een bestaande shift staat WhatsApp standaard aan, maar de beheerder kan dit uitvinken.
+     $("whatsappAfterSave").disabled=false;
+     $("whatsappAfterSave").checked=!!crewPhone($("editEmployee").value);
+     $("whatsappAfterSaveWrap").lastChild.textContent=" WhatsApp-bericht openen na opslaan";
    }else{
      $("whatsappAfterSave").disabled=false;
      $("whatsappAfterSave").checked=false;
@@ -5432,9 +5436,9 @@ $("saveShift").onclick=async()=>{
 
  if(v.zone!=="VERLOF" && !await confirmAvailabilityOverride("crew",v.employee,v.date))return;
 
- const sendWhatsApp=editing
+ const sendWhatsApp=!!$("whatsappAfterSave")?.checked && (editing
    ? !!whatsappUrlForShift(v,"gewijzigd")
-   : (!!$("whatsappAfterSave")?.checked && !!whatsappUrlForShift(v,"ingepland"));
+   : !!whatsappUrlForShift(v,"ingepland"));
  let whatsappWindow=null;
  if(sendWhatsApp){
    // Open het tabblad rechtstreeks vanuit de klikactie; zo blokkeren mobiele browsers het minder snel.
@@ -5478,10 +5482,31 @@ $("saveShift").onclick=async()=>{
      const changedValue={...v,planningChangedAt:Date.now(),planningChangedBy:(user?.email||"")};
      await updateDoc(doc(db,"shifts",editing._id),changedValue);
      await writeAudit(v.zone==="VERLOF"?"Verlof gewijzigd":"Shift gewijzigd",before,changedValue);
-     $("shiftModal").classList.remove("show");
+     const addAnother=$("keepAdding").checked;
      if(whatsappWindow){
        const url=whatsappUrlForShift({...v,_id:editing._id},"gewijzigd");
        if(url)whatsappWindow.location.href=url; else whatsappWindow.close();
+     }
+     if(addAnother){
+       // Na het wijzigen meteen een nieuwe shift kunnen invoeren met dezelfde basisgegevens.
+       editing=null;
+       $("shiftTitle").textContent="Nieuwe shift";
+       $("deleteShift").style.display="none";
+       $("duplicateShift").style.display="none";
+       $("editDate").value=v.date;
+       $("editEmployee").value=people()[0]||"";
+       $("editStart").value=v.start;
+       $("editEnd").value=v.end;
+       $("editZone").value=v.zone;
+       $("editNote").value="";
+       $("keepAdding").checked=false;
+       $("whatsappAfterSave").checked=false;
+       $("whatsappAfterSaveWrap").lastChild.textContent=" Persoonlijk WhatsApp-bericht na opslaan";
+       updateLeaveFields();
+       updateWhatsAppShiftButton();
+       $("editEmployee").focus();
+     }else{
+       $("shiftModal").classList.remove("show");
      }
    }else{
      const createdRef=await addDoc(collection(db,"shifts"),v);
