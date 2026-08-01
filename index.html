@@ -5259,7 +5259,11 @@ function openShift(x=null){
  $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
  $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";updateLeaveFields();
  $("deleteShift").style.display=x?"inline-block":"none";$("duplicateShift").style.display=x?"inline-block":"none";
- $("keepAdding").checked=false;updateWhatsAppShiftButton();
+ $("keepAdding").checked=false;
+ // "Nog een shift toevoegen" is alleen nuttig bij een nieuwe shift, niet bij aanpassen.
+ const keepAddingWrap=$("keepAdding").closest("label");
+ if(keepAddingWrap)keepAddingWrap.style.display=x?"none":"flex";
+ updateWhatsAppShiftButton();
  if($("whatsappAfterSaveWrap")){
    $("whatsappAfterSaveWrap").style.display=x&&crewPhone($("editEmployee").value)?"flex":$("whatsappAfterSaveWrap").style.display;
    if(x){
