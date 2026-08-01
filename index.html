@@ -4584,6 +4584,24 @@ function label(k){return new Date(k+"T12:00:00").toLocaleDateString("nl-BE",{wee
 function sorted(a){return [...a].sort((x,y)=>x.date.localeCompare(y.date)||x.start.localeCompare(y.start)||x.zone.localeCompare(y.zone)||x.employee.localeCompare(y.employee))}
 function visibleShifts(){const n=$("myEmployee").value;const base=normalCrewShifts();return n?base.filter(x=>x.employee===n):base}
 
+// In de weergave "Iedereen" verdwijnen alleen gewone shifts zodra hun einduur voorbij is.
+// De gegevens blijven in Firebase en blijven zichtbaar in Mijn planning, rapporten en het archief.
+function hidePastShiftInEveryone(x){
+ const selected=(($("myEmployee")?.value)||"").trim();
+ if(selected || !x || x.zone==="VERLOF")return false;
+ const today=key(new Date());
+ if((x.date||"")<today)return true;
+ if((x.date||"")>today)return false;
+ if(!/^\d{2}:\d{2}$/.test(x.end||""))return false;
+ const now=new Date();
+ const [hours,minutes]=(x.end||"00:00").split(":").map(Number);
+ const end=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hours,minutes,0,0);
+ return now>=end;
+}
+function plannerVisibleShifts(){
+ return visibleShifts().filter(x=>!hidePastShiftInEveryone(x));
+}
+
 async function loadFallback(){
  try{
    const r=await fetch("./planning.json?ts="+Date.now(),{cache:"no-store"});
@@ -4991,7 +5009,7 @@ function shiftHtml(x){
    <div class="time">${esc(x.start)}–${esc(x.end)}${x.note?` <span class="note">📝 ${esc(x.note)}</span>`:""}</div></div>`;
 }
 function renderDay(){
- const d=$("date").value, list=visibleShifts();
+ const d=$("date").value, list=plannerVisibleShifts();
  const mineMode=document.body.classList.contains("mobile-mine-mode");
  const normalZones=zones.filter(z=>z!=="VERLOF");
  const vacationRows=list.filter(x=>x.date===d&&x.zone==="VERLOF");
@@ -5061,7 +5079,7 @@ function renderDay(){
  $("dayGrid").innerHTML=vacationBanner+zoneHtml;
 }
 function renderWeek(){
- const start=mondayOf($("date").value),list=visibleShifts();
+ const start=mondayOf($("date").value),list=plannerVisibleShifts();
  const mineMode=document.body.classList.contains("mobile-mine-mode");
  let leaveHtml="",daysHtml="";
 
