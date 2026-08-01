@@ -3343,6 +3343,82 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 /* V13.7: WhatsApp bij shiftwijziging is optioneel; 'Nog een shift toevoegen' werkt ook na aanpassen. */
 #whatsappAfterSave:not(:disabled),#keepAdding:not(:disabled){cursor:pointer}
 </style>
+
+<style id="v13-59-mobile-tabs-modal-fix">
+/* V13.59: Jobstudenten-tab bereikbaar en shiftpopup volledig binnen mobiel scherm. */
+@media(max-width:720px){
+  .planner-tabs{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    width:100%!important;
+    overflow:visible!important;
+    gap:6px!important;
+  }
+  .planner-tab{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0!important;
+    width:100%!important;
+    padding:7px 4px!important;
+    white-space:normal!important;
+    line-height:1.15!important;
+    text-align:center!important;
+    touch-action:manipulation;
+  }
+  #studentPlannerTab:not([style*="display: none"]){display:flex!important}
+
+  #shiftModal{
+    padding:8px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    overflow:hidden!important;
+  }
+  #shiftModal>.modal{
+    width:calc(100vw - 16px)!important;
+    min-width:0!important;
+    max-width:calc(100vw - 16px)!important;
+    max-height:calc(100dvh - 16px)!important;
+    margin:0!important;
+    padding:16px 14px!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    box-sizing:border-box!important;
+    border-radius:18px!important;
+  }
+  #shiftModal .formgrid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #shiftModal .formgrid>*{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  #shiftModal input,#shiftModal select,#shiftModal textarea{
+    width:100%!important;
+    min-width:0!important;
+  }
+  #shiftModal .quicktimes{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:100%!important;
+  }
+  #shiftModal .quicktimes span{grid-column:1/-1}
+  #shiftModal .quicktimes button{width:100%!important;min-width:0!important}
+  #shiftModal .modalactions{
+    width:100%!important;
+    grid-template-columns:1fr!important;
+  }
+  #shiftModal .modalactions>button,
+  #shiftModal .modalactions>label{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+}
+</style>
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -7371,14 +7447,15 @@ function relevantToMe(x){
  return !!n && x && x.employee===n;
 }
 
-const ADMIN_EMAILS=["nick@lakesideparadise.be","arno@lakesideparadise.be","annsophy@lakesideparadise.be"];
+const ADMIN_EMAILS=["nick@lakesideparadise.be","arno@lakesideparadise.be","annsophy@lakesideparadise.be","ann-sophy@lakesideparadise.be"];
 const ADMIN_NAME_BY_EMAIL={
  "nick@lakesideparadise.be":"Nick",
  "arno@lakesideparadise.be":"Arno",
- "annsophy@lakesideparadise.be":"Ann-Sophy"
+ "annsophy@lakesideparadise.be":"Ann-Sophy",
+ "ann-sophy@lakesideparadise.be":"Ann-Sophy"
 };
 function isAdminUser(){return !!(user && user.email && ADMIN_EMAILS.includes(user.email.toLowerCase()))}
-function isContractManager(){return (user?.email||"").toLowerCase()==="annsophy@lakesideparadise.be"}
+function isContractManager(){return ["annsophy@lakesideparadise.be","ann-sophy@lakesideparadise.be"].includes((user?.email||"").toLowerCase())}
 function isPlannerAdmin(){return ["nick@lakesideparadise.be","arno@lakesideparadise.be"].includes((user?.email||"").toLowerCase())}
 function adminCrewName(){
  const email=(user?.email||"").toLowerCase();
