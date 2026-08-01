@@ -1862,6 +1862,18 @@ body.admin-active .shift:hover{background:#fff8e8}
   #crewPlannerTab,#studentPlannerTab,#todoPlannerTab{pointer-events:auto!important;touch-action:manipulation!important}
 }
 
+
+/* ===== V13.1 ROLGEBONDEN PLANNINGSTABS ===== */
+.mobile-onboarding-type{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 12px}
+.mobile-onboarding-type button{min-height:44px;border-radius:12px;background:#fff;color:#526577;border:1px solid #d6e0e8}
+.mobile-onboarding-type button.selected{background:#0f4b6d;color:#fff;border-color:#0f4b6d}
+body.jobstudent-viewer #crewPlannerTab{display:none!important}
+body.jobstudent-viewer .planner-tabs{grid-template-columns:1fr 1fr!important}
+@media(max-width:720px){
+  .mobile-onboarding-type{position:sticky;top:0;background:#fff;z-index:2;padding-top:2px}
+  body.jobstudent-viewer #studentPlannerTab{display:flex!important}
+}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -4002,7 +4014,12 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
       <div class="mobile-onboarding-stepnr">1</div>
       <div class="mobile-onboarding-stepbody">
         <strong>Wie ben jij?</strong>
-        <p>Tik gewoon op je naam. Je hoeft niets te typen. CableCrew onthoudt daarna dit toestel.</p>
+        <p>Kies eerst of je bij de crew of de jobstudenten hoort en tik daarna op je naam.</p>
+        <div class="mobile-onboarding-type" role="group" aria-label="Kies je groep">
+          <button id="mobileOnboardingCrewType" type="button" class="selected">👤 Crew</button>
+          <button id="mobileOnboardingStudentType" type="button">🎓 Jobstudent</button>
+        </div>
+        <input id="mobileOnboardingPersonType" type="hidden" value="crew">
         <div id="mobileOnboardingNameList" class="mobile-onboarding-name-list" aria-label="Kies je naam"></div>
         <input id="mobileOnboardingName" type="hidden" value="">
         <div id="mobileOnboardingNameError" class="mobile-onboarding-error"></div>
@@ -7920,6 +7937,30 @@ $("backupsBtn").onclick=()=>{if(!isAdminUser())return;$("backupsModal").classLis
 
 
 // =========================
+// KIJKRECHTEN CREW / JOBSTUDENTEN
+// =========================
+function inferredViewerType(){
+ if(isAdminUser())return "crew";
+ const saved=(localStorage.getItem("cc_person_type")||"").toLowerCase();
+ if(saved==="student"||saved==="crew")return saved;
+ const name=(localStorage.getItem("cc_my_name")||"").trim();
+ if(name && typeof studentActiveNames==="function" && studentActiveNames().includes(name) && !(typeof people==="function"&&people().includes(name)))return "student";
+ return "crew";
+}
+function isJobstudentViewer(){return !isAdminUser() && inferredViewerType()==="student"}
+function applyViewerPlanningAccess(){
+ const student=isJobstudentViewer();
+ document.body.classList.toggle("jobstudent-viewer",student);
+ const crewTab=$("crewPlannerTab");
+ const studentTab=$("studentPlannerTab");
+ if(crewTab){crewTab.hidden=student;crewTab.setAttribute("aria-hidden",student?"true":"false")}
+ if(studentTab){studentTab.hidden=false;studentTab.style.display="inline-flex"}
+ if(student && !$(`studentMain`)?.classList.contains("active")){
+   setTimeout(()=>setPlannerTab("students"),0);
+ }
+}
+
+// =========================
 // JOBSTUDENTEN PLANNER
 // =========================
 const STUDENT_ZONES=["PRO","ROOKIE","VERHUUR"];
@@ -8017,7 +8058,7 @@ function renderStudentWeek(){
 }
 function renderStudentAll(){
  const admin=isPlannerAdmin();
- $("studentPlannerTab").style.display="inline-flex";
+ $("studentPlannerTab").style.display="inline-flex"; applyViewerPlanningAccess();
  const canEdit=isPlannerAdmin();
  $("studentAdminActionTop").classList.toggle("show",canEdit);
  if($("studentWeather") && $("weather")) $("studentWeather").innerHTML=$("weather").innerHTML;
@@ -8033,6 +8074,7 @@ function renderStudentAll(){
  renderStudentWeek();
 }
 function setPlannerTab(tab){
+ if(tab==="crew" && isJobstudentViewer())tab="students";
  const student=tab==="students";
  const todo=tab==="todo";
 
@@ -9590,11 +9632,14 @@ function fillMobileOnboardingNames(){
  const list=$("mobileOnboardingNameList");
  const hidden=$("mobileOnboardingName");
  if(!list||!hidden)return 0;
- const names=typeof people==="function" ? people() : [];
+ const personType=$("mobileOnboardingPersonType")?.value||"crew";
+ const names=personType==="student"
+   ? (typeof studentActiveNames==="function" ? studentActiveNames() : [])
+   : (typeof people==="function" ? people() : []);
  const current=hidden.value||"";
 
  if(!names.length){
-   list.innerHTML='<div class="mobile-onboarding-loading">Crewleden laden…</div>';
+   list.innerHTML=`<div class="mobile-onboarding-loading">${personType==="student"?"Jobstudenten":"Crewleden"} laden…</div>`;
    return 0;
  }
 
@@ -9651,6 +9696,16 @@ function maybeShowMobileOnboarding(){
  showMobileOnboarding();
 }
 
+function setMobileOnboardingType(type){
+ $("mobileOnboardingPersonType").value=type;
+ $("mobileOnboardingName").value="";
+ $("mobileOnboardingCrewType").classList.toggle("selected",type==="crew");
+ $("mobileOnboardingStudentType").classList.toggle("selected",type==="student");
+ fillMobileOnboardingNames();
+ updateMobileOnboardingButton();
+}
+$("mobileOnboardingCrewType").onclick=()=>setMobileOnboardingType("crew");
+$("mobileOnboardingStudentType").onclick=()=>setMobileOnboardingType("student");
 $("mobileOnboardingInstalled").onchange=updateMobileOnboardingButton;
 
 $("mobileOnboardingDone").onclick=()=>{
@@ -9659,7 +9714,9 @@ $("mobileOnboardingDone").onclick=()=>{
    $("mobileOnboardingNameError").textContent="Kies eerst je naam.";
    return;
  }
+ const personType=$("mobileOnboardingPersonType")?.value||"crew";
  localStorage.setItem("cc_my_name",name);
+ localStorage.setItem("cc_person_type",personType);
  localStorage.setItem(MOBILE_ONBOARDING_KEY,"1");
 
  // Koppel de bestaande plannerselectie meteen aan dezelfde identiteit.
@@ -9674,7 +9731,15 @@ $("mobileOnboardingDone").onclick=()=>{
  $("mobileOnboardingModal").classList.remove("show");
 
  // Eerste opening na installatie brengt de gebruiker meteen naar zijn eigen planning.
- if(typeof showOnlyMyCrewPlanning==="function"){
+ applyViewerPlanningAccess();
+ if(personType==="student"){
+   setTimeout(()=>{
+     setPlannerTab("students");
+     if($("studentPerson") && [...$("studentPerson").options].some(o=>o.value===name)){
+       $("studentPerson").value=name; renderStudentAll();
+     }
+   },80);
+ }else if(typeof showOnlyMyCrewPlanning==="function"){
    setTimeout(()=>showOnlyMyCrewPlanning(),80);
  }
 };
@@ -9682,6 +9747,7 @@ $("mobileOnboardingDone").onclick=()=>{
 // Firestore/namenlijst kan iets later geladen zijn. Probeer daarom enkele keren,
 // maar toon de onboarding nooit opnieuw zodra dit toestel voltooid is.
 window.addEventListener("load",()=>{
+ applyViewerPlanningAccess();
  // Eerste mobiele opening: popup meteen tonen, planning niet eerst laten "winnen".
  maybeShowMobileOnboarding();
  setTimeout(maybeShowMobileOnboarding,250);
