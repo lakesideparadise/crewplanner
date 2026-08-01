@@ -1850,6 +1850,10 @@ body.admin-active .shift:hover{background:#fff8e8}
 .publish-help{font-size:12px;color:var(--muted);line-height:1.45;margin-top:7px}
 .publish-status{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:#eaf7ee;color:#176b3a;font-size:11px;font-weight:900}
 @media(max-width:620px){.publish-period-grid{grid-template-columns:1fr}}
+
+/* V13.1 School / Splash gecombineerde activiteit */
+.activity-block.school-splash,.mini-activity.school-splash{background:linear-gradient(135deg,#eaf4ff 0%,#eaf4ff 48%,#e8f8f5 52%,#e8f8f5 100%);border-left-color:#2387a5}
+.activity-zone-locked{opacity:.75;background:#eef6fb!important;border-color:#9fc9dc!important}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -4097,6 +4101,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
         <select id="activityType">
           <option value="SCHOOL">🏫 School</option>
           <option value="SPLASH">💦 Splash</option>
+          <option value="SCHOOL_SPLASH">🏫💦 School / Splash samen</option>
         </select>
       </label>
       <label>Startuur<input id="activityStart" type="time"></label>
@@ -4652,11 +4657,14 @@ function activityBlocksFor(dateKey,zone){
    .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.activityType||"").localeCompare(b.activityType||""));
 }
 function activityLabel(x){
- return x.activityType==="SPLASH"?"💦 Splash":"🏫 School";
+ if(x.activityType==="SPLASH")return "💦 Splash";
+ if(x.activityType==="SCHOOL_SPLASH")return "🏫💦 School / Splash";
+ return "🏫 School";
 }
 function activityBlockHtml(x,mini=false){
  const count=Number(x.participants)||0;
- const classes=`${mini?"mini-activity":"activity-block"} ${x.activityType==="SPLASH"?"splash":"school"} ${editMode?"editable":""}`;
+ const activityClass=x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school");
+ const classes=`${mini?"mini-activity":"activity-block"} ${activityClass} ${editMode?"editable":""}`;
  if(mini){
    const assigned=Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
    return `<div class="${classes}" data-activity-id="${esc(x._id||"")}"><b>${activityLabel(x)}</b>${count?` · ${count} pers.`:""} · ${esc(x.start||"")}–${esc(x.end||"")}${x.note?` · ${esc(x.note)}`:""}${assigned.length?`<br>👤 ${assigned.map(esc).join(", ")}`:""}</div>`;
@@ -5189,8 +5197,19 @@ function selectedActivityEmployees(){
 function selectedActivityZones(){
  return [...document.querySelectorAll('#activityZoneChoices input[type="checkbox"]:checked')].map(x=>x.value);
 }
+function activityTypeDisplay(type){
+ if(type==="SPLASH")return "💦 Splash";
+ if(type==="SCHOOL_SPLASH")return "🏫💦 School / Splash";
+ return "🏫 School";
+}
+function syncActivityTypeZones(){
+ const combined=$("activityType")?.value==="SCHOOL_SPLASH";
+ const boxes=[...document.querySelectorAll('#activityZoneChoices input[value="SCHOOL"],#activityZoneChoices input[value="SCHOOL / SPLASH"]')];
+ boxes.forEach(c=>{if(combined)c.checked=true;c.disabled=combined;c.closest("label")?.classList.toggle("activity-zone-locked",combined)});
+}
 function updateActivityPreview(){
- const type=$("activityType")?.value==="SPLASH"?"💦 Splash":"🏫 School";
+ syncActivityTypeZones();
+ const type=activityTypeDisplay($("activityType")?.value);
  const zonesChosen=selectedActivityZones();
  const count=Number($("activityParticipants")?.value)||0;
  const start=$("activityStart")?.value||"";
@@ -5210,7 +5229,8 @@ function openActivity(x=null){
  $("activityParticipants").value=x?.participants||"";
  $("activityNote").value=x?.note||"";
  const selected=new Set(Array.isArray(x?.activityZones)?x.activityZones:["PRO"]);
- document.querySelectorAll('#activityZoneChoices input[type="checkbox"]').forEach(c=>c.checked=selected.has(c.value));
+ document.querySelectorAll('#activityZoneChoices input[type="checkbox"]').forEach(c=>{c.disabled=false;c.checked=selected.has(c.value);c.closest("label")?.classList.remove("activity-zone-locked")});
+ syncActivityTypeZones();
  renderActivityEmployeeChoices(Array.isArray(x?.assignedEmployees)?x.assignedEmployees:[]);
  $("deleteActivityBtn").style.display=x?"inline-block":"none";
  updateActivityPreview();
@@ -5238,10 +5258,10 @@ async function saveActivity(){
  try{
    if(activityEditing){
      await updateDoc(doc(db,"shifts",activityEditing._id),v);
-     await writeAudit(`${v.activityType==="SPLASH"?"Splash":"School"} aangepast`,activityEditing,v);
+     await writeAudit(`${v.activityType==="SPLASH"?"Splash":(v.activityType==="SCHOOL_SPLASH"?"School / Splash":"School")} aangepast`,activityEditing,v);
    }else{
      await addDoc(collection(db,"shifts"),v);
-     await writeAudit(`${v.activityType==="SPLASH"?"Splash":"School"} toegevoegd`,null,v);
+     await writeAudit(`${v.activityType==="SPLASH"?"Splash":(v.activityType==="SCHOOL_SPLASH"?"School / Splash":"School")} toegevoegd`,null,v);
    }
    $("activityModal").classList.remove("show");
  }catch(e){alert("Opslaan mislukt: "+e.message)}
@@ -5288,7 +5308,7 @@ $("deleteActivityBtn").onclick=async()=>{
  if(!confirm("Dit School / Splash-blok verwijderen?"))return;
  try{
    await deleteDoc(doc(db,"shifts",activityEditing._id));
-   await writeAudit(`${activityEditing.activityType==="SPLASH"?"Splash":"School"} verwijderd`,activityEditing,null);
+   await writeAudit(`${activityEditing.activityType==="SPLASH"?"Splash":(activityEditing.activityType==="SCHOOL_SPLASH"?"School / Splash":"School")} verwijderd`,activityEditing,null);
    $("activityModal").classList.remove("show");
  }catch(e){alert("Verwijderen mislukt: "+e.message)}
 };
