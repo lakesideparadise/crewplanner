@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13-MOBILE-PLANNING-FIRST-MOBILE-WHATSAPP-DIRECT-2026-08-01">
+<meta name="cablecrew-version" content="V13.88-JOBSTUDENTEN-VIEW-FIX-2026-08-02">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -10504,5 +10504,107 @@ document.addEventListener("visibilitychange",()=>{
   setTimeout(placeAndBind,300);
 })();
 </script>
+
+
+<!-- V13.88: definitieve Crew/Jobstudenten-weergave (één gerichte fix) -->
+<style id="v13-88-student-planner-visible-fix">
+  /* Deze regels staan als laatste zodat oudere patches de studentenweergave niet meer kunnen verbergen. */
+  body.cc-student-planner-open > main{display:none!important}
+  body.cc-student-planner-open #studentMain{
+    display:flex!important;
+    flex-direction:column!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+  body.cc-student-planner-open #studentDayPanel{display:block}
+  body.cc-crew-planner-open > main{display:flex}
+  body.cc-crew-planner-open #studentMain{display:none!important}
+</style>
+<script>
+(function(){
+  const originalSwitch=window.setPlannerTab;
+
+  function fallbackEmptyStudentZones(){
+    const grid=document.getElementById('studentDayGrid');
+    if(!grid || grid.children.length)return;
+    const zones=[
+      ['PRO','pro'],
+      ['ROOKIE','rookie'],
+      ['VERHUUR','rental']
+    ];
+    grid.innerHTML=zones.map(([name,cls])=>
+      `<section class="student-zone ${cls}"><h2>${name}</h2><div class="empty" style="padding:12px 14px">Geen jobstudenten ingepland.</div></section>`
+    ).join('');
+  }
+
+  function enforceStudentView(){
+    const main=document.querySelector('body > main');
+    const studentMain=document.getElementById('studentMain');
+    const todoMain=document.getElementById('todoMain');
+    if(!studentMain)return;
+
+    document.body.classList.add('cc-student-planner-open');
+    document.body.classList.remove('cc-crew-planner-open');
+    if(main)main.style.setProperty('display','none','important');
+    studentMain.classList.add('active');
+    studentMain.style.setProperty('display','flex','important');
+    if(todoMain){todoMain.classList.remove('active');todoMain.style.display='none'}
+
+    document.getElementById('crewPlannerTab')?.classList.remove('active');
+    document.getElementById('studentPlannerTab')?.classList.add('active');
+    document.getElementById('todoPlannerTab')?.classList.remove('active');
+
+    const dayPanel=document.getElementById('studentDayPanel');
+    const weekPanel=document.getElementById('studentWeekPanel');
+    const weekActive=document.getElementById('studentWeekBtn')?.classList.contains('active');
+    if(dayPanel)dayPanel.style.display=weekActive?'none':'block';
+    if(weekPanel)weekPanel.style.display=weekActive?'block':'none';
+
+    fallbackEmptyStudentZones();
+  }
+
+  function enforceCrewView(){
+    const main=document.querySelector('body > main');
+    const studentMain=document.getElementById('studentMain');
+    document.body.classList.add('cc-crew-planner-open');
+    document.body.classList.remove('cc-student-planner-open');
+    if(main){
+      main.style.removeProperty('display');
+      if(getComputedStyle(main).display==='none')main.style.display='flex';
+    }
+    if(studentMain){studentMain.classList.remove('active');studentMain.style.setProperty('display','none','important')}
+  }
+
+  window.setPlannerTab=function(tab){
+    if(typeof originalSwitch==='function')originalSwitch(tab);
+    if(tab==='students'){
+      requestAnimationFrame(()=>{
+        enforceStudentView();
+        setTimeout(enforceStudentView,60);
+      });
+    }else if(tab==='crew'){
+      requestAnimationFrame(enforceCrewView);
+    }
+  };
+
+  function handleTab(event){
+    const button=event.target.closest?.('#crewPlannerTab,#studentPlannerTab,#todoPlannerTab');
+    if(!button)return;
+    if(button.id==='studentPlannerTab'){
+      event.preventDefault();
+      event.stopPropagation();
+      window.setPlannerTab('students');
+    }else if(button.id==='crewPlannerTab'){
+      event.preventDefault();
+      event.stopPropagation();
+      window.setPlannerTab('crew');
+    }
+  }
+
+  document.addEventListener('click',handleTab,true);
+  document.addEventListener('pointerup',handleTab,true);
+})();
+</script>
+
 </body>
 </html>
