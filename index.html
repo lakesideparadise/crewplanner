@@ -9346,6 +9346,45 @@ $("archiveBtn").onclick=()=>{
  renderArchive();$("archiveModal").classList.add("show");
 };
 $("closeArchiveBtn").onclick=()=>$("archiveModal").classList.remove("show");
+
+// V13.2 MOBILE FIX: een datum in Verleden direct openen op iPhone/Android.
+// Desktop blijft de bestaande klikafhandeling gebruiken.
+if($("archiveList")){
+ let archiveTouchHandled=false;
+ const openArchiveDateMobile=e=>{
+   if(!window.matchMedia("(max-width: 720px)").matches)return;
+   const row=e.target.closest("[data-archive-date]");
+   if(!row)return;
+   e.preventDefault();
+   e.stopPropagation();
+   archiveTouchHandled=true;
+   const target=row.dataset.archiveDate;
+   $("archiveModal").classList.remove("show");
+   ensureDateOption(target);
+   $("date").value=target;
+   currentView="day";
+   document.querySelectorAll("main .viewbtn").forEach(b=>b.classList.toggle("active",b.dataset.view==="day"));
+   document.querySelectorAll("main .panel").forEach(p=>p.classList.toggle("active",p.id==="day"));
+   renderDay();
+   renderWeek();
+   updateSelectedDateHeader();
+   renderMobileDayScroller(target);
+   requestAnimationFrame(()=>{
+     $("date").value=target;
+     renderDay();
+     document.querySelector("#dayGrid")?.scrollIntoView({behavior:"smooth",block:"start"});
+   });
+   setTimeout(()=>{archiveTouchHandled=false;},450);
+ };
+ $("archiveList").addEventListener("pointerup",openArchiveDateMobile,{passive:false});
+ $("archiveList").addEventListener("click",e=>{
+   if(archiveTouchHandled && window.matchMedia("(max-width: 720px)").matches){
+     e.preventDefault();
+     e.stopPropagation();
+   }
+ },true);
+}
+
 if($("pastShiftVisibilityBtn")) $("pastShiftVisibilityBtn").onclick=async()=>{
  if(!isPlannerAdmin())return alert("Alleen Nick en Arno kunnen deze instelling wijzigen.");
  const next=!hidePastCompletedInEveryone;
