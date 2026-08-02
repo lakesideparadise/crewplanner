@@ -9308,11 +9308,25 @@ function visibleDatesForUser(){
 }
 function applyPastDateVisibility(){
  const today=realTodayKey();
- [...$("date").options].forEach(o=>{
+ const dateSelect=$("date");
+ if(!dateSelect)return;
+
+ // Beheerders en contractbeheer mogen bewust oude planningen openen.
+ // Een gekozen datum uit het verleden mag daarna niet automatisch terug naar vandaag springen.
+ if(isAdminUser()){
+   [...dateSelect.options].forEach(o=>{
+     o.hidden=false;
+     o.disabled=false;
+   });
+   return;
+ }
+
+ // Gewone crewleden en jobstudenten zien geen historische datums via de datumkeuze.
+ [...dateSelect.options].forEach(o=>{
    o.hidden=o.value<today;
    o.disabled=o.value<today;
  });
- if($("date").value<today && !$("archiveModal").classList.contains("show")){
+ if(dateSelect.value<today){
    goToDate(today);
  }
 }
