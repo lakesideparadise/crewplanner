@@ -10264,7 +10264,9 @@ document.addEventListener("visibilitychange",()=>{
 
 /* ===== V13.1 MOBIEL: PLANNING EERST, BEHEER ONDERAAN ===== */
 @media(max-width:720px){
-  main{
+  /* Hogere specificiteit dan de mobiele planner-switch, anders bleef main display:block. */
+  body[data-planner-view="crew"] main,
+  body:not([data-planner-view]) main{
     display:flex!important;
     flex-direction:column!important;
   }
