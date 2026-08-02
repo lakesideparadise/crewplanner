@@ -10606,5 +10606,117 @@ document.addEventListener("visibilitychange",()=>{
 })();
 </script>
 
+
+
+<!-- V13.89: jobstudentenpaneel altijd zichtbaar en gevuld -->
+<style id="v13-89-students-visible">
+body[data-cc-view="students"] > main{display:none!important}
+body[data-cc-view="students"] #studentMain{
+  display:flex!important;flex-direction:column!important;
+  width:min(1280px,100%)!important;max-width:1280px!important;
+  min-height:320px!important;margin:0 auto!important;padding:14px!important;
+  visibility:visible!important;opacity:1!important;position:relative!important;
+}
+body[data-cc-view="students"] #studentDayPanel{display:block!important;width:100%!important;visibility:visible!important}
+body[data-cc-view="students"] #studentDayGrid{display:grid!important;width:100%!important;visibility:visible!important}
+body[data-cc-view="students"] #studentDayGrid .student-zone{display:block!important;visibility:visible!important;min-height:92px!important}
+body[data-cc-view="crew"] #studentMain{display:none!important}
+@media(max-width:720px){
+ body[data-cc-view="students"] #studentMain{width:100%!important;padding:10px 10px 100px!important}
+ body[data-cc-view="students"] #studentDayGrid{grid-template-columns:1fr!important;gap:12px!important}
+}
+</style>
+<script id="v13-89-students-visible-script">
+(function(){
+  'use strict';
+  function todayKey(){
+    const d=new Date(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+    return d.getFullYear()+'-'+m+'-'+day;
+  }
+  function guaranteeStudentContent(){
+    const section=document.getElementById('studentMain');
+    const dayPanel=document.getElementById('studentDayPanel');
+    const weekPanel=document.getElementById('studentWeekPanel');
+    const grid=document.getElementById('studentDayGrid');
+    const date=document.getElementById('studentDate');
+    if(!section||!grid)return;
+
+    section.hidden=false;
+    dayPanel && (dayPanel.hidden=false);
+    if(dayPanel)dayPanel.style.setProperty('display','block','important');
+    if(weekPanel)weekPanel.style.setProperty('display','none','important');
+
+    if(date && !date.options.length){
+      const o=document.createElement('option');o.value=todayKey();o.textContent='Vandaag';date.appendChild(o);date.value=o.value;
+    }
+
+    try{
+      if(typeof window.renderStudentAll==='function')window.renderStudentAll();
+      else if(typeof renderStudentAll==='function')renderStudentAll();
+    }catch(err){console.warn('Jobstudenten render-fallback:',err)}
+
+    if(!grid.querySelector('.student-zone')){
+      grid.innerHTML=[
+        ['PRO','pro'],['ROOKIE','rookie'],['VERHUUR','rental']
+      ].map(function(z){
+        return '<section class="student-zone '+z[1]+'"><h2>'+z[0]+'</h2><div class="empty" style="padding:12px 14px">Geen jobstudenten ingepland.</div></section>';
+      }).join('');
+    }
+  }
+
+  function showStudents(){
+    document.body.dataset.ccView='students';
+    document.body.dataset.plannerView='students';
+    document.body.classList.add('cc-student-planner-open');
+    document.body.classList.remove('cc-crew-planner-open');
+    const main=document.querySelector('body > main');
+    const section=document.getElementById('studentMain');
+    const todo=document.getElementById('todoMain');
+    if(main){main.hidden=true;main.style.setProperty('display','none','important')}
+    if(todo){todo.hidden=true;todo.classList.remove('active');todo.style.setProperty('display','none','important')}
+    if(section){section.hidden=false;section.classList.add('active');section.style.setProperty('display','flex','important')}
+    document.getElementById('crewPlannerTab')?.classList.remove('active');
+    document.getElementById('studentPlannerTab')?.classList.add('active');
+    document.getElementById('todoPlannerTab')?.classList.remove('active');
+    document.querySelectorAll('[data-plan]').forEach(function(b){b.classList.toggle('active',b.dataset.plan==='students')});
+    guaranteeStudentContent();
+    requestAnimationFrame(guaranteeStudentContent);
+    setTimeout(guaranteeStudentContent,80);
+  }
+
+  function showCrew(){
+    document.body.dataset.ccView='crew';
+    document.body.dataset.plannerView='crew';
+    document.body.classList.add('cc-crew-planner-open');
+    document.body.classList.remove('cc-student-planner-open');
+    const main=document.querySelector('body > main');
+    const section=document.getElementById('studentMain');
+    if(main){main.hidden=false;main.style.removeProperty('display')}
+    if(section){section.hidden=true;section.classList.remove('active');section.style.setProperty('display','none','important')}
+    document.getElementById('crewPlannerTab')?.classList.add('active');
+    document.getElementById('studentPlannerTab')?.classList.remove('active');
+    document.querySelectorAll('[data-plan]').forEach(function(b){b.classList.toggle('active',b.dataset.plan==='crew')});
+  }
+
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest('#studentPlannerTab,[data-plan="students"],#studentDashboardBtn');
+    if(btn){e.preventDefault();e.stopImmediatePropagation();showStudents();return}
+    const crew=e.target.closest('#crewPlannerTab,[data-plan="crew"]');
+    if(crew){e.preventDefault();e.stopImmediatePropagation();showCrew()}
+  },true);
+  document.addEventListener('pointerup',function(e){
+    const btn=e.target.closest('#studentPlannerTab,[data-plan="students"],#studentDashboardBtn');
+    if(btn){e.preventDefault();e.stopImmediatePropagation();showStudents();return}
+    const crew=e.target.closest('#crewPlannerTab,[data-plan="crew"]');
+    if(crew){e.preventDefault();e.stopImmediatePropagation();showCrew()}
+  },true);
+
+  window.ccShowStudents=showStudents;
+  window.addEventListener('load',function(){
+    if(document.body.dataset.plannerView==='students'||document.body.dataset.ccView==='students')showStudents();
+  });
+})();
+</script>
+
 </body>
 </html>
