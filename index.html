@@ -3948,6 +3948,9 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
       <button id="archiveBtn" class="admin-tool-card tool-orange">
         <span class="tool-icon">📂</span><span class="tool-copy"><b>Verleden</b><small>Bekijk eerdere planningen.</small></span><span class="tool-arrow">›</span>
       </button>
+      <button id="pastShiftVisibilityBtn" class="admin-tool-card tool-blue" type="button">
+        <span class="tool-icon">👁️</span><span class="tool-copy"><b>Voorbije shifts</b><small id="pastShiftVisibilityStatus">Afgelopen shifts verbergen in Iedereen.</small></span><span class="tool-arrow">›</span>
+      </button>
       <button id="changeLogBtn" class="admin-tool-card tool-yellow">
         <span class="tool-icon">📒</span><span class="tool-copy"><b>Logboek</b><small>Raadpleeg wijzigingen en acties.</small></span><span class="tool-arrow">›</span>
       </button>
@@ -4575,7 +4578,8 @@ const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHO
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
 let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewDirectory=new Map(), crewContactsUnsub=null,
 studentShifts=[], studentDirectory=new Map(), studentShiftUnsub=null, studentDirectoryUnsub=null,
-studentEditing=null, studentView="day", availabilityExceptions=[], availabilityViewType="crew", monthTemplateDraft=[], monthTemplateExcluded=new Set();
+studentEditing=null, studentView="day", availabilityExceptions=[], availabilityViewType="crew", monthTemplateDraft=[], monthTemplateExcluded=new Set(),
+hidePastCompletedInEveryone=true, planningDisplaySettingsUnsub=null;
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -4584,22 +4588,48 @@ function label(k){return new Date(k+"T12:00:00").toLocaleDateString("nl-BE",{wee
 function sorted(a){return [...a].sort((x,y)=>x.date.localeCompare(y.date)||x.start.localeCompare(y.start)||x.zone.localeCompare(y.zone)||x.employee.localeCompare(y.employee))}
 function visibleShifts(){const n=$("myEmployee").value;const base=normalCrewShifts();return n?base.filter(x=>x.employee===n):base}
 
-// In de weergave "Iedereen" verdwijnen alleen gewone shifts zodra hun einduur voorbij is.
-// De gegevens blijven in Firebase en blijven zichtbaar in Mijn planning, rapporten en het archief.
+// Instelbaar door Nick en Arno: afgelopen shifts van vandaag wel of niet tonen in "Iedereen".
+// Een datum die bewust via Verleden of de jaarplanner wordt geopend, blijft altijd volledig zichtbaar.
 function hidePastShiftInEveryone(x){
- const selected=(($("myEmployee")?.value)||"").trim();
- if(selected || !x || x.zone==="VERLOF")return false;
+ const selectedPerson=(($('myEmployee')?.value)||'').trim();
+ if(selectedPerson || !x || x.zone==='VERLOF' || !hidePastCompletedInEveryone)return false;
  const today=key(new Date());
- if((x.date||"")<today)return true;
- if((x.date||"")>today)return false;
- if(!/^\d{2}:\d{2}$/.test(x.end||""))return false;
+ const openedDate=(($('date')?.value)||today);
+ if(openedDate!==today || (x.date||'')!==today)return false;
+ if(!/^\d{2}:\d{2}$/.test(x.end||''))return false;
  const now=new Date();
- const [hours,minutes]=(x.end||"00:00").split(":").map(Number);
- const end=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hours,minutes,0,0);
- return now>=end;
+ const [hours,minutes]=(x.end||'00:00').split(':').map(Number);
+ const endTime=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hours,minutes,0,0);
+ return now>=endTime;
 }
 function plannerVisibleShifts(){
  return visibleShifts().filter(x=>!hidePastShiftInEveryone(x));
+}
+
+function updatePastShiftVisibilityUI(){
+ const status=$('pastShiftVisibilityStatus');
+ const btn=$('pastShiftVisibilityBtn');
+ if(status){
+   status.textContent=hidePastCompletedInEveryone
+     ? 'Afgelopen shifts worden verborgen in Iedereen.'
+     : 'Alle shifts blijven zichtbaar in Iedereen.';
+ }
+ if(btn){
+   btn.style.display=isPlannerAdmin()?'grid':'none';
+   btn.setAttribute('aria-pressed',String(!hidePastCompletedInEveryone));
+ }
+}
+function startPlanningDisplaySettingsListener(){
+ if(planningDisplaySettingsUnsub){planningDisplaySettingsUnsub();planningDisplaySettingsUnsub=null;}
+ planningDisplaySettingsUnsub=onSnapshot(doc(db,'settings','planningDisplay'),snap=>{
+   const data=snap.exists()?snap.data():{};
+   hidePastCompletedInEveryone=data.hidePastCompletedInEveryone!==false;
+   updatePastShiftVisibilityUI();
+   renderDay();renderWeek();
+ },()=>{
+   hidePastCompletedInEveryone=true;
+   updatePastShiftVisibilityUI();
+ });
 }
 
 async function loadFallback(){
@@ -7411,7 +7441,7 @@ onAuthStateChanged(auth,u=>{
    localStorage.setItem("cc_my_name",adminCrewName());
  }
 
- fillPeople();updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();startCrewContactsListener();startStudentShiftListener();startStudentDirectoryListener();renderDay();renderWeek();renderMessages();renderStudentAll();syncMobileAdminState();
+ fillPeople();updateImportButton();updateMessageIdentity();applyPastDateVisibility();startAuditListener();startCrewContactsListener();startStudentShiftListener();startStudentDirectoryListener();startPlanningDisplaySettingsListener();updatePastShiftVisibilityUI();renderDay();renderWeek();renderMessages();renderStudentAll();syncMobileAdminState();
 });
 
 function updateImportButton(){
@@ -9302,6 +9332,24 @@ $("archiveBtn").onclick=()=>{
  renderArchive();$("archiveModal").classList.add("show");
 };
 $("closeArchiveBtn").onclick=()=>$("archiveModal").classList.remove("show");
+if($("pastShiftVisibilityBtn")) $("pastShiftVisibilityBtn").onclick=async()=>{
+ if(!isPlannerAdmin())return alert("Alleen Nick en Arno kunnen deze instelling wijzigen.");
+ const next=!hidePastCompletedInEveryone;
+ const explanation=next
+   ? "Afgelopen shifts van vandaag verbergen in de weergave Iedereen? Oude planningen blijven via Verleden volledig zichtbaar."
+   : "Alle shifts van vandaag zichtbaar laten, ook nadat hun einduur voorbij is?";
+ if(!confirm(explanation))return;
+ try{
+   await setDoc(doc(db,"settings","planningDisplay"),{
+     hidePastCompletedInEveryone:next,
+     updatedAt:serverTimestamp(),
+     updatedBy:(user?.email||"")
+   },{merge:true});
+ }catch(err){
+   console.error(err);
+   alert("De instelling kon niet worden opgeslagen. Controleer je verbinding en Firebase-rechten.");
+ }
+};
 document.addEventListener("click",e=>{
  const row=e.target.closest("[data-archive-date]");
  if(!row)return;
