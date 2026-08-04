@@ -4924,6 +4924,12 @@ function people(){
    .map(([name])=>name);
 
  const names=new Set(activeDirectory);
+
+ // Ann-Sophy heeft geen gewone crewshift nodig om haar naam te kunnen kiezen.
+ // Haar naam blijft beschikbaar zodat uitsluitend zij de Login-knop kan openen
+ // en daarna met haar Firebase-account als contractbeheerder kan inloggen.
+ names.add("Ann-Sophy");
+
  shiftNames.forEach(name=>{
    // Bestaande/historische naam zonder directory-record blijft zichtbaar
    // totdat beheer hem expliciet verwijdert/deactiveert.
@@ -7766,7 +7772,8 @@ function updateAdminLoginVisibility(){
  const mobileBtn=$("mobileAuthBtn");
  const desktopBtn=$("desktopAuthBtn");
  const selected=($("myEmployee")?.value || localStorage.getItem("cc_my_name") || "").trim();
- const mayManage=["Nick","Arno","Ann-Sophy","Ann Sophy","Annsophy"].includes(selected) || isAdminUser();
+ const normalizedSelected=selected.toLowerCase().replace(/[^a-z]/g,"");
+ const mayManage=["nick","arno","annsophy"].includes(normalizedSelected) || isAdminUser();
 
  if(btn){
    btn.style.display=mayManage && !isAdminUser() ? "inline-block" : "none";
