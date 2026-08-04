@@ -3640,6 +3640,11 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 }
 </style>
 
+
+<style id="v13-alarm-testmode-style">
+#alarmTestModeBtn.test-mode-on{outline:3px solid #e3b21b;background:#fff8d9}
+#alarmTestModeBtn.test-mode-on .tool-icon{background:#ffe89a}
+</style>
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -3962,6 +3967,9 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
       </button>
       <button id="alarmLogBtn" class="admin-tool-card tool-orange">
         <span class="tool-icon">📕</span><span class="tool-copy"><b>Alarm logboek</b><small>Problemen, responstijd en afhandeling.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="alarmTestModeBtn" class="admin-tool-card tool-yellow" type="button">
+        <span class="tool-icon">🧪</span><span class="tool-copy"><b>Alarm testmodus</b><small id="alarmTestModeStatus">Uit · alarmen zijn echte meldingen.</small></span><span class="tool-arrow">›</span>
       </button>
       <button id="appUsageBtn" class="admin-tool-card tool-blue">
         <span class="tool-icon">📱</span><span class="tool-copy"><b>App gebruik</b><small>Zie wie CableCrew al geopend en gebruikt heeft.</small></span><span class="tool-arrow">›</span>
@@ -6233,7 +6241,34 @@ function openZoneAlert(){
 function zonesForAlertFallback(){
  return ["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS"];
 }
+const ALARM_TEST_MODE_KEY="cc_alarm_test_mode";
+function alarmTestModeEnabled(){
+ return localStorage.getItem(ALARM_TEST_MODE_KEY)==="1";
+}
+function updateAlarmTestModeUI(){
+ const btn=$("alarmTestModeBtn");
+ const status=$("alarmTestModeStatus");
+ const enabled=alarmTestModeEnabled();
+ if(status)status.textContent=enabled
+   ? "Aan · meldingen worden duidelijk als TESTALARM verstuurd."
+   : "Uit · alarmen zijn echte meldingen.";
+ if(btn){
+   btn.classList.toggle("test-mode-on",enabled);
+   btn.setAttribute("aria-pressed",enabled?"true":"false");
+ }
+}
+function toggleAlarmTestMode(){
+ const enabled=!alarmTestModeEnabled();
+ localStorage.setItem(ALARM_TEST_MODE_KEY,enabled?"1":"0");
+ updateAlarmTestModeUI();
+ alert(enabled
+   ? "Alarm testmodus staat AAN. Alarmberichten worden als TESTALARM gemarkeerd."
+   : "Alarm testmodus staat UIT. Volgende alarmen zijn echte meldingen.");
+}
 function zoneAlertMessage(data){
+ if(alarmTestModeEnabled()){
+   return `🧪 TESTALARM – GEEN ECHTE NOODSITUATIE\n\nDit is een test van CableCrew.\nZone: ${data.zone}\nMedewerker: ${data.person}\nTijd: ${data.timeLabel}\n\nGeen hulp nodig.`;
+ }
  return `🚨 ALERT PROBLEEM\nZone: ${data.zone}\n${data.person} heeft hulp nodig.\nTijd: ${data.timeLabel}\n\nWie kan komen helpen?`;
 }
 function whatsappShareUrl(message){
@@ -7322,6 +7357,8 @@ $("closeAppUsageBtn").onclick=()=>$("appUsageModal").classList.remove("show");
 $("appUsageCrewTab").onclick=()=>{appUsageView="crew";renderAppUsage()};
 $("appUsageStudentTab").onclick=()=>{appUsageView="student";renderAppUsage()};
 $("alarmLogBtn").onclick=()=>{renderAlarmLog();$("alarmLogModal").classList.add("show")};
+if($("alarmTestModeBtn"))$("alarmTestModeBtn").onclick=toggleAlarmTestMode;
+updateAlarmTestModeUI();
 $("closeAlarmLogBtn").onclick=()=>$("alarmLogModal").classList.remove("show");
 $("cancelAlarmReportBtn").onclick=()=>{$("alarmReportModal").classList.remove("show");alarmReportEditing=null};
 $("saveAlarmReportBtn").onclick=saveAlarmReport;
