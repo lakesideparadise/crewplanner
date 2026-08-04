@@ -1874,6 +1874,12 @@ body.jobstudent-viewer .planner-tabs{grid-template-columns:1fr 1fr!important}
   body.jobstudent-viewer #studentPlannerTab{display:flex!important}
 }
 
+/* ===== V14 OFFLINE STATUS ===== */
+.offline-status-banner{display:none;position:sticky;top:0;z-index:140;padding:8px 14px;text-align:center;font-size:12px;font-weight:900;background:#fff3cd;color:#765500;border-bottom:1px solid #e8cf79}
+.offline-status-banner.show{display:block}
+.offline-status-banner.online-again{background:#e8f6ed;color:#176b3a;border-bottom-color:#9fd2af}
+@media(max-width:720px){.offline-status-banner{font-size:11px;padding:7px 10px}}
+
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -3642,6 +3648,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 
 </head>
 <body>
+<div id="offlineStatusBanner" class="offline-status-banner" role="status" aria-live="polite"></div>
 <div id="toastWrap" class="toast-wrap"></div>
 <header><div class="header-inner">
   <div class="brand-wrap"><img class="brand-logo" src="./icon-192.png" alt=""><div class="brand">CableCrew Lakeside</div></div>
@@ -4561,7 +4568,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, query, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, query, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBdeGM27e5xNRGipmEeQzmTW4aNMrKtc3A",
@@ -4573,6 +4580,12 @@ const firebaseConfig = {
 };
 
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+// Bewaar eerder geladen Firestore-data lokaal, zodat de laatst gesynchroniseerde planning offline leesbaar blijft.
+enableIndexedDbPersistence(db).catch((err)=>{
+  if(err?.code!=="failed-precondition" && err?.code!=="unimplemented"){
+    console.warn("CableCrew offline Firestore-cache:",err);
+  }
+});
 const $=id=>document.getElementById(id);
 const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
@@ -9920,12 +9933,48 @@ updateAdminLoginVisibility();
 
 <script>
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(err => {
+  window.addEventListener("load", async () => {
+    try{
+      const registration=await navigator.serviceWorker.register("./service-worker.js");
+      registration.update().catch(()=>{});
+    }catch(err){
       console.warn("CableCrew service worker:", err);
-    });
+    }
   });
 }
+
+(function initCableCrewConnectivity(){
+  const banner=document.getElementById("offlineStatusBanner");
+  let onlineAgainTimer=null;
+  function updateConnectivity(initial=false){
+    if(!banner)return;
+    clearTimeout(onlineAgainTimer);
+    if(!navigator.onLine){
+      const lastSync=localStorage.getItem("cc_last_online_sync");
+      let suffix="";
+      if(lastSync){
+        const d=new Date(lastSync);
+        if(!Number.isNaN(d.getTime())) suffix=` · laatst online ${d.toLocaleString("nl-BE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`;
+      }
+      banner.textContent=`📶 Offline modus — je bekijkt de laatst gesynchroniseerde planning${suffix}`;
+      banner.className="offline-status-banner show";
+      document.body.classList.add("cablecrew-offline");
+    }else{
+      localStorage.setItem("cc_last_online_sync",new Date().toISOString());
+      document.body.classList.remove("cablecrew-offline");
+      if(!initial){
+        banner.textContent="🟢 Verbinding hersteld — planning wordt bijgewerkt";
+        banner.className="offline-status-banner show online-again";
+        onlineAgainTimer=setTimeout(()=>{banner.className="offline-status-banner";},3500);
+      }else{
+        banner.className="offline-status-banner";
+      }
+    }
+  }
+  window.addEventListener("online",()=>updateConnectivity(false));
+  window.addEventListener("offline",()=>updateConnectivity(false));
+  updateConnectivity(true);
+})();
 
 
 // =========================
