@@ -1874,12 +1874,6 @@ body.jobstudent-viewer .planner-tabs{grid-template-columns:1fr 1fr!important}
   body.jobstudent-viewer #studentPlannerTab{display:flex!important}
 }
 
-/* ===== V14 OFFLINE STATUS ===== */
-.offline-status-banner{display:none;position:sticky;top:0;z-index:140;padding:8px 14px;text-align:center;font-size:12px;font-weight:900;background:#fff3cd;color:#765500;border-bottom:1px solid #e8cf79}
-.offline-status-banner.show{display:block}
-.offline-status-banner.online-again{background:#e8f6ed;color:#176b3a;border-bottom-color:#9fd2af}
-@media(max-width:720px){.offline-status-banner{font-size:11px;padding:7px 10px}}
-
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -3648,7 +3642,6 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 
 </head>
 <body>
-<div id="offlineStatusBanner" class="offline-status-banner" role="status" aria-live="polite"></div>
 <div id="toastWrap" class="toast-wrap"></div>
 <header><div class="header-inner">
   <div class="brand-wrap"><img class="brand-logo" src="./icon-192.png" alt=""><div class="brand">CableCrew Lakeside</div></div>
@@ -4568,7 +4561,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, enableIndexedDbPersistence, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, query, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, query, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBdeGM27e5xNRGipmEeQzmTW4aNMrKtc3A",
@@ -4580,12 +4573,6 @@ const firebaseConfig = {
 };
 
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
-// Bewaar eerder geladen Firestore-data lokaal, zodat de laatst gesynchroniseerde planning offline leesbaar blijft.
-enableIndexedDbPersistence(db).catch((err)=>{
-  if(err?.code!=="failed-precondition" && err?.code!=="unimplemented"){
-    console.warn("CableCrew offline Firestore-cache:",err);
-  }
-});
 const $=id=>document.getElementById(id);
 const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
@@ -9933,48 +9920,12 @@ updateAdminLoginVisibility();
 
 <script>
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", async () => {
-    try{
-      const registration=await navigator.serviceWorker.register("./service-worker.js");
-      registration.update().catch(()=>{});
-    }catch(err){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(err => {
       console.warn("CableCrew service worker:", err);
-    }
+    });
   });
 }
-
-(function initCableCrewConnectivity(){
-  const banner=document.getElementById("offlineStatusBanner");
-  let onlineAgainTimer=null;
-  function updateConnectivity(initial=false){
-    if(!banner)return;
-    clearTimeout(onlineAgainTimer);
-    if(!navigator.onLine){
-      const lastSync=localStorage.getItem("cc_last_online_sync");
-      let suffix="";
-      if(lastSync){
-        const d=new Date(lastSync);
-        if(!Number.isNaN(d.getTime())) suffix=` · laatst online ${d.toLocaleString("nl-BE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`;
-      }
-      banner.textContent=`📶 Offline modus — je bekijkt de laatst gesynchroniseerde planning${suffix}`;
-      banner.className="offline-status-banner show";
-      document.body.classList.add("cablecrew-offline");
-    }else{
-      localStorage.setItem("cc_last_online_sync",new Date().toISOString());
-      document.body.classList.remove("cablecrew-offline");
-      if(!initial){
-        banner.textContent="🟢 Verbinding hersteld — planning wordt bijgewerkt";
-        banner.className="offline-status-banner show online-again";
-        onlineAgainTimer=setTimeout(()=>{banner.className="offline-status-banner";},3500);
-      }else{
-        banner.className="offline-status-banner";
-      }
-    }
-  }
-  window.addEventListener("online",()=>updateConnectivity(false));
-  window.addEventListener("offline",()=>updateConnectivity(false));
-  updateConnectivity(true);
-})();
 
 
 // =========================
@@ -10764,6 +10715,223 @@ body[data-cc-view="crew"] #studentMain{display:none!important}
   window.addEventListener('load',function(){
     if(document.body.dataset.plannerView==='students'||document.body.dataset.ccView==='students')showStudents();
   });
+})();
+</script>
+
+
+
+<!-- ===== INDEX 90: OFFLINE STATUS & AUTOMATISCHE HERSYNCHRONISATIE ===== -->
+<style>
+  #ccNetworkBanner{
+    display:none;
+    position:relative;
+    z-index:140;
+    width:100%;
+    padding:10px 16px;
+    text-align:center;
+    font-size:13px;
+    line-height:1.35;
+    font-weight:850;
+    border-bottom:1px solid transparent;
+  }
+  #ccNetworkBanner.cc-offline{
+    display:block;
+    background:#fff2c7;
+    color:#765300;
+    border-bottom-color:#e8c55b;
+  }
+  #ccNetworkBanner.cc-syncing{
+    display:block;
+    background:#eaf4fb;
+    color:#0b4f78;
+    border-bottom-color:#b9d9ec;
+  }
+  #ccNetworkToast{
+    display:none;
+    position:fixed;
+    left:50%;
+    top:14px;
+    transform:translateX(-50%);
+    z-index:500;
+    max-width:calc(100vw - 28px);
+    padding:11px 16px;
+    border-radius:12px;
+    background:#e9f8ef;
+    color:#17643a;
+    border:1px solid #9ed5b5;
+    box-shadow:0 10px 28px rgba(18,76,45,.18);
+    font-size:13px;
+    font-weight:900;
+    text-align:center;
+  }
+  #ccNetworkToast.show{display:block}
+  #ccNetworkStatus{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+    font-size:11px;
+    font-weight:850;
+    color:#607086;
+  }
+  #ccNetworkStatus .cc-dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:#22a447;
+    box-shadow:0 0 0 2px rgba(34,164,71,.12);
+  }
+  #ccNetworkStatus.offline .cc-dot{background:#d98b00;box-shadow:0 0 0 2px rgba(217,139,0,.14)}
+  #ccNetworkStatus.syncing .cc-dot{background:#1687df;animation:ccNetPulse 1s ease-in-out infinite}
+  @keyframes ccNetPulse{50%{opacity:.35}}
+  #loginBtn.cc-login-offline{
+    background:#e5e9ed!important;
+    color:#7d8994!important;
+    border-color:#d5dce2!important;
+    cursor:not-allowed!important;
+    box-shadow:none!important;
+  }
+  @media(max-width:720px){
+    #ccNetworkBanner{padding:9px 12px;font-size:12px}
+    #ccNetworkStatus{font-size:0;gap:0}
+    #ccNetworkStatus .cc-dot{width:10px;height:10px}
+    #ccNetworkToast{top:10px;font-size:12px}
+  }
+</style>
+<script>
+(function cableCrewOfflineExperience(){
+  const LAST_SYNC_KEY="cc_last_successful_sync_v1";
+  const SUCCESS_FLAG="cc_show_sync_success_v1";
+  let reconnectBusy=false;
+
+  function ensureUI(){
+    let banner=document.getElementById("ccNetworkBanner");
+    if(!banner){
+      banner=document.createElement("div");
+      banner.id="ccNetworkBanner";
+      banner.setAttribute("role","status");
+      banner.setAttribute("aria-live","polite");
+      document.body.insertBefore(banner,document.body.firstChild);
+    }
+    let toast=document.getElementById("ccNetworkToast");
+    if(!toast){
+      toast=document.createElement("div");
+      toast.id="ccNetworkToast";
+      toast.setAttribute("role","status");
+      toast.setAttribute("aria-live","polite");
+      document.body.appendChild(toast);
+    }
+    let status=document.getElementById("ccNetworkStatus");
+    if(!status){
+      status=document.createElement("span");
+      status.id="ccNetworkStatus";
+      status.innerHTML='<span class="cc-dot"></span><span class="cc-status-label">Online</span>';
+      const host=document.querySelector(".header-inner") || document.querySelector("header");
+      if(host) host.appendChild(status);
+    }
+    return {banner,toast,status};
+  }
+
+  function relativeSyncText(ms){
+    if(!ms)return "nog niet beschikbaar";
+    const d=new Date(Number(ms));
+    if(Number.isNaN(d.getTime()))return "nog niet beschikbaar";
+    const now=new Date();
+    const dayKey=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
+    const yesterday=new Date(now);yesterday.setDate(now.getDate()-1);
+    const time=d.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"});
+    if(dayKey(d)===dayKey(now))return `vandaag ${time}`;
+    if(dayKey(d)===dayKey(yesterday))return `gisteren ${time}`;
+    return `${d.toLocaleDateString("nl-BE",{day:"2-digit",month:"2-digit",year:"numeric"})} ${time}`;
+  }
+
+  function setLoginOffline(isOffline){
+    const btn=document.getElementById("loginBtn");
+    if(!btn)return;
+    if(!btn.dataset.ccOriginalText)btn.dataset.ccOriginalText=btn.textContent;
+    const appearsLoggedOut=/login|aanmelden/i.test(btn.textContent||"");
+    if(isOffline && appearsLoggedOut){
+      btn.disabled=true;
+      btn.classList.add("cc-login-offline");
+      btn.textContent="📴 Offline";
+      btn.title="Inloggen is niet beschikbaar zonder internetverbinding.";
+    }else if(!isOffline && btn.classList.contains("cc-login-offline")){
+      btn.disabled=false;
+      btn.classList.remove("cc-login-offline");
+      btn.textContent=btn.dataset.ccOriginalText||"🔐 Login";
+      btn.removeAttribute("title");
+    }
+  }
+
+  function setState(state){
+    const {banner,status}=ensureUI();
+    status.classList.remove("offline","syncing");
+    const label=status.querySelector(".cc-status-label");
+    if(state==="offline"){
+      status.classList.add("offline");
+      if(label)label.textContent="Offline";
+      const last=localStorage.getItem(LAST_SYNC_KEY);
+      banner.className="cc-offline";
+      banner.innerHTML=`📶 <strong>Offline modus</strong> — je bekijkt de laatst gesynchroniseerde planning · laatst gesynchroniseerd: ${relativeSyncText(last)}`;
+      setLoginOffline(true);
+    }else if(state==="syncing"){
+      status.classList.add("syncing");
+      if(label)label.textContent="Synchroniseren…";
+      banner.className="cc-syncing";
+      banner.innerHTML="🔄 <strong>Verbinding hersteld</strong> — planning wordt opnieuw gesynchroniseerd…";
+      setLoginOffline(false);
+    }else{
+      if(label)label.textContent="Online";
+      banner.className="";
+      banner.textContent="";
+      setLoginOffline(false);
+    }
+  }
+
+  function showSyncedToast(){
+    const {toast}=ensureUI();
+    toast.textContent="🟢 Online — planning gesynchroniseerd";
+    toast.classList.add("show");
+    window.setTimeout(()=>toast.classList.remove("show"),3000);
+  }
+
+  async function reconnectAndRefresh(){
+    if(reconnectBusy)return;
+    reconnectBusy=true;
+    setState("syncing");
+    try{
+      const probe=await fetch(`./index.html?cc_sync=${Date.now()}`,{cache:"no-store"});
+      if(!probe.ok)throw new Error(`HTTP ${probe.status}`);
+      localStorage.setItem(LAST_SYNC_KEY,String(Date.now()));
+      sessionStorage.setItem(SUCCESS_FLAG,"1");
+      // Een herlaadbeurt maakt de Firestore-listeners, het weer en de watertemperatuur
+      // opnieuw actief en voorkomt dat er oude offline gegevens blijven staan.
+      window.setTimeout(()=>window.location.reload(),350);
+    }catch(err){
+      reconnectBusy=false;
+      setState("offline");
+      console.warn("CableCrew hersynchronisatie mislukt:",err);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded",()=>{
+    ensureUI();
+    if(sessionStorage.getItem(SUCCESS_FLAG)==="1"){
+      sessionStorage.removeItem(SUCCESS_FLAG);
+      localStorage.setItem(LAST_SYNC_KEY,String(Date.now()));
+      setState("online");
+      showSyncedToast();
+    }else if(navigator.onLine){
+      setState("online");
+      // Bij een normale online start onthouden we het laatste succesvolle openingsmoment.
+      window.setTimeout(()=>localStorage.setItem(LAST_SYNC_KEY,String(Date.now())),1200);
+    }else{
+      setState("offline");
+    }
+  });
+
+  window.addEventListener("offline",()=>setState("offline"));
+  window.addEventListener("online",reconnectAndRefresh);
 })();
 </script>
 
