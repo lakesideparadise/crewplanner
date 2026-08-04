@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13.93-ALARM-NO-LOGIN-2026-08-04">
+<meta name="cablecrew-version" content="V13.96-SAFETY-ALARM-TYPES-2026-08-04">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -3641,6 +3641,24 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 </style>
 
 
+<style id="v13-96-safety-alarm-types-style">
+.zone-alert-choice-modal{width:min(520px,96vw)}
+.zone-alert-choice-head{text-align:center;margin-bottom:14px}
+.zone-alert-choice-head h2{margin:0 0 6px;font-size:24px}
+.zone-alert-choice-head p{margin:0;color:#607086;font-size:13px;line-height:1.4}
+.zone-alert-context{margin:12px 0;padding:10px 12px;border-radius:11px;background:#f3f7fa;color:#29465d;font-size:13px;font-weight:800;text-align:center}
+.zone-alert-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.zone-alert-type-btn{min-height:142px;border-radius:18px;border:0;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:18px;font-weight:950;box-shadow:0 9px 24px rgba(27,55,78,.15)}
+.zone-alert-type-btn .alarm-type-icon{font-size:42px;line-height:1}
+.zone-alert-type-btn .alarm-type-sub{font-size:11px;font-weight:750;opacity:.92}
+.zone-alert-type-btn.medical{background:linear-gradient(145deg,#b91522,#e33845)}
+.zone-alert-type-btn.technical{background:linear-gradient(145deg,#c66a00,#f29a1f)}
+.zone-alert-type-btn:active{transform:scale(.985)}
+.zone-alert-cancel{width:100%;margin-top:12px;min-height:46px}
+.live-zone-alert.medical{background:linear-gradient(135deg,#8f1020,#d32436)!important}
+.live-zone-alert.technical{background:linear-gradient(135deg,#9a5100,#dd830f)!important}
+@media(max-width:520px){.zone-alert-type-grid{grid-template-columns:1fr}.zone-alert-type-btn{min-height:112px;flex-direction:row;text-align:left;padding:18px}.zone-alert-type-btn .alarm-type-icon{font-size:38px}}
+</style>
 <style id="v13-alarm-testmode-style">
 #alarmTestModeBtn.test-mode-on{outline:3px solid #e3b21b;background:#fff8d9}
 #alarmTestModeBtn.test-mode-on .tool-icon{background:#ffe89a}
@@ -3798,30 +3816,25 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 </div>
 
 <div id="zoneAlertModal" class="modalback">
-  <div class="modal zone-alert-modal">
-    <h2>🚨 Probleem melden</h2>
-    <div class="zone-alert-warning">
-      Gebruik dit voor een operationeel probleem waarbij je snel hulp van collega's nodig hebt.
-      Bij echte medische of levensbedreigende nood: gebruik de normale noodprocedure/nooddiensten.
+  <div class="modal zone-alert-choice-modal">
+    <div class="zone-alert-choice-head">
+      <h2>🚨 Kies het alarmtype</h2>
+      <p>Eén tik activeert het alarm onmiddellijk.</p>
     </div>
-    <div class="formgrid">
-      <label class="wide">Melder<input id="zoneAlertPerson" readonly></label>
-      <label>Zone
-        <select id="zoneAlertZone"></select>
-      </label>
-      <label>Urgentie
-        <select id="zoneAlertUrgency">
-          <option value="help">Hulp nodig</option>
-          <option value="urgent">Dringend probleem</option>
-        </select>
-      </label>
-      <label class="wide">Korte melding<textarea id="zoneAlertNote" rows="2" placeholder="bv. kabel stilgevallen, materiaalprobleem, extra hulp nodig..."></textarea></label>
+    <div id="zoneAlertDetected" class="zone-alert-context"></div>
+    <div class="zone-alert-type-grid">
+      <button id="medicalAlarmBtn" class="zone-alert-type-btn medical" type="button">
+        <span class="alarm-type-icon">🩺</span>
+        <span>MEDISCH</span>
+        <span class="alarm-type-sub">Onmiddellijke medische hulp</span>
+      </button>
+      <button id="technicalAlarmBtn" class="zone-alert-type-btn technical" type="button">
+        <span class="alarm-type-icon">🔧</span>
+        <span>TECHNISCH</span>
+        <span class="alarm-type-sub">Onmiddellijke technische hulp</span>
+      </button>
     </div>
-    <div id="zoneAlertDetected" class="zone-alert-detected"></div>
-    <div class="modalactions">
-      <button id="cancelZoneAlertBtn" type="button">Annuleren</button>
-      <button id="sendZoneAlertBtn" class="danger" type="button">🚨 Alarm versturen</button>
-    </div>
+    <button id="cancelZoneAlertBtn" class="zone-alert-cancel" type="button">Annuleren</button>
   </div>
 </div>
 
@@ -6205,6 +6218,8 @@ function alertZoneOptions(person){
  const zones=current.length?current:fallback;
  return zones;
 }
+let pendingZoneAlert=null;
+
 function openZoneAlert(){
  const person=alertPersonName();
  if(!person){
@@ -6212,37 +6227,16 @@ function openZoneAlert(){
    updateZoneAlertButtonState();
    return;
  }
-
  const active=currentActiveCrewShiftsFor(person);
  if(!active.length){
    alert("De alarmknop kan alleen gebruikt worden tijdens je ingeplande shift.");
    updateZoneAlertButtonState();
    return;
  }
-
- // Bij overlap nemen we de eerst startende actieve shift.
  const zone=active[0].zone;
- const now=new Date();
- if(!alarmCanBeActivatedNow()){
-   updateZoneAlertButtonState();
-   return alert("Het alarm kan alleen tijdens je actieve crewshift gebruikt worden.");
- }
-
- const data={
-   person,
-   zone,
-   urgency:"urgent",
-   date:realTodayKey(),
-   timeLabel:now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"}),
-   createdAt:now.toISOString(),
-   active:true
- };
-
- const msg=zoneAlertMessage(data);
-
- // Meteen WhatsApp openen; interne melding wordt op de achtergrond opgeslagen.
- openLakesideOperatorsGroup(msg);
- addDoc(collection(db,"zoneAlerts"),data).catch(e=>console.warn("Zone-alert kon niet worden opgeslagen:",e));
+ pendingZoneAlert={person,zone};
+ $("zoneAlertDetected").textContent=`${person} · ${zone}`;
+ $("zoneAlertModal").classList.add("show");
 }
 function zonesForAlertFallback(){
  return ["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS"];
@@ -6271,45 +6265,52 @@ function toggleAlarmTestMode(){
    ? "Alarm testmodus staat AAN. Alarmberichten worden als TESTALARM gemarkeerd."
    : "Alarm testmodus staat UIT. Volgende alarmen zijn echte meldingen.");
 }
+function alarmTypeLabel(type){return type==="medical"?"MEDISCH":"TECHNISCH"}
+function alarmTypeIcon(type){return type==="medical"?"🩺":"🔧"}
 function zoneAlertMessage(data){
+ const type=alarmTypeLabel(data.type);
+ const icon=alarmTypeIcon(data.type);
  if(alarmTestModeEnabled()){
-   return `🧪 TESTALARM – GEEN ECHTE NOODSITUATIE\n\nDit is een test van CableCrew.\nZone: ${data.zone}\nMedewerker: ${data.person}\nTijd: ${data.timeLabel}\n\nGeen hulp nodig.`;
+   return `🧪🧪 TESTALARM · ${type} 🧪🧪\n\nGEEN ECHTE NOODSITUATIE\n\n${icon} TYPE: ${type}\n👤 Medewerker: ${data.person}\n📍 Zone: ${data.zone}\n🕒 Tijd: ${data.timeLabel}\n\nDit is een test van CableCrew. Geen hulp nodig.`;
  }
- return `🚨 ALERT PROBLEEM\nZone: ${data.zone}\n${data.person} heeft hulp nodig.\nTijd: ${data.timeLabel}\n\nWie kan komen helpen?`;
+ const help=data.type==="medical"?"ONMIDDELLIJKE MEDISCHE HULP NODIG":"ONMIDDELLIJKE TECHNISCHE HULP NODIG";
+ return `🚨🚨🚨 ${type} ALARM 🚨🚨🚨\n\n${icon} TYPE: ${type}\n👤 Medewerker: ${data.person}\n📍 Zone: ${data.zone}\n🕒 Tijd: ${data.timeLabel}\n\n❗ ${help}`;
 }
 function whatsappShareUrl(message){
  return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
-async function sendZoneAlert(){
- const person=$("zoneAlertPerson").value.trim();
- const zone=$("zoneAlertZone").value;
- const note=$("zoneAlertNote").value.trim();
- const urgency=$("zoneAlertUrgency").value;
- if(!person||!zone)return alert("Melder en zone ontbreken.");
-
+async function activateZoneAlert(type){
+ const ctx=pendingZoneAlert;
+ if(!ctx)return;
+ const active=currentActiveCrewShiftsFor(ctx.person);
+ if(!active.length){
+   $("zoneAlertModal").classList.remove("show");
+   pendingZoneAlert=null;
+   updateZoneAlertButtonState();
+   return alert("Je actieve shift is intussen afgelopen. Het alarm werd niet verstuurd.");
+ }
  const now=new Date();
  const data={
-   person,zone,note,urgency,
+   person:ctx.person,zone:ctx.zone,type,urgency:"urgent",
    date:realTodayKey(),
    timeLabel:now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"}),
-   createdAt:new Date().toISOString(),
-   active:true
+   createdAt:now.toISOString(),active:true,test:alarmTestModeEnabled()
  };
-
+ $("zoneAlertModal").classList.remove("show");
+ pendingZoneAlert=null;
+ startZoneAlarmSound(type);
+ const msg=zoneAlertMessage(data);
+ // De shiftmeldingen blijven volledig onaangeroerd. Voor alarmen opent de
+ // WhatsApp-deelkeuze met het bericht reeds ingevuld; kies Lakeside Operators en druk op verzenden.
+ window.open(whatsappShareUrl(msg),"_blank","noopener");
  try{
-   await addDoc(collection(db,"zoneAlerts"),data);
-   $("zoneAlertModal").classList.remove("show");
-
-   // WhatsApp Web/App kan officieel niet automatisch rechtstreeks naar een specifieke
-   // groep posten. We openen daarom WhatsApp met de melding reeds ingevuld; de gebruiker
-   // kiest enkel nog "Lakeside Operators" en drukt op verzenden.
-   const msg=zoneAlertMessage(data);
-   openLakesideOperatorsGroup(msg);
+   const ref=await addDoc(collection(db,"zoneAlerts"),data);
+   showZoneAlertBanner(data,ref.id);
  }catch(e){
-   alert("Alarm kon niet worden opgeslagen: "+e.message);
+   console.warn("Zone-alert kon niet worden opgeslagen:",e);
+   showZoneAlertBanner(data,`local-${Date.now()}`);
  }
 }
-
 
 
 
@@ -6586,7 +6587,8 @@ function zoneAlertHelperName(){
 
 
 function zoneAlertResolvedMessage(data,helper,timeLabel){
- return `✅ HULP ONDERWEG\nZone: ${data.zone}\n${helper} komt helpen.\nTijd: ${timeLabel}\n\nAlarm afgesloten.`;
+ const type=alarmTypeLabel(data.type);
+ return `✅ HULP ONDERWEG · ${type}\n\n${alarmTypeIcon(data.type)} ${type} ALARM\n📍 Zone: ${data.zone}\n👤 ${helper} komt helpen\n🕒 Tijd: ${timeLabel}\n\nHet alarmsignaal is gestopt. De situatie wordt opgevolgd.`;
 }
 
 async function acknowledgeZoneAlert(id,data){
@@ -6601,6 +6603,7 @@ async function acknowledgeZoneAlert(id,data){
  const now=new Date();
  const timeLabel=now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"});
  const msg=zoneAlertResolvedMessage(data,helper,timeLabel);
+ stopZoneAlarmSound();
 
  // Meteen WhatsApp openen vanuit de klikactie zodat mobiele browsers dit niet blokkeren.
  // De medewerker kiest daarna enkel nog de groep "Lakeside Operators" en verzendt.
@@ -6680,20 +6683,28 @@ function zoneAlarmBeep(startOffset=0,duration=.22,freq=1040){
  }catch(e){}
 }
 
+let zoneAlarmType="technical";
 function playZoneAlarmPattern(){
  if(!zoneAlarmPlaying)return;
- // Duidelijk dubbel alarmsignaal, daarna korte pauze.
- zoneAlarmBeep(0,.24,1120);
- zoneAlarmBeep(.34,.24,1120);
- zoneAlarmBeep(.68,.34,860);
+ if(zoneAlarmType==="medical"){
+   zoneAlarmBeep(0,.18,1320);
+   zoneAlarmBeep(.24,.18,1320);
+   zoneAlarmBeep(.48,.18,1320);
+   zoneAlarmBeep(.82,.42,920);
+ }else{
+   zoneAlarmBeep(0,.24,1060);
+   zoneAlarmBeep(.34,.24,1060);
+   zoneAlarmBeep(.72,.34,790);
+ }
 }
 
-function startZoneAlarmSound(){
- if(zoneAlarmPlaying)return;
+function startZoneAlarmSound(type="technical"){
+ stopZoneAlarmSound();
+ zoneAlarmType=type||"technical";
  zoneAlarmPlaying=true;
  ensureZoneAlarmAudio();
  playZoneAlarmPattern();
- zoneAlarmTimer=setInterval(playZoneAlarmPattern,2400);
+ zoneAlarmTimer=setInterval(playZoneAlarmPattern,zoneAlarmType==="medical"?1900:2400);
 
  // Het alarmsignaal stopt automatisch na maximaal 20 seconden.
  // De rode alarmmelding blijft wel zichtbaar totdat iemand ze overneemt.
@@ -6724,13 +6735,15 @@ function showZoneAlertBanner(data,id){
 
  const div=document.createElement("div");
  div.id="liveZoneAlert";
- div.className="live-zone-alert";
+ div.className=`live-zone-alert ${data.type||"technical"}`;
  div.dataset.alertId=id;
 
+ const typeLabel=alarmTypeLabel(data.type);
+ const typeIcon=alarmTypeIcon(data.type);
  div.innerHTML=`
-   <div>🚨</div>
+   <div>${typeIcon}</div>
    <div>
-     <strong>${esc(data.zone)} · Hulp nodig</strong>
+     <strong>${esc(typeLabel)} ALARM · ${esc(data.zone)}</strong>
      <small>Gemeld door ${esc(data.person)} · ${esc(data.timeLabel||"")}</small>
      <span class="alert-sound-status">🔊 ALARM ACTIEF</span>
    </div>
@@ -6742,12 +6755,12 @@ function showZoneAlertBanner(data,id){
  div.querySelector(".alert-help-btn").onclick=()=>acknowledgeZoneAlert(id,data);
 
  document.body.appendChild(div);
- startZoneAlarmSound();
+ startZoneAlarmSound(data.type);
 
  if("Notification" in window && Notification.permission==="granted"){
    try{
-     new Notification(`🚨 ${data.zone} · hulp nodig`,{
-       body:`${data.person} heeft hulp nodig. Open CableCrew om de melding over te nemen.`
+     new Notification(`${alarmTypeIcon(data.type)} ${alarmTypeLabel(data.type)} ALARM · ${data.zone}`,{
+       body:`${data.person} heeft onmiddellijke ${data.type==="medical"?"medische":"technische"} hulp nodig.`
      });
    }catch(e){}
  }
@@ -7374,8 +7387,9 @@ $("cancelAlarmReportBtn").onclick=()=>{$("alarmReportModal").classList.remove("s
 $("saveAlarmReportBtn").onclick=saveAlarmReport;
 $("zoneAlertBtn").onclick=openZoneAlert;
 $("mobileNavAlert").onclick=openZoneAlert;
-$("cancelZoneAlertBtn").onclick=()=>$("zoneAlertModal").classList.remove("show");
-$("sendZoneAlertBtn").onclick=sendZoneAlert;
+$("cancelZoneAlertBtn").onclick=()=>{$("zoneAlertModal").classList.remove("show");pendingZoneAlert=null};
+$("medicalAlarmBtn").onclick=()=>activateZoneAlert("medical");
+$("technicalAlarmBtn").onclick=()=>activateZoneAlert("technical");
 
 $("todoAudienceFilter").onchange=renderTodo;
 $("todoAddBtn").onclick=()=>openTodoEdit();
