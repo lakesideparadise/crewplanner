@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13.88-JOBSTUDENTEN-VIEW-FIX-2026-08-02">
+<meta name="cablecrew-version" content="V13.93-ALARM-NO-LOGIN-2026-08-04">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -6191,7 +6191,13 @@ function todayScheduledZonesFor(name){
    .filter((z,i,a)=>a.indexOf(z)===i);
 }
 function alertPersonName(){
- return ($("myEmployee")?.value||"").trim();
+ // De alarmidentiteit komt op mobiel ook uit de lokaal gekozen naam.
+ // Een Firebase-login is niet vereist: alleen een actieve crewshift telt.
+ return (
+   $("myEmployee")?.value ||
+   localStorage.getItem("cc_my_name") ||
+   ""
+ ).trim();
 }
 function alertZoneOptions(person){
  const current=currentScheduledZonesFor(person);
@@ -6571,7 +6577,11 @@ function renderAlarmLog(){
 }
 
 function zoneAlertHelperName(){
- return ($("myEmployee")?.value||"").trim();
+ return (
+   $("myEmployee")?.value ||
+   localStorage.getItem("cc_my_name") ||
+   ""
+ ).trim();
 }
 
 
