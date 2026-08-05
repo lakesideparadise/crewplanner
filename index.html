@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13.101-ALARM-STANDBY-FIX-2026-08-05">
+<meta name="cablecrew-version" content="V13.102-WHATSAPP-GROUP-AUTO-REFRESH-2026-08-05">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -6342,7 +6342,7 @@ async function activateZoneAlert(type){
  const msg=zoneAlertMessage(data);
  // De shiftmeldingen blijven volledig onaangeroerd. Voor alarmen opent de
  // WhatsApp-deelkeuze met het bericht reeds ingevuld; kies Lakeside Operators en druk op verzenden.
- window.open(whatsappShareUrl(msg),"_blank","noopener");
+ openLakesideOperatorsGroup(msg);
  try{
    const ref=await addDoc(collection(db,"zoneAlerts"),data);
    showZoneAlertBanner(data,ref.id);
@@ -6647,7 +6647,23 @@ async function acknowledgeZoneAlert(id,data){
 
  // Meteen WhatsApp openen vanuit de klikactie zodat mobiele browsers dit niet blokkeren.
  // De medewerker kiest daarna enkel nog de groep "Lakeside Operators" en verzendt.
- window.open(whatsappShareUrl(msg),"_blank","noopener");
+ openLakesideOperatorsGroup(msg);
+
+ // Werk de lokale app onmiddellijk bij. Zo verdwijnt het alarm al vóór de
+ // terugkeer uit WhatsApp en is geen handmatige refresh nodig.
+ const localAlert=zoneAlerts.find(x=>x._id===id);
+ if(localAlert){
+   Object.assign(localAlert,{
+     active:false,acknowledged:true,acknowledgedBy:helper,
+     acknowledgedAt:now.toISOString(),acknowledgedTime:timeLabel
+   });
+ }
+ const banner=document.getElementById("liveZoneAlert");
+ if(banner?.dataset.alertId===id)banner.remove();
+ stopZoneAlarmSound();
+ showZoneHelpConfirmation({...data,_id:id,active:false,acknowledged:true,acknowledgedBy:helper,acknowledgedAt:now.toISOString(),acknowledgedTime:timeLabel});
+ updateZoneAlertButtonState();
+ if($("alarmLogModal")?.classList.contains("show"))renderAlarmLog();
 
  try{
    await updateDoc(doc(db,"zoneAlerts",id),{
@@ -6805,6 +6821,23 @@ function showZoneAlertBanner(data,id){
    }catch(e){}
  }
 }
+
+function refreshAlarmInterfaceAfterReturn(){
+ try{
+   const activeAlert=zoneAlerts.find(x=>x.active);
+   const banner=document.getElementById("liveZoneAlert");
+   if(!activeAlert && banner)banner.remove();
+   if(!activeAlert)stopZoneAlarmSound();
+   updateZoneAlertButtonState();
+   if(typeof renderDay==="function")renderDay();
+   if(typeof renderWeek==="function")renderWeek();
+   if($("alarmLogModal")?.classList.contains("show"))renderAlarmLog();
+ }catch(e){console.warn("Alarminterface vernieuwen mislukt:",e)}
+}
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible")setTimeout(refreshAlarmInterfaceAfterReturn,80);
+});
+window.addEventListener("pageshow",()=>setTimeout(refreshAlarmInterfaceAfterReturn,80));
 
 let todoTasks=[];
 let todoEditing=null;
