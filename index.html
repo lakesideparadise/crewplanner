@@ -4588,6 +4588,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, query, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBdeGM27e5xNRGipmEeQzmTW4aNMrKtc3A",
@@ -4599,6 +4600,10 @@ const firebaseConfig = {
 };
 
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+const CABLECREW_VAPID_KEY="BPdFx5C4GB1qqICD16w6yW_wwp8L5a7s_zQvkwIegbsSgJISM_RI5tr1moKjc-PombUw6djYbLZFlN35nLgZRC0";
+let cableCrewMessaging=null;
+let cableCrewMessagingReady=false;
+let cableCrewForegroundUnsub=null;
 const $=id=>document.getElementById(id);
 const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
@@ -6399,7 +6404,7 @@ async function activateZoneAlert(type){
    date:realTodayKey(),
    timeLabel:now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"}),
    createdAt:now.toISOString(),active:true,test:alarmTestModeEnabled(),
-   recipients:activeAlarmRecipients(),recipientMode:"active-shifts-and-standby"
+   recipients:activeAlarmRecipients(),recipientMode:"active-shifts-and-standby",pushRequested:true,pushVersion:"index106"
  };
  $("zoneAlertModal").classList.remove("show");
  pendingZoneAlert=null;
@@ -7630,6 +7635,10 @@ $("loginForm").addEventListener("submit",async e=>{
 });
 $("logoutBtn").onclick=async()=>{await signOut(auth);await ensureAnonymousAuth()};
 
+
+$("myEmployee").addEventListener("change",()=>setTimeout(syncCableCrewPushIdentity,150));
+window.addEventListener("focus",()=>setTimeout(syncCableCrewPushIdentity,250));
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(syncCableCrewPushIdentity,250)});
 onAuthStateChanged(auth,u=>{
  user=u;
  const admin=isAdminUser();
@@ -7856,6 +7865,65 @@ $("personalAlertClose").onclick=()=>{
  acknowledgeShiftAlerts();
 };
 
+
+function cableCrewDeviceId(){
+ let id=localStorage.getItem("cc_fcm_device_id");
+ if(!id){
+   id=(crypto?.randomUUID?.()||`cc-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+   localStorage.setItem("cc_fcm_device_id",id);
+ }
+ return id;
+}
+async function cableCrewServiceWorkerRegistration(){
+ if(!("serviceWorker" in navigator))throw new Error("Serviceworkers worden niet ondersteund.");
+ const reg=await navigator.serviceWorker.register("./service-worker.js",{scope:"./"});
+ await navigator.serviceWorker.ready;
+ return reg;
+}
+async function registerCableCrewPushToken(){
+ const employee=currentCrewName();
+ if(!employee)throw new Error("Kies eerst je naam bij Mijn planning.");
+ if(!(await messagingIsSupported()))throw new Error("Firebase-push wordt op dit toestel niet ondersteund.");
+ if(Notification.permission!=="granted")throw new Error("Meldingstoestemming werd niet gegeven.");
+ const reg=await cableCrewServiceWorkerRegistration();
+ if(!cableCrewMessaging)cableCrewMessaging=getMessaging(app);
+ const token=await getToken(cableCrewMessaging,{vapidKey:CABLECREW_VAPID_KEY,serviceWorkerRegistration:reg});
+ if(!token)throw new Error("Firebase gaf geen toestel-token terug.");
+ const deviceId=cableCrewDeviceId();
+ await setDoc(doc(db,"pushTokens",deviceId),{
+   token,employee,deviceId,enabled:true,
+   platform:navigator.platform||"",userAgent:navigator.userAgent||"",
+   appMode:(window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true)?"standalone":"browser",
+   updatedAt:serverTimestamp(),updatedAtIso:new Date().toISOString()
+ },{merge:true});
+ localStorage.setItem("cc_fcm_registered_employee",employee);
+ localStorage.setItem("cc_fcm_token_ready","1");
+ cableCrewMessagingReady=true;
+ if(!cableCrewForegroundUnsub){
+   cableCrewForegroundUnsub=onMessage(cableCrewMessaging,payload=>{
+     const n=payload?.notification||{}; const d=payload?.data||{};
+     const title=n.title||d.title||"CableCrew melding";
+     const body=n.body||d.body||"Open CableCrew voor meer informatie.";
+     showLocalNotice(title,body,"important");
+     if(d.alertId)setTimeout(refreshAlarmInterfaceAfterReturn,100);
+   });
+ }
+ return token;
+}
+async function disableCableCrewPushToken(){
+ const id=localStorage.getItem("cc_fcm_device_id");
+ if(id){
+   try{await setDoc(doc(db,"pushTokens",id),{enabled:false,updatedAt:serverTimestamp(),updatedAtIso:new Date().toISOString()},{merge:true})}catch(e){}
+ }
+ localStorage.setItem("cc_fcm_token_ready","0");
+}
+async function syncCableCrewPushIdentity(){
+ if(Notification.permission!=="granted"||localStorage.getItem("cc_notify_enabled")!=="1")return;
+ const now=currentCrewName();
+ const old=localStorage.getItem("cc_fcm_registered_employee")||"";
+ if(now&&now!==old){try{await registerCableCrewPushToken()}catch(e){console.warn("Pushidentiteit bijwerken:",e)}}
+}
+
 function notificationsSupported(){return "Notification" in window}
 function notificationsEnabled(){
  return notificationsSupported() && Notification.permission==="granted" && localStorage.getItem("cc_notify_enabled")==="1";
@@ -7876,7 +7944,7 @@ function updateNotifyUI(){
    $("notifyBtn").style.display="none";
    $("notifyBtn").classList.add("enabled");
    $("notifyBtn").textContent="🔔 Meldingen aan";
-   $("notifyStatus").textContent=name?`Persoonlijke meldingen actief voor ${name}. Wijzigingen tellen ook mee op het app-icoon als je toestel badges ondersteunt.`:"";
+   $("notifyStatus").textContent=name?`Pushmeldingen actief voor ${name}. Alarmen kunnen ook binnenkomen wanneer CableCrew gesloten is.`:"";
  }else{
    $("notifyBtn").style.display="inline-block";
    $("notifyBtn").classList.remove("enabled");
@@ -7890,6 +7958,7 @@ $("notifyBtn").onclick=async()=>{
  if(!notificationsSupported())return alert("Deze browser ondersteunt geen meldingen.");
  if(notificationsEnabled()){
    localStorage.setItem("cc_notify_enabled","0");
+   await disableCableCrewPushToken();
    updateNotifyUI();
    return;
  }
@@ -7897,7 +7966,13 @@ $("notifyBtn").onclick=async()=>{
  if(permission==="granted"){
    localStorage.setItem("cc_notify_enabled","1");
    updateNotifyUI();
-   showLocalNotice("Meldingen staan aan",`Je krijgt meldingen voor ${name} en belangrijke crewberichten.`,"shiftchange");
+   try{
+     await registerCableCrewPushToken();
+     showLocalNotice("Pushmeldingen staan aan",`Dit toestel is geregistreerd voor ${name}. Alarmen kunnen nu ook binnenkomen wanneer CableCrew niet openstaat.`,"shiftchange");
+   }catch(e){
+     console.warn("FCM-registratie mislukt:",e);
+     showLocalNotice("Browsermeldingen staan aan",`Lokale meldingen werken, maar Firebase-push kon nog niet registreren: ${e.message}`,"important");
+   }
  }else{
    localStorage.setItem("cc_notify_enabled","0");
    updateNotifyUI();

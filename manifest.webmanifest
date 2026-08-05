@@ -1,17 +1,10 @@
 {
-  "name": "CableCrew Planner",
-  "short_name": "CableCrew",
-  "description": "Interne planning voor Lakeside Paradise",
-  "start_url": "./index.html",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#f2f6f9",
-  "theme_color": "#0f4b6d",
-  "lang": "nl-BE",
-  "icons": [
-    {"src":"./icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"./icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"},
-    {"src":"./icon-180.png","sizes":"180x180","type":"image/png"},
-    {"src":"./favicon-32.png","sizes":"32x32","type":"image/png"}
-  ]
+  "name":"CableCrew Lakeside",
+  "short_name":"CableCrew",
+  "start_url":"./index106.html",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#f2f6f9",
+  "theme_color":"#0f4b6d",
+  "icons":[{"src":"./cablecrew_logo.png","sizes":"65x65","type":"image/png","purpose":"any maskable"}]
 }

@@ -1,52 +1,11 @@
-const CACHE_NAME = "cablecrew-v14-offline-2026-08-04";
-const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./icon-180.png",
-  "./favicon-32.png"
-];
-
-self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
-});
-
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
-      .then(()=>self.clients.claim())
-  );
-});
-
-self.addEventListener("fetch", event => {
-  const request=event.request;
-  if(request.method!=="GET") return;
-  const url=new URL(request.url);
-
-  // Navigaties: probeer eerst online, val terug op de lokaal opgeslagen app.
-  if(request.mode==="navigate"){
-    event.respondWith(
-      fetch(request).then(response=>{
-        const copy=response.clone();
-        caches.open(CACHE_NAME).then(cache=>cache.put("./index.html",copy));
-        return response;
-      }).catch(()=>caches.match("./index.html"))
-    );
-    return;
-  }
-
-  // Lokale bestanden en Firebase-modules: cache-first, daarna netwerk en cache bijwerken.
-  if(url.origin===self.location.origin || url.hostname==="www.gstatic.com"){
-    event.respondWith(
-      caches.match(request).then(cached=>cached || fetch(request).then(response=>{
-        if(response && response.status===200){
-          const copy=response.clone();
-          caches.open(CACHE_NAME).then(cache=>cache.put(request,copy));
-        }
-        return response;
-      }))
-    );
-  }
-});
+const CACHE="cablecrew-v106";
+const CORE=["./","./index106.html","./manifest.webmanifest","./cablecrew_logo.png"];
+self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE).catch(()=>{})));self.skipWaiting()});
+self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
+self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request).then(r=>r||caches.match("./index106.html"))))});
+importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
+firebase.initializeApp({apiKey:"AIzaSyBdeGM27e5xNRGipmEeQzmTW4aNMrKtc3A",authDomain:"cable-crew-planner.firebaseapp.com",projectId:"cable-crew-planner",storageBucket:"cable-crew-planner.firebasestorage.app",messagingSenderId:"179845869941",appId:"1:179845869941:web:3a4c640053c9eaf9f9e33c"});
+const messaging=firebase.messaging();
+messaging.onBackgroundMessage(payload=>{const n=payload.notification||{};const d=payload.data||{};const title=n.title||d.title||"CableCrew alarm";const options={body:n.body||d.body||"Open CableCrew voor meer informatie.",icon:"./cablecrew_logo.png",badge:"./cablecrew_logo.png",tag:d.alertId?`alarm-${d.alertId}`:"cablecrew",renotify:true,requireInteraction:d.type==="medical",data:{url:d.url||"./index106.html",alertId:d.alertId||""}};self.registration.showNotification(title,options)});
+self.addEventListener("notificationclick",event=>{event.notification.close();const url=event.notification.data?.url||"./index106.html";event.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(list=>{for(const c of list){if("focus" in c){c.navigate(url);return c.focus()}}return clients.openWindow(url)}))});
