@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13.100-ALARM-ZONES-2026-08-05">
+<meta name="cablecrew-version" content="V13.101-ALARM-STANDBY-FIX-2026-08-05">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -6159,7 +6159,17 @@ function alarmAllowedForZone(zone){
  return DEFAULT_ALARM_ZONES.has(normalizedAlarmZone(zone));
 }
 function currentActiveAlarmShiftsFor(name){
- return currentActiveCrewShiftsFor(name).filter(x=>alarmAllowedForZone(x.zone));
+ // Index 101: controleer elke gelijktijdig actieve shift afzonderlijk.
+ // Alleen STANDBY activeert niets, maar STANDBY + een gelijktijdige
+ // PRO-, ROOKIE- of 2.0-shift activeert de alarmknop via die operationele shift.
+ // VERLOF, vrije momenten en alle andere zones worden hard uitgesloten.
+ return currentActiveCrewShiftsFor(name).filter(x=>{
+   const zone=normalizedAlarmZone(x.zone);
+   if(zone==="STANDBY" || zone==="VERLOF" || !alarmAllowedForZone(zone))return false;
+   if(!x.date || !x.start || !x.end)return false;
+   const start=mins(x.start), end=mins(x.end), now=currentTimeMinutes();
+   return x.date===realTodayKey() && Number.isFinite(start) && Number.isFinite(end) && start<=now && end>now;
+ });
 }
 function alarmCanBeActivatedNow(){
  const person=alertPersonName();
@@ -6190,10 +6200,16 @@ function updateZoneAlertButtonState(){
  }
  if(btn)btn.style.display="";
 
+ // Altijd eerst uitschakelen; pas na een actuele geldige shift opnieuw activeren.
+ // Zo kan een oude actieve status nooit blijven hangen bij standby of vrije tijd.
+ if(btn)btn.disabled=true;
+ if(mobileBtn)mobileBtn.disabled=true;
  const active=currentActiveAlarmShiftsFor(person);
  const enabled=active.length>0;
- if(btn)btn.disabled=!enabled;
- if(mobileBtn)mobileBtn.disabled=!enabled;
+ if(enabled){
+   if(btn)btn.disabled=false;
+   if(mobileBtn)mobileBtn.disabled=false;
+ }
 
  if(!enabled){
    const anyActive=currentActiveCrewShiftsFor(person).length>0;
