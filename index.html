@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner · index 105</title>
-<meta name="cablecrew-version" content="V13.122-MULTI-EMPLOYEE-SHIFT-2026-08-05">
+<meta name="cablecrew-version" content="V13.123-SESSIONS-TAB-2026-08-05">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -4059,6 +4059,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
           <span class="edit-hint">Klik op een shift om te bewerken</span>
         </div>
         <button id="addActivityBtn" class="admin-action">🏫 <span>School / Splash</span></button>
+        <button id="sessionsBtn" class="admin-action">📅 <span>Sessies</span></button>
         <button id="duplicateDayBtn" class="admin-action">📄 <span>Dag kopiëren</span></button>
         <button id="copyWeekBtn" class="admin-action">🗓️ <span>Week kopiëren</span></button>
       </div>
@@ -4579,6 +4580,22 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
       <button id="deleteActivityBtn" class="danger" style="display:none">Verwijderen</button>
       <button id="cancelActivityBtn">Annuleren</button>
       <button id="saveActivityBtn" class="success">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="sessionsModal" class="modalback">
+  <div class="modal">
+    <div class="year-head">
+      <div>
+        <h2>📅 Sessies</h2>
+        <div class="year-sub">Beheer hier straks Women Session, Daddy is Cool, Kids Session, BK, EK en andere sessies.</div>
+      </div>
+      <button id="closeSessionsBtn">Sluiten</button>
+    </div>
+    <div style="padding:12px;border:1px solid var(--line);border-radius:12px;background:#f7fafc;line-height:1.5">
+      Het tabblad Sessies is toegevoegd naast School / Splash. In de volgende stap voegen we het aanmaken en beheren van sessies toe, zonder de werkende planning te wijzigen.
     </div>
   </div>
 </div>
@@ -5937,6 +5954,9 @@ function syncKeepAddingUi(){
 $("keepAdding")?.addEventListener("change",syncKeepAddingUi);
 $("addShiftBtn").onclick=()=>openShift();
 $("addActivityBtn").onclick=()=>openActivity();
+$("sessionsBtn").onclick=()=>$("sessionsModal").classList.add("show");
+$("closeSessionsBtn").onclick=()=>$("sessionsModal").classList.remove("show");
+$("sessionsModal").onclick=e=>{if(e.target===$("sessionsModal"))$("sessionsModal").classList.remove("show")};
 $("cancelActivityBtn").onclick=()=>$("activityModal").classList.remove("show");
 $("saveActivityBtn").onclick=saveActivity;
 $("deleteActivityBtn").onclick=async()=>{
