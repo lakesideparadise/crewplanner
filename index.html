@@ -4540,6 +4540,24 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 
 
 
+
+<style id="v125-session-manager">
+.session-manager-modal{width:min(920px,96vw);max-height:92vh;overflow:auto}
+.session-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.planned-sessions-list{display:grid;gap:8px;margin-bottom:12px}
+.planned-session-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.planned-session-row .session-meta{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
+.planned-session-actions{display:flex;gap:6px;flex-wrap:wrap}.planned-session-actions button{padding:6px 8px;font-size:11px}
+.session-editor{border:1px solid #cfdce6;border-radius:14px;padding:14px;background:#fff;margin-top:10px}
+.session-editor h3{margin:0 0 12px}.session-zone-assignments{display:grid;gap:10px}
+.session-zone-row{border:1px solid var(--line);border-radius:11px;padding:10px;background:#f8fafc}
+.session-zone-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.session-zone-head b{font-size:14px}
+.session-employee-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.session-employee-grid label{display:flex;align-items:center;gap:6px;padding:6px 7px;border:1px solid #e3e9ee;border-radius:8px;background:#fff;font-size:12px;font-weight:700}
+.session-shift-option{display:flex!important;align-items:center;gap:8px;padding:10px;border-radius:10px;background:#eef7f1;color:#245b3c!important}.session-shift-option input{width:auto!important;margin:0!important}
+.activity-block.session,.mini-activity.session{background:#eef5ff;border-left-color:#4b7bec}
+@media(max-width:720px){.session-employee-grid{grid-template-columns:1fr 1fr}.planned-session-row{grid-template-columns:1fr}.planned-session-actions{justify-content:flex-end}}
+</style>
 <div id="activityModal" class="modalback">
   <div class="modal activity-modal">
     <h2 id="activityTitle">School / Splash toevoegen</h2>
@@ -4586,24 +4604,53 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 
 
 <div id="sessionsModal" class="modalback">
-  <div class="modal">
+  <div class="modal session-manager-modal">
     <div class="year-head">
       <div>
         <h2>📅 Sessies</h2>
-        <div class="year-sub">Beheer de soorten sessies die later bij een planning kunnen worden gekozen.</div>
+        <div class="year-sub">Plan sessies zoals School / Splash, met medewerkers per zone.</div>
       </div>
       <button id="closeSessionsBtn">Sluiten</button>
     </div>
 
-    <div id="sessionTypesList" style="display:grid;gap:8px;margin:10px 0 14px"></div>
+    <div class="session-toolbar">
+      <button id="newSessionBtn" class="primary" type="button">➕ Nieuwe sessie</button>
+      <button id="manageSessionTypesBtn" type="button">⚙️ Sessietypes beheren</button>
+    </div>
+    <div id="plannedSessionsList" class="planned-sessions-list"></div>
 
-    <div style="padding:12px;border:1px solid var(--line);border-radius:12px;background:#f7fafc">
-      <label style="display:block;font-size:12px;font-weight:900;color:#51606b">Nieuwe sessie toevoegen</label>
+    <div id="sessionEditor" class="session-editor" style="display:none">
+      <h3 id="sessionEditorTitle">Nieuwe sessie</h3>
+      <div class="formgrid">
+        <label>Sessietype<select id="sessionTypeSelect"></select></label>
+        <label>Datum<input id="sessionDate" type="date"></label>
+        <label>Startuur<input id="sessionStart" type="time"></label>
+        <label>Einduur<input id="sessionEnd" type="time"></label>
+        <label>Aantal deelnemers<input id="sessionParticipants" type="number" min="0" step="1" placeholder="bv. 20"></label>
+        <label>Kleur<input id="sessionColor" type="color" value="#dfeeff"></label>
+        <label class="wide">Opmerking<textarea id="sessionNote" rows="2" placeholder="Extra informatie voor de planning"></textarea></label>
+        <div class="wide">
+          <div class="activity-zones-label">Medewerkers per zone</div>
+          <div id="sessionZoneAssignments" class="session-zone-assignments"></div>
+        </div>
+        <label class="wide session-shift-option"><input id="sessionCreateShifts" type="checkbox" checked> Ook als gewone shifts toevoegen (uren tellen mee en zichtbaar in Mijn planning)</label>
+      </div>
+      <div id="sessionPreview" class="activity-preview"></div>
+      <div class="modalactions">
+        <button id="deleteSessionBtn" class="danger" type="button" style="display:none">Verwijderen</button>
+        <button id="duplicateSessionBtn" type="button" style="display:none">📋 Dupliceren</button>
+        <button id="cancelSessionEditBtn" type="button">Annuleren</button>
+        <button id="saveSessionBtn" class="success" type="button">Opslaan</button>
+      </div>
+    </div>
+
+    <div id="sessionTypesManager" style="display:none;padding:12px;border:1px solid var(--line);border-radius:12px;background:#f7fafc;margin-top:12px">
+      <div id="sessionTypesList" style="display:grid;gap:8px;margin:0 0 14px"></div>
+      <label style="display:block;font-size:12px;font-weight:900;color:#51606b">Nieuw sessietype toevoegen</label>
       <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:7px">
         <input id="newSessionTypeInput" type="text" maxlength="60" placeholder="Bijv. Kids Session of Testdag">
         <button id="addSessionTypeBtn" class="primary" type="button">Toevoegen</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:7px;line-height:1.4">De standaardtypes blijven beschikbaar. Zelf toegevoegde sessies kun je later weer verwijderen.</div>
     </div>
   </div>
 </div>
@@ -5262,20 +5309,27 @@ function activityBlocksFor(dateKey,zone){
    .sort((a,b)=>(a.start||"").localeCompare(b.start||"")||(a.activityType||"").localeCompare(b.activityType||""));
 }
 function activityLabel(x){
+ if(x.activityType==="SESSION")return `📅 ${x.sessionName||"Sessie"}`;
  if(x.activityType==="SPLASH")return "💦 Splash";
  if(x.activityType==="SCHOOL_SPLASH")return "🏫💦 School / Splash";
  return "🏫 School";
 }
-function activityBlockHtml(x,mini=false){
- const count=Number(x.participants)||0;
- const activityClass=x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school");
- const classes=`${mini?"mini-activity":"activity-block"} ${activityClass} ${editMode?"editable":""}`;
- if(mini){
-   const assigned=Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
-   return `<div class="${classes}" data-activity-id="${esc(x._id||"")}"><b>${activityLabel(x)}</b>${count?` · ${count} pers.`:""} · ${esc(x.start||"")}–${esc(x.end||"")}${x.note?` · ${esc(x.note)}`:""}${assigned.length?`<br>👤 ${assigned.map(esc).join(", ")}`:""}</div>`;
+function activityEmployeesForZone(x,zone=""){
+ if(x.activityType==="SESSION" && x.zoneAssignments && zone){
+   return Array.isArray(x.zoneAssignments[zone])?x.zoneAssignments[zone]:[];
  }
- const assigned=Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
- return `<div class="${classes}" data-activity-id="${esc(x._id||"")}">
+ return Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
+}
+function activityBlockHtml(x,mini=false,zone=""){
+ const count=Number(x.participants)||0;
+ const activityClass=x.activityType==="SESSION"?"session":(x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school"));
+ const classes=`${mini?"mini-activity":"activity-block"} ${activityClass} ${editMode?"editable":""}`;
+ const assigned=activityEmployeesForZone(x,zone);
+ const style=x.activityType==="SESSION"&&x.sessionColor?` style="background:${esc(x.sessionColor)}"`:"";
+ if(mini){
+   return `<div class="${classes}"${style} data-activity-id="${esc(x._id||"")}"><b>${activityLabel(x)}</b>${count?` · ${count} pers.`:""} · ${esc(x.start||"")}–${esc(x.end||"")}${x.note?` · ${esc(x.note)}`:""}${assigned.length?`<br>👤 ${assigned.map(esc).join(", ")}`:""}</div>`;
+ }
+ return `<div class="${classes}"${style} data-activity-id="${esc(x._id||"")}">
    <div class="activity-main"><b>${activityLabel(x)}</b><div class="activity-meta">${esc(x.start||"")}–${esc(x.end||"")}${x.note?` · ${esc(x.note)}`:""}</div>${assigned.length?`<div class="activity-assignees">${assigned.map(n=>`<span class="activity-assignee-chip">${esc(n)}</span>`).join("")}</div>`:""}</div>
    ${count?`<span class="activity-count">${count} pers.</span>`:""}
  </div>`;
@@ -5344,7 +5398,7 @@ function renderDay(){
      return "";
    }
 
-   return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${relevantBlocks.map(x=>activityBlockHtml(x,false)).join("")}${rows.map(shiftHtml).join("")}</section>`;
+   return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${relevantBlocks.map(x=>activityBlockHtml(x,false,z)).join("")}${rows.map(shiftHtml).join("")}</section>`;
  }).join("");
 
  if(!vacationRows.length && !zoneHtml){
@@ -5417,7 +5471,7 @@ function renderWeek(){
          rows.length>0
        );
      }
-     if(rows.length||blocks.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${blocks.map(x=>activityBlockHtml(x,true)).join("")}${rows.map(x=>{const ch=shiftChangeState(x._id);return `<div class="mini-shift ${editMode?'editable':''}${ch?' has-planning-change':''}" data-id="${esc(x._id||'')}"><b>${ch?'<span class="mini-change-dot"></span>':''}${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}${ch?` <span class="mini-change-label" data-ack-shift="${esc(x._id||'')}">${ch}</span>`:""}</div>`}).join("")}</div>`;
+     if(rows.length||blocks.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${blocks.map(x=>activityBlockHtml(x,true,z)).join("")}${rows.map(x=>{const ch=shiftChangeState(x._id);return `<div class="mini-shift ${editMode?'editable':''}${ch?' has-planning-change':''}" data-id="${esc(x._id||'')}"><b>${ch?'<span class="mini-change-dot"></span>':''}${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}${ch?` <span class="mini-change-label" data-ack-shift="${esc(x._id||'')}">${ch}</span>`:""}</div>`}).join("")}</div>`;
    });
    daysHtml+=`</section>`;
  }
@@ -5529,7 +5583,7 @@ document.addEventListener("click",e=>{
  const activityEl=e.target.closest("[data-activity-id]");
  if(!activityEl||!editMode||!user)return;
  const x=shifts.find(s=>s._id===activityEl.dataset.activityId && s.recordType==="activity");
- if(x){e.preventDefault();e.stopPropagation();openActivity(x)}
+ if(x){e.preventDefault();e.stopPropagation();x.activityType==="SESSION"?openSessionEditor(x):openActivity(x)}
 });
 document.addEventListener("click",e=>{
  const el=e.target.closest("[data-id]");if(!el||!editMode||!user)return;
@@ -5962,8 +6016,10 @@ function syncKeepAddingUi(){
 $("keepAdding")?.addEventListener("change",syncKeepAddingUi);
 $("addShiftBtn").onclick=()=>openShift();
 $("addActivityBtn").onclick=()=>openActivity();
-const SESSION_TYPES_STORAGE_KEY="cc_session_types_v124";
+const SESSION_TYPES_STORAGE_KEY="cc_session_types_v125";
 const DEFAULT_SESSION_TYPES=["Women Session","Daddy is Cool","UFO Session","BK","EK"];
+const SESSION_ZONES=["PRO","ROOKIE","VERHUUR","2.0","STANDBY"];
+let sessionEditing=null;
 function getSessionTypes(){
   try{
     const saved=JSON.parse(localStorage.getItem(SESSION_TYPES_STORAGE_KEY)||"[]");
@@ -5987,7 +6043,7 @@ function renderSessionTypes(){
     const name=btn.dataset.removeSession;
     if(!confirm(`${name} verwijderen uit de keuzelijst?`))return;
     saveCustomSessionTypes(getSessionTypes().filter(v=>v!==name));
-    renderSessionTypes();
+    renderSessionTypes();fillSessionTypeSelect();
   }));
 }
 function addSessionType(){
@@ -5996,16 +6052,100 @@ function addSessionType(){
   if(!name)return alert("Vul eerst een naam voor de sessie in.");
   const types=getSessionTypes();
   if(types.some(v=>v.toLowerCase()===name.toLowerCase()))return alert("Deze sessie bestaat al.");
-  types.push(name);
-  saveCustomSessionTypes(types);
-  input.value="";
-  renderSessionTypes();
+  types.push(name);saveCustomSessionTypes(types);input.value="";renderSessionTypes();fillSessionTypeSelect(name);
 }
-$("sessionsBtn").onclick=()=>{renderSessionTypes();$("sessionsModal").classList.add("show")};
+function fillSessionTypeSelect(selected=""){
+  const sel=$("sessionTypeSelect");if(!sel)return;
+  sel.innerHTML=getSessionTypes().map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  if(selected&&getSessionTypes().includes(selected))sel.value=selected;
+}
+function sessionRecords(){return activityRecords().filter(x=>x.activityType==="SESSION")}
+function sessionZoneAssignmentsFromForm(){
+  const result={};
+  SESSION_ZONES.forEach(zone=>{
+    result[zone]=[...document.querySelectorAll(`#sessionZoneAssignments input[data-session-zone="${CSS.escape(zone)}"]:checked`)].map(x=>x.value);
+  });
+  return result;
+}
+function sessionAssignedUnion(assignments){return [...new Set(Object.values(assignments||{}).flat())]}
+function renderSessionZoneAssignments(assignments={}){
+  const wrap=$("sessionZoneAssignments");if(!wrap)return;
+  wrap.innerHTML=SESSION_ZONES.map(zone=>{
+    const names=plannablePeople(zone);
+    const chosen=new Set(Array.isArray(assignments?.[zone])?assignments[zone]:[]);
+    return `<div class="session-zone-row"><div class="session-zone-head"><b>${esc(zone)}</b><span>${chosen.size} gekozen</span></div><div class="session-employee-grid">${names.length?names.map(n=>`<label><input type="checkbox" data-session-zone="${esc(zone)}" value="${esc(n)}" ${chosen.has(n)?"checked":""}> ${esc(n)}</label>`).join(""):'<div class="empty">Geen inplanbare medewerkers.</div>'}</div></div>`;
+  }).join("");
+  wrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener("change",()=>{renderSessionZoneAssignments(sessionZoneAssignmentsFromForm());updateSessionPreview()}));
+}
+function updateSessionPreview(){
+  const box=$("sessionPreview");if(!box)return;
+  const assignments=sessionZoneAssignmentsFromForm();
+  const zones=SESSION_ZONES.filter(z=>(assignments[z]||[]).length);
+  box.innerHTML=`<b>📅 ${esc($("sessionTypeSelect")?.value||"Sessie")}</b> · ${esc($("sessionStart")?.value||"")}–${esc($("sessionEnd")?.value||"")}${Number($("sessionParticipants")?.value)||0?` · ${Number($("sessionParticipants").value)} deelnemers`:""}<br>${zones.length?zones.map(z=>`${esc(z)}: ${(assignments[z]||[]).map(esc).join(", ")}`).join("<br>"):"Kies minstens één medewerker in een zone."}`;
+}
+function openSessionEditor(x=null,duplicate=false){
+  sessionEditing=duplicate?null:x;
+  $("sessionEditor").style.display="block";$("sessionTypesManager").style.display="none";
+  $("sessionEditorTitle").textContent=duplicate?"Sessie dupliceren":(x?"Sessie aanpassen":"Nieuwe sessie");
+  fillSessionTypeSelect(x?.sessionName||getSessionTypes()[0]);
+  $("sessionDate").value=x?.date||$("date").value||realTodayKey();
+  $("sessionStart").value=x?.start||"09:00";$("sessionEnd").value=x?.end||"12:00";
+  $("sessionParticipants").value=x?.participants||"";$("sessionColor").value=x?.sessionColor||"#dfeeff";$("sessionNote").value=x?.note||"";
+  $("sessionCreateShifts").checked=x?.createOrdinaryShifts!==false;
+  renderSessionZoneAssignments(x?.zoneAssignments||{});
+  $("deleteSessionBtn").style.display=x&&!duplicate?"inline-block":"none";$("duplicateSessionBtn").style.display=x&&!duplicate?"inline-block":"none";
+  updateSessionPreview();$("sessionEditor").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderPlannedSessions(){
+  const list=$("plannedSessionsList");if(!list)return;
+  const rows=sessionRecords().slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.start||"").localeCompare(b.start||""));
+  list.innerHTML=rows.length?rows.map(x=>{
+    const asg=x.zoneAssignments||{};const zones=SESSION_ZONES.filter(z=>(asg[z]||[]).length);
+    return `<div class="planned-session-row"><div><b>📅 ${esc(x.sessionName||"Sessie")}</b><div class="session-meta">${esc(x.date||"")} · ${esc(x.start||"")}–${esc(x.end||"")}${x.participants?` · ${Number(x.participants)} deelnemers`:""}<br>${zones.map(z=>`${esc(z)}: ${(asg[z]||[]).map(esc).join(", ")}`).join(" · ")||"Nog geen medewerkers"}</div></div><div class="planned-session-actions"><button data-edit-session="${esc(x._id)}">Bewerken</button><button data-duplicate-session="${esc(x._id)}">📋 Dupliceren</button></div></div>`;
+  }).join(""):'<div class="empty">Nog geen sessies gepland.</div>';
+  list.querySelectorAll("[data-edit-session]").forEach(b=>b.onclick=()=>openSessionEditor(shifts.find(x=>x._id===b.dataset.editSession)));
+  list.querySelectorAll("[data-duplicate-session]").forEach(b=>b.onclick=()=>openSessionEditor(shifts.find(x=>x._id===b.dataset.duplicateSession),true));
+}
+async function deleteGeneratedSessionShifts(record){
+  const ids=Array.isArray(record?.generatedShiftIds)?record.generatedShiftIds:[];
+  for(const id of ids){try{await deleteDoc(doc(db,"shifts",id))}catch(_){}}
+}
+async function saveSession(){
+  const assignments=sessionZoneAssignmentsFromForm();
+  const zones=SESSION_ZONES.filter(z=>(assignments[z]||[]).length);
+  const v={recordType:"activity",activityType:"SESSION",sessionName:$("sessionTypeSelect").value,date:$("sessionDate").value,start:$("sessionStart").value,end:$("sessionEnd").value,participants:Number($("sessionParticipants").value)||0,sessionColor:$("sessionColor").value||"#dfeeff",note:$("sessionNote").value.trim(),zoneAssignments:assignments,activityZones:zones,assignedEmployees:sessionAssignedUnion(assignments),createOrdinaryShifts:$("sessionCreateShifts").checked,employee:"",zone:"__ACTIVITY__",generatedShiftIds:[]};
+  if(!v.date||!v.start||!v.end)return alert("Vul datum en uren in.");
+  if(mins(v.end)<=mins(v.start))return alert("Het einduur moet na het startuur liggen.");
+  if(!zones.length)return alert("Kies minstens één medewerker bij een zone.");
+  try{
+    if(sessionEditing)await deleteGeneratedSessionShifts(sessionEditing);
+    let ref;
+    if(sessionEditing){ref=doc(db,"shifts",sessionEditing._id);await updateDoc(ref,v)}else{ref=await addDoc(collection(db,"shifts"),v)}
+    const generated=[];
+    if(v.createOrdinaryShifts){
+      for(const zone of zones){for(const employee of assignments[zone]){
+        const shift={date:v.date,start:v.start,end:v.end,zone,employee,note:`Sessie: ${v.sessionName}`,sessionActivityId:ref.id};
+        const sr=await addDoc(collection(db,"shifts"),shift);generated.push(sr.id);
+      }}
+    }
+    await updateDoc(doc(db,"shifts",ref.id),{generatedShiftIds:generated});
+    await writeAudit(`${v.sessionName} ${sessionEditing?"aangepast":"toegevoegd"}`,sessionEditing||null,{...v,generatedShiftIds:generated});
+    $("sessionEditor").style.display="none";sessionEditing=null;renderPlannedSessions();
+  }catch(e){alert("Sessie opslaan mislukt: "+e.message)}
+}
+async function deleteSession(){
+  if(!sessionEditing||!confirm("Deze sessie en de automatisch aangemaakte shifts verwijderen?"))return;
+  try{await deleteGeneratedSessionShifts(sessionEditing);await deleteDoc(doc(db,"shifts",sessionEditing._id));$("sessionEditor").style.display="none";sessionEditing=null;renderPlannedSessions()}catch(e){alert("Verwijderen mislukt: "+e.message)}
+}
+$("sessionsBtn").onclick=()=>{renderPlannedSessions();renderSessionTypes();$("sessionEditor").style.display="none";$("sessionTypesManager").style.display="none";$("sessionsModal").classList.add("show")};
 $("closeSessionsBtn").onclick=()=>$("sessionsModal").classList.remove("show");
 $("sessionsModal").onclick=e=>{if(e.target===$("sessionsModal"))$("sessionsModal").classList.remove("show")};
-$("addSessionTypeBtn").onclick=addSessionType;
-$("newSessionTypeInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addSessionType()}});
+$("newSessionBtn").onclick=()=>openSessionEditor();
+$("manageSessionTypesBtn").onclick=()=>{renderSessionTypes();$("sessionTypesManager").style.display=$("sessionTypesManager").style.display==="none"?"block":"none"};
+$("addSessionTypeBtn").onclick=addSessionType;$("newSessionTypeInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addSessionType()}});
+$("cancelSessionEditBtn").onclick=()=>{$("sessionEditor").style.display="none";sessionEditing=null};
+$("saveSessionBtn").onclick=saveSession;$("deleteSessionBtn").onclick=deleteSession;$("duplicateSessionBtn").onclick=()=>{if(sessionEditing)openSessionEditor(sessionEditing,true)};
+["sessionTypeSelect","sessionDate","sessionStart","sessionEnd","sessionParticipants","sessionColor","sessionNote"].forEach(id=>{$(id)?.addEventListener("input",updateSessionPreview);$(id)?.addEventListener("change",updateSessionPreview)});
 $("cancelActivityBtn").onclick=()=>$("activityModal").classList.remove("show");
 $("saveActivityBtn").onclick=saveActivity;
 $("deleteActivityBtn").onclick=async()=>{
