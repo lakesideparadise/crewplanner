@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13.102-WHATSAPP-GROUP-AUTO-REFRESH-2026-08-05">
+<meta name="cablecrew-version" content="V13.103-REALTIME-ALERT-STATE-2026-08-05">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -5210,6 +5210,9 @@ function renderAll(){
  fillPeople();
  forceAdminDeviceOverview();
  renderToday();renderDay();renderWeek();
+ // Index 103: de alarmknop wordt na elke volledige hertekening meteen
+ // opnieuw berekend, onafhankelijk van de knop ‘Mijn planning’.
+ queueMicrotask(updateZoneAlertButtonState);
 }
 
 function applyCrewDeepLink(){
@@ -5299,6 +5302,7 @@ $("myEmployee").onchange=e=>{
  // Bij 'Iedereen' blijft de persoonlijke identiteit bewaard,
  // zodat meldingen voor de eigen shifts blijven werken.
  renderDay();renderWeek();updateMessageIdentity();updateNotifyUI();updateAdminLoginVisibility();
+ updateZoneAlertButtonState();
 };
 
 function findShift(id){return shifts.find(x=>x._id===id)}
@@ -7632,6 +7636,7 @@ setTimeout(()=>{
     renderAll();
     applyPastDateVisibility();
     updateNotifyUI();
+    updateZoneAlertButtonState();
     applyCrewDeepLink();
     applyStudentDeepLink();
     renderMobileDayScroller();
@@ -7740,10 +7745,10 @@ onSnapshot(collection(db,"shifts"),snap=>{
    $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
  }
  shiftsInitialized=true;
- updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();applyCrewDeepLink();applyStudentDeepLink();renderMobileDayScroller();setTimeout(ensureDailyBackup,500);
+ updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();applyCrewDeepLink();applyStudentDeepLink();renderMobileDayScroller();updateZoneAlertButtonState();setTimeout(ensureDailyBackup,500);
 },err=>{
  firestoreReady=false;shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
- $("syncStatus").textContent="🔴 Firebase niet bereikbaar – JSON-weergave";renderAll();updateNotifyUI();
+ $("syncStatus").textContent="🔴 Firebase niet bereikbaar – JSON-weergave";renderAll();updateNotifyUI();updateZoneAlertButtonState();
 });
 
 
@@ -8822,11 +8827,23 @@ setTimeout(()=>{
 },800);
 setTimeout(()=>{updateDailyPlanningPreferenceUI();shouldShowDailyPlanningPopup()},1400);
 scheduleDailyPlanningPopup();
-setInterval(updateZoneAlertButtonState,30000);
+// Index 103: centrale real-time alarmstatus.
+// Meteen bij opstart, nogmaals na het asynchroon laden van de planning,
+// bij terugkeer naar de app en vervolgens elke 30 seconden.
+function refreshRealtimeAlertState(){
+ try{ updateZoneAlertButtonState(); }
+ catch(err){ console.warn("Alarmstatus kon niet worden bijgewerkt:",err); }
+}
+setTimeout(refreshRealtimeAlertState,0);
+setTimeout(refreshRealtimeAlertState,500);
+setTimeout(refreshRealtimeAlertState,1500);
+setInterval(refreshRealtimeAlertState,30000);
 document.addEventListener("visibilitychange",()=>{
- if(!document.hidden)updateZoneAlertButtonState();
+ if(!document.hidden)refreshRealtimeAlertState();
 });
-window.addEventListener("focus",updateZoneAlertButtonState);
+window.addEventListener("focus",refreshRealtimeAlertState);
+window.addEventListener("pageshow",refreshRealtimeAlertState);
+window.addEventListener("online",refreshRealtimeAlertState);
 
 
 // =========================
