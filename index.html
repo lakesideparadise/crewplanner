@@ -3690,6 +3690,18 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 
 /* V13.115: Firebase push tijdelijk veilig uitgeschakeld; volledige planner behouden. */
 #pushSetupBanner,#notifyBtn,#notifyStatus,#notificationIdentity{display:none!important}
+
+/* ===== V13.8 MEERDERE MEDEWERKERS PER SHIFT ===== */
+.shift-employee-multi{grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:10px;background:#f8fbfd}
+.shift-employee-multi-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.shift-employee-multi-head b{font-size:13px}
+.shift-employee-multi-head small{font-size:11px;color:var(--muted)}
+.shift-employee-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.shift-employee-choice{display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid #dce5ec;border-radius:10px;background:#fff;font-size:12px;font-weight:800;cursor:pointer}
+.shift-employee-choice:has(input:checked){border-color:#0b5683;background:#eaf5fb;color:#083f62}
+.shift-employee-choice input{width:auto;margin:0}
+@media(max-width:720px){.shift-employee-choices{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.shift-employee-choices{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -4461,7 +4473,14 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   <div class="formgrid">
     <label>Datum<input id="editDate" type="date"></label>
     <label id="leaveEndLabel" style="display:none">Verlof t/m<input id="leaveEndDate" type="date"></label>
-    <label>Medewerker<select id="editEmployee"></select></label>
+    <label id="singleEmployeeLabel">Medewerker<select id="editEmployee"></select></label>
+    <div id="multiEmployeePicker" class="shift-employee-multi">
+      <div class="shift-employee-multi-head">
+        <div><b>Medewerkers voor deze shift</b><br><small>Klik één of meerdere medewerkers aan.</small></div>
+        <button id="selectAllShiftEmployees" type="button">Alles kiezen</button>
+      </div>
+      <div id="shiftEmployeeChoices" class="shift-employee-choices"></div>
+    </div>
     <label>Startuur<input id="editStart" type="time"></label>
     <label>Einduur<input id="editEnd" type="time"></label>
     <div class="wide quicktimes">
@@ -5886,6 +5905,39 @@ async function saveActivity(){
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 }
 
+function renderShiftEmployeeChoices(selected=[]){
+ const box=$("shiftEmployeeChoices");
+ if(!box)return;
+ const names=people().filter(Boolean);
+ const chosen=new Set((selected||[]).filter(Boolean));
+ box.innerHTML=names.map(name=>`<label class="shift-employee-choice"><input type="checkbox" value="${esc(name)}" ${chosen.has(name)?"checked":""}> <span>${esc(name)}</span></label>`).join("");
+ box.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener("change",()=>{
+   const selectedNow=selectedShiftEmployees();
+   if(selectedNow.length && $("editEmployee"))$("editEmployee").value=selectedNow[0];
+   updateOverlapWarning();
+ }));
+}
+function selectedShiftEmployees(){
+ if(editing)return [$("editEmployee").value].filter(Boolean);
+ const checked=[...document.querySelectorAll('#shiftEmployeeChoices input[type="checkbox"]:checked')].map(x=>x.value).filter(Boolean);
+ return checked.length?checked:[$("editEmployee").value].filter(Boolean);
+}
+function syncShiftEmployeePicker(){
+ const picker=$("multiEmployeePicker");
+ const single=$("singleEmployeeLabel");
+ const show=!editing && !$("multiShiftMode")?.checked;
+ if(picker)picker.style.display=show?"block":"none";
+ if(single)single.style.display=show?"none":"flex";
+}
+$("selectAllShiftEmployees")?.addEventListener("click",()=>{
+ const boxes=[...document.querySelectorAll('#shiftEmployeeChoices input[type="checkbox"]')];
+ const allSelected=boxes.length && boxes.every(x=>x.checked);
+ boxes.forEach(x=>x.checked=!allSelected);
+ const selected=selectedShiftEmployees();
+ if(selected.length)$("editEmployee").value=selected[0];
+ $("selectAllShiftEmployees").textContent=allSelected?"Alles kiezen":"Alles wissen";
+ updateOverlapWarning();
+});
 function openShift(x=null){
  editing=x;
  if($("multiShiftRows"))$("multiShiftRows").innerHTML="";
@@ -5895,6 +5947,8 @@ function openShift(x=null){
  $("editDate").value=x?.date||$("date").value;
  $("leaveEndDate").value=x?.date||$("editDate").value;
  $("editEmployee").value=x?.employee||people()[0]||"";
+ renderShiftEmployeeChoices([x?.employee||people()[0]||""]);
+ syncShiftEmployeePicker();
  $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
  $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";updateLeaveFields();
  $("deleteShift").style.display=x?"inline-block":"none";$("duplicateShift").style.display=x?"inline-block":"none";
@@ -5952,7 +6006,7 @@ $("deleteActivityBtn").onclick=async()=>{
 });
 document.querySelectorAll('#activityZoneChoices input[type="checkbox"]').forEach(c=>c.addEventListener("change",updateActivityPreview));
 $("cancelShift").onclick=()=>{$("shiftModal").classList.remove("show");setMultiShiftMode(false)};
-$("multiShiftMode").addEventListener("change",e=>setMultiShiftMode(e.target.checked));
+$("multiShiftMode").addEventListener("change",e=>{setMultiShiftMode(e.target.checked);syncShiftEmployeePicker()});
 $("addMultiShiftRow").onclick=()=>addMultiShiftRow();
 $("editEmployee").addEventListener("change",updateMultiShiftSummary);
 function updateLeaveFields(){
@@ -5982,6 +6036,10 @@ $("editEmployee").onchange=()=>{
   const n=prompt("Naam nieuwe medewerker:");
   if(n){const o=document.createElement("option");o.value=n;o.textContent=n;$("editEmployee").insertBefore(o,$("editEmployee").lastElementChild);$("editEmployee").value=n}
   else $("editEmployee").value=editing?.employee||people()[0]||"";
+ }
+ if(!editing){
+   const chosen=$("editEmployee").value;
+   document.querySelectorAll('#shiftEmployeeChoices input[type="checkbox"]').forEach(cb=>cb.checked=(cb.value===chosen));
  }
  updateWhatsAppShiftButton();
 };
@@ -6087,18 +6145,24 @@ async function writeAudit(action,before,after){
 $("saveShift").onclick=async()=>{
  if(!editing && $("multiShiftMode")?.checked){await saveMultiShifts();return}
  const v=formObj();
- if(!v.date||!v.employee||(v.zone!=="VERLOF"&&(!v.start||!v.end))){
-   alert(v.zone==="VERLOF"?"Vul datum en medewerker in.":"Vul datum, medewerker en uren in.");
+ const employees=editing?[v.employee]:selectedShiftEmployees();
+ if(!v.date||!employees.length||(v.zone!=="VERLOF"&&(!v.start||!v.end))){
+   alert(v.zone==="VERLOF"?"Vul datum en minstens één medewerker in.":"Vul datum, minstens één medewerker en uren in.");
    return;
  }
 
- if(v.zone!=="VERLOF" && !await confirmAvailabilityOverride("crew",v.employee,v.date))return;
+ for(const employee of employees){
+   if(v.zone!=="VERLOF" && !await confirmAvailabilityOverride("crew",employee,v.date))return;
+ }
 
+ if(!editing && employees.length>1 && $("whatsappAfterSave")?.checked){
+   alert("De shifts worden voor alle gekozen medewerkers opgeslagen. Automatisch meerdere WhatsApp-chats openen wordt geblokkeerd; WhatsApp wordt daarom bij deze multi-selectie niet geopend.");
+ }
  const sendWhatsApp=editing
    ? !!whatsappUrlForShift(v,"gewijzigd")
-   : (!!$("whatsappAfterSave")?.checked && !!whatsappUrlForShift(v,"ingepland"));
+   : (employees.length===1 && !!$("whatsappAfterSave")?.checked && !!whatsappUrlForShift({...v,employee:employees[0]},"ingepland"));
  const pendingWhatsAppUrl=sendWhatsApp
-   ? whatsappUrlForShift(v,editing?"gewijzigd":"ingepland")
+   ? whatsappUrlForShift({...v,employee:employees[0]},editing?"gewijzigd":"ingepland")
    : "";
  if(editing && !sendWhatsApp){
    alert(`Deze shift kan niet worden gewijzigd omdat er geen WhatsApp-nummer voor ${v.employee} is ingesteld. Voeg eerst een nummer toe bij WhatsApp nummers.`);
@@ -6114,19 +6178,45 @@ $("saveShift").onclick=async()=>{
        return;
      }
 
-     const existing=new Set(
-       shifts.filter(x=>x.zone==="VERLOF"&&x.employee===v.employee).map(x=>x.date)
-     );
-     const toAdd=dates.filter(d=>!existing.has(d));
-
-     await Promise.all(toAdd.map(async date=>{
-       const leave={...v,date,start:"",end:""};
-       await addDoc(collection(db,"shifts"),leave);
-       await writeAudit("Verlof toegevoegd",null,leave);
-     }));
+     for(const employee of employees){
+       const existing=new Set(
+         shifts.filter(x=>x.zone==="VERLOF"&&x.employee===employee).map(x=>x.date)
+       );
+       const toAdd=dates.filter(d=>!existing.has(d));
+       await Promise.all(toAdd.map(async date=>{
+         const leave={...v,employee,date,start:"",end:""};
+         await addDoc(collection(db,"shifts"),leave);
+         await writeAudit("Verlof toegevoegd",null,leave);
+       }));
+     }
 
      $("shiftModal").classList.remove("show");
      if(pendingWhatsAppUrl)openWhatsAppUrlAfterSave(pendingWhatsAppUrl);
+     return;
+   }
+
+   if(!editing && employees.length>1){
+     const overlapMessages=[];
+     for(const employee of employees){
+       const candidate={...v,employee};
+       const hits=normalCrewShifts().filter(x=>x.date===candidate.date && x.employee===employee && candidate.zone!=="VERLOF" && mins(candidate.start)<mins(x.end) && mins(candidate.end)>mins(x.start));
+       if(hits.length)overlapMessages.push(`${employee}: ${hits.map(x=>`${x.start}–${x.end} (${x.zone})`).join(", ")}`);
+     }
+     if(overlapMessages.length && !confirm(`⚠️ Overlappende shifts gevonden:
+
+${overlapMessages.join("
+")}
+
+Toch voor iedereen opslaan?`))return;
+     for(const employee of employees){
+       const row={...v,employee};
+       await addDoc(collection(db,"shifts"),row);
+       await writeAudit("Shift toegevoegd",null,row);
+     }
+     alert(`${employees.length} medewerkers zijn aan dezelfde shift toegevoegd.`);
+     $("shiftModal").classList.remove("show");
+     $("keepAdding").checked=false;
+     syncKeepAddingUi();
      return;
    }
 
@@ -6165,6 +6255,7 @@ $("saveShift").onclick=async()=>{
        $("shiftModal").classList.remove("show");
      }
    }else{
+     v.employee=employees[0];
      const createdRef=await addDoc(collection(db,"shifts"),v);
      const createdShift={...v,_id:createdRef.id};
      await writeAudit("Shift toegevoegd",null,v);
