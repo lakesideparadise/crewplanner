@@ -1881,7 +1881,7 @@ body.jobstudent-viewer .planner-tabs{grid-template-columns:1fr 1fr!important}
 
 </style>
 
-<link rel="manifest" href="./manifest.webmanifest">
+<link rel="manifest" href="./manifest.webmanifest?v=107">
 <meta name="theme-color" content="#0f4b6d">
 <meta name="application-name" content="CableCrew">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3667,12 +3667,32 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 <style id="v13-alarm-testmode-style">
 #alarmTestModeBtn.test-mode-on{outline:3px solid #e3b21b;background:#fff8d9}
 #alarmTestModeBtn.test-mode-on .tool-icon{background:#ffe89a}
+
+/* ===== V13.107 PUSH ACTIVATION BANNER ===== */
+.push-setup-banner{
+  max-width:1280px;margin:10px auto 0;padding:12px 14px;border-radius:14px;
+  display:flex;align-items:center;gap:12px;background:#eef7ff;border:1px solid #b9d8f3;
+  box-shadow:0 5px 16px rgba(25,75,110,.08)
+}
+.push-setup-banner.hidden{display:none!important}
+.push-setup-icon{font-size:25px;flex:0 0 auto}
+.push-setup-copy{min-width:0;flex:1}
+.push-setup-copy strong{display:block;font-size:14px;color:#123b5a}
+.push-setup-copy small{display:block;margin-top:3px;color:#607086;line-height:1.35}
+.push-setup-banner button{background:#0f4b6d;color:#fff;border-color:#0f4b6d;white-space:nowrap}
+.push-setup-banner.denied{background:#fff1f1;border-color:#efb0b0}
+.push-setup-banner.denied button{background:#a33;border-color:#a33}
+@media(max-width:720px){
+ .push-setup-banner{margin:8px 10px 0;padding:11px;border-radius:14px;align-items:flex-start;flex-wrap:wrap}
+ .push-setup-copy{flex:1 1 calc(100% - 42px)}
+ .push-setup-banner button{width:100%;min-height:44px}
+}
 </style>
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
 <header><div class="header-inner">
-  <div class="brand-wrap"><img class="brand-logo" src="data:image/png;base64,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" alt=""><div class="brand">CableCrew Lakeside</div></div>
+  <div class="brand-wrap"><img class="brand-logo" src="./cablecrew_logo.png?v=107" alt="CableCrew Lakeside-logo"><div class="brand">CableCrew Lakeside</div></div>
   <div class="mobile-header-actions">
     <div id="mobileHeaderWeather" class="mobile-header-weather"></div>
     <button id="mobileAuthBtn" class="mobile-auth-btn" type="button" style="display:none">Login</button>
@@ -3718,6 +3738,15 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   <button id="crewPlannerTab" class="planner-tab active" type="button">Crew</button>
   <button id="studentPlannerTab" class="planner-tab" type="button">🎓 Jobstudenten</button>
   <button id="todoPlannerTab" class="planner-tab" type="button">✅ To do</button>
+</div>
+
+<div id="pushSetupBanner" class="push-setup-banner">
+  <div class="push-setup-icon">🔔</div>
+  <div class="push-setup-copy">
+    <strong id="pushSetupTitle">Pushmeldingen nog niet actief</strong>
+    <small id="pushSetupText">Kies eerst je naam en activeer meldingen. De browser toont daarna de officiële toestemmingsvraag.</small>
+  </div>
+  <button id="pushSetupBtn" type="button">Pushmeldingen activeren</button>
 </div>
 
 
@@ -7930,32 +7959,62 @@ function notificationsEnabled(){
 }
 function updateNotifyUI(){
  const name=currentCrewName();
+ const btn=$("notifyBtn");
+ const banner=$("pushSetupBanner");
+ const bannerBtn=$("pushSetupBtn");
+ const bannerTitle=$("pushSetupTitle");
+ const bannerText=$("pushSetupText");
  if($("notificationIdentity")){
    $("notificationIdentity").textContent=name?`🔔 Herkend voor meldingen als: ${name}`:"";
  }
  if(!notificationsSupported()){
-   $("notifyBtn").style.display="none";
+   if(btn)btn.style.display="none";
    $("notifyStatus").textContent="Browsermeldingen worden op dit toestel niet ondersteund.";
+   if(banner){banner.classList.remove("hidden");banner.classList.add("denied");}
+   if(bannerTitle)bannerTitle.textContent="Pushmeldingen niet ondersteund";
+   if(bannerText)bannerText.textContent="Gebruik een recente versie van Chrome, Edge of Safari en open CableCrew via HTTPS.";
+   if(bannerBtn)bannerBtn.style.display="none";
    return;
  }
- $("notifyBtn").style.display="inline-block";
  if(notificationsEnabled()){
-   // Na activeren hoeft de knop niet meer voortdurend zichtbaar te blijven.
-   $("notifyBtn").style.display="none";
-   $("notifyBtn").classList.add("enabled");
-   $("notifyBtn").textContent="🔔 Meldingen aan";
-   $("notifyStatus").textContent=name?`Pushmeldingen actief voor ${name}. Alarmen kunnen ook binnenkomen wanneer CableCrew gesloten is.`:"";
+   if(btn){btn.style.display="none";btn.classList.add("enabled");btn.textContent="🔔 Meldingen aan";}
+   $("notifyStatus").textContent=name?`Pushmeldingen actief voor ${name}.`:"Pushmeldingen zijn actief.";
+   if(banner)banner.classList.add("hidden");
+   return;
+ }
+ if(btn){btn.style.display="inline-block";btn.classList.remove("enabled");btn.textContent="🔔 Meldingen aanzetten";}
+ $("notifyStatus").textContent=name?`Zet meldingen aan voor ${name}.`:`Kies eerst één keer je naam.`;
+ if(banner){banner.classList.remove("hidden","denied");}
+ if(Notification.permission==="denied"){
+   if(banner)banner.classList.add("denied");
+   if(bannerTitle)bannerTitle.textContent="Meldingen zijn geblokkeerd";
+   if(bannerText)bannerText.textContent="Sta meldingen toe via het slotje naast het webadres en herlaad daarna CableCrew.";
+   if(bannerBtn)bannerBtn.textContent="Controleer browserinstellingen";
+ }else if(!name){
+   if(bannerTitle)bannerTitle.textContent="Kies eerst je naam";
+   if(bannerText)bannerText.textContent="Open Mijn planning, kies je naam en druk daarna hier om pushmeldingen te activeren.";
+   if(bannerBtn)bannerBtn.textContent="Naam kiezen";
  }else{
-   $("notifyBtn").style.display="inline-block";
-   $("notifyBtn").classList.remove("enabled");
-   $("notifyBtn").textContent="🔔 Meldingen aanzetten";
-   $("notifyStatus").textContent=name?`Zet meldingen aan voor wijzigingen aan de shifts van ${name}.`:"Kies eerst één keer je naam.";
+   if(bannerTitle)bannerTitle.textContent=`Pushmeldingen activeren voor ${name}`;
+   if(bannerText)bannerText.textContent="Na je klik verschijnt de officiële browservraag. Kies Toestaan om alarmen te ontvangen.";
+   if(bannerBtn)bannerBtn.textContent="Pushmeldingen activeren";
  }
 }
-$("notifyBtn").onclick=async()=>{
+async function requestCableCrewNotifications(){
  const name=currentCrewName();
- if(!name)return alert("Kies eerst je naam bij ‘Mijn planning’.");
+ if(!name){
+   try{setMobileMineMode(true)}catch(e){}
+   const sel=$("myEmployee");
+   if(sel){sel.scrollIntoView({behavior:"smooth",block:"center"});sel.focus();}
+   alert("Kies eerst je naam bij ‘Mijn planning’ en druk daarna opnieuw op Pushmeldingen activeren.");
+   return;
+ }
  if(!notificationsSupported())return alert("Deze browser ondersteunt geen meldingen.");
+ if(Notification.permission==="denied"){
+   alert("Meldingen zijn in de browser geblokkeerd. Klik op het slotje naast het webadres, zet Meldingen op Toestaan en herlaad CableCrew.");
+   updateNotifyUI();
+   return;
+ }
  if(notificationsEnabled()){
    localStorage.setItem("cc_notify_enabled","0");
    await disableCableCrewPushToken();
@@ -7968,16 +8027,20 @@ $("notifyBtn").onclick=async()=>{
    updateNotifyUI();
    try{
      await registerCableCrewPushToken();
-     showLocalNotice("Pushmeldingen staan aan",`Dit toestel is geregistreerd voor ${name}. Alarmen kunnen nu ook binnenkomen wanneer CableCrew niet openstaat.`,"shiftchange");
+     showLocalNotice("Pushmeldingen staan aan",`Dit toestel is geregistreerd voor ${name}.`,"shiftchange");
    }catch(e){
      console.warn("FCM-registratie mislukt:",e);
-     showLocalNotice("Browsermeldingen staan aan",`Lokale meldingen werken, maar Firebase-push kon nog niet registreren: ${e.message}`,"important");
+     localStorage.setItem("cc_notify_enabled","0");
+     updateNotifyUI();
+     showLocalNotice("Pushregistratie niet voltooid",e.message||"Onbekende fout bij Firebase-registratie.","important");
    }
  }else{
    localStorage.setItem("cc_notify_enabled","0");
    updateNotifyUI();
  }
-};
+}
+$("notifyBtn").onclick=requestCableCrewNotifications;
+$("pushSetupBtn").onclick=requestCableCrewNotifications;
 
 function pendingShiftChanges(){try{return JSON.parse(localStorage.getItem("cc_pending_shift_changes")||"{}")}catch(e){return {}}}
 function savePendingShiftChanges(v){localStorage.setItem("cc_pending_shift_changes",JSON.stringify(v||{}))}
@@ -10218,7 +10281,7 @@ updateAdminLoginVisibility();
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(err => {
+    navigator.serviceWorker.register("./service-worker.js?v=107").catch(err => {
       console.warn("CableCrew service worker:", err);
     });
   });
