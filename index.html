@@ -3721,7 +3721,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 @media(max-width:720px){.crew-zone-options{grid-template-columns:repeat(2,minmax(0,1fr))}.crew-contact-row{grid-template-columns:1fr!important}}
 </style>
 
-<style id="v126-zone-management">
+<style id="v127-zone-management">
 .zone-manager-modal{width:min(760px,96vw);max-height:90vh;overflow:auto}
 .zone-manager-tools{display:grid;grid-template-columns:1fr 130px auto;gap:8px;margin:10px 0 14px}
 .zone-manager-list{display:grid;gap:8px}
@@ -4073,6 +4073,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
         </div>
         <button id="addActivityBtn" class="admin-action">🏫 <span>School / Splash</span></button>
         <button id="sessionsBtn" class="admin-action">📅 <span>Sessies</span></button>
+        <button id="groupsBtn" class="admin-action">🏢 <span>Bedrijven / Groepen</span></button>
         <button id="duplicateDayBtn" class="admin-action">📄 <span>Dag kopiëren</span></button>
         <button id="copyWeekBtn" class="admin-action">🗓️ <span>Week kopiëren</span></button>
       </div>
@@ -4618,6 +4619,38 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   </div>
 </div>
 
+
+
+<style id="v127-groups-manager">
+.group-manager-modal{width:min(980px,96vw);max-height:92vh;overflow:auto}.group-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.planned-groups-list{display:grid;gap:8px;margin-bottom:12px}.planned-group-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fff}.planned-group-meta{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}.planned-group-actions{display:flex;gap:6px;flex-wrap:wrap}.planned-group-actions button{padding:6px 8px;font-size:11px}.group-editor{border:1px solid #cfdce6;border-radius:14px;padding:14px;background:#fff;margin-top:10px}.group-activities-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.group-activities-grid label{display:flex;align-items:center;gap:7px;padding:8px;border:1px solid #e1e8ee;border-radius:9px;background:#fff;font-size:12px;font-weight:800}.group-assignment-list{display:grid;gap:10px}.group-assignment-row{border:1px solid var(--line);border-radius:11px;padding:10px;background:#f8fafc}.group-assignment-head{display:grid;grid-template-columns:1fr 180px;gap:8px;align-items:center;margin-bottom:8px}.group-employee-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.group-employee-grid label{display:flex;align-items:center;gap:6px;padding:6px 7px;border:1px solid #e3e9ee;border-radius:8px;background:#fff;font-size:12px;font-weight:700}.activity-block.group,.mini-activity.group{background:#f2ebff;border-left-color:#7c3aed}@media(max-width:720px){.group-activities-grid,.group-employee-grid{grid-template-columns:1fr 1fr}.planned-group-row{grid-template-columns:1fr}.group-assignment-head{grid-template-columns:1fr}}
+</style>
+<div id="groupsModal" class="modalback">
+ <div class="modal group-manager-modal">
+  <div class="year-head"><div><h2>🏢 Bedrijven / Groepen</h2><div class="year-sub">Plan groepen, activiteiten en begeleiders op dezelfde manier als School / Splash en Sessies.</div></div><button id="closeGroupsBtn">Sluiten</button></div>
+  <div class="group-toolbar"><button id="newGroupBtn" class="primary" type="button">➕ Nieuwe groep</button><button id="manageGroupActivitiesBtn" type="button">⚙️ Activiteiten beheren</button></div>
+  <div id="plannedGroupsList" class="planned-groups-list"></div>
+  <div id="groupEditor" class="group-editor" style="display:none">
+   <h3 id="groupEditorTitle">Nieuwe groep</h3>
+   <div class="formgrid">
+    <label>Bedrijf / groepsnaam<input id="groupName" type="text" placeholder="bv. Bedrijf ABC"></label>
+    <label>Datum<input id="groupDate" type="date"></label>
+    <label>Startuur<input id="groupStart" type="time"></label><label>Einduur<input id="groupEnd" type="time"></label>
+    <label>Aantal deelnemers<input id="groupParticipants" type="number" min="0" step="1"></label><label>Kleur<input id="groupColor" type="color" value="#f2ebff"></label>
+    <label>Contactpersoon<input id="groupContact" type="text"></label><label>Telefoonnummer<input id="groupPhone" type="tel"></label>
+    <div class="wide"><div class="activity-zones-label">Activiteiten kiezen</div><div id="groupActivityChoices" class="group-activities-grid"></div></div>
+    <div class="wide"><div class="activity-zones-label">Medewerkers en zone per activiteit</div><div id="groupAssignments" class="group-assignment-list"></div></div>
+    <label class="wide">Opmerking<textarea id="groupNote" rows="2"></textarea></label>
+    <label class="wide session-shift-option"><input id="groupCreateShifts" type="checkbox" checked> Ook als gewone shifts toevoegen</label>
+   </div>
+   <div id="groupPreview" class="activity-preview"></div>
+   <div class="modalactions"><button id="deleteGroupBtn" class="danger" style="display:none">Verwijderen</button><button id="duplicateGroupBtn" style="display:none">📋 Dupliceren</button><button id="cancelGroupEditBtn">Annuleren</button><button id="saveGroupBtn" class="success">Opslaan</button></div>
+  </div>
+  <div id="groupActivitiesManager" style="display:none;padding:12px;border:1px solid var(--line);border-radius:12px;background:#f7fafc;margin-top:12px">
+   <h3>Activiteiten beheren</h3><div id="groupActivitiesList" style="display:grid;gap:8px;margin-bottom:12px"></div>
+   <div style="display:flex;gap:8px"><input id="newGroupActivityInput" type="text" placeholder="Nieuwe activiteit" style="flex:1"><button id="addGroupActivityBtn" class="primary">Toevoegen</button></div>
+  </div>
+ </div>
+</div>
 
 <div id="sessionsModal" class="modalback">
   <div class="modal session-manager-modal">
@@ -5400,6 +5433,7 @@ function activityBlocksFor(dateKey,zone){
 }
 function activityLabel(x){
  if(x.activityType==="SESSION")return `📅 ${x.sessionName||"Sessie"}`;
+ if(x.activityType==="GROUP")return `🏢 ${x.groupName||"Bedrijf / Groep"}`;
  if(x.activityType==="SPLASH")return "💦 Splash";
  if(x.activityType==="SCHOOL_SPLASH")return "🏫💦 School / Splash";
  return "🏫 School";
@@ -5408,14 +5442,17 @@ function activityEmployeesForZone(x,zone=""){
  if(x.activityType==="SESSION" && x.zoneAssignments && zone){
    return Array.isArray(x.zoneAssignments[zone])?x.zoneAssignments[zone]:[];
  }
+ if(x.activityType==="GROUP" && Array.isArray(x.groupAssignments) && zone){
+   return [...new Set(x.groupAssignments.filter(a=>a.zone===zone).flatMap(a=>Array.isArray(a.employees)?a.employees:[]))];
+ }
  return Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
 }
 function activityBlockHtml(x,mini=false,zone=""){
  const count=Number(x.participants)||0;
- const activityClass=x.activityType==="SESSION"?"session":(x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school"));
+ const activityClass=x.activityType==="SESSION"?"session":(x.activityType==="GROUP"?"group":(x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school")));
  const classes=`${mini?"mini-activity":"activity-block"} ${activityClass} ${editMode?"editable":""}`;
  const assigned=activityEmployeesForZone(x,zone);
- const style=x.activityType==="SESSION"&&x.sessionColor?` style="background:${esc(x.sessionColor)}"`:"";
+ const style=x.activityType==="SESSION"&&x.sessionColor?` style="background:${esc(x.sessionColor)}"`:(x.activityType==="GROUP"&&x.groupColor?` style="background:${esc(x.groupColor)}"`:"");
  if(mini){
    return `<div class="${classes}"${style} data-activity-id="${esc(x._id||"")}"><b>${activityLabel(x)}</b>${count?` · ${count} pers.`:""} · ${esc(x.start||"")}–${esc(x.end||"")}${x.note?` · ${esc(x.note)}`:""}${assigned.length?`<br>👤 ${assigned.map(esc).join(", ")}`:""}</div>`;
  }
@@ -5673,7 +5710,7 @@ document.addEventListener("click",e=>{
  const activityEl=e.target.closest("[data-activity-id]");
  if(!activityEl||!editMode||!user)return;
  const x=shifts.find(s=>s._id===activityEl.dataset.activityId && s.recordType==="activity");
- if(x){e.preventDefault();e.stopPropagation();x.activityType==="SESSION"?openSessionEditor(x):openActivity(x)}
+ if(x){e.preventDefault();e.stopPropagation();x.activityType==="SESSION"?openSessionEditor(x):(x.activityType==="GROUP"?openGroupEditor(x):openActivity(x))}
 });
 document.addEventListener("click",e=>{
  const el=e.target.closest("[data-id]");if(!el||!editMode||!user)return;
@@ -6107,7 +6144,7 @@ function syncKeepAddingUi(){
 $("keepAdding")?.addEventListener("change",syncKeepAddingUi);
 $("addShiftBtn").onclick=()=>openShift();
 $("addActivityBtn").onclick=()=>openActivity();
-const SESSION_TYPES_STORAGE_KEY="cc_session_types_v126";
+const SESSION_TYPES_STORAGE_KEY="cc_session_types_v127";
 const DEFAULT_SESSION_TYPES=["Women Session","Daddy is Cool","UFO Session","BK","EK"];
 let SESSION_ZONES=["PRO","ROOKIE","VERHUUR","2.0","STANDBY"];
 let sessionEditing=null;
@@ -6237,6 +6274,30 @@ $("addSessionTypeBtn").onclick=addSessionType;$("newSessionTypeInput").addEventL
 $("cancelSessionEditBtn").onclick=()=>{$("sessionEditor").style.display="none";sessionEditing=null};
 $("saveSessionBtn").onclick=saveSession;$("deleteSessionBtn").onclick=deleteSession;$("duplicateSessionBtn").onclick=()=>{if(sessionEditing)openSessionEditor(sessionEditing,true)};
 ["sessionTypeSelect","sessionDate","sessionStart","sessionEnd","sessionParticipants","sessionColor","sessionNote"].forEach(id=>{$(id)?.addEventListener("input",updateSessionPreview);$(id)?.addEventListener("change",updateSessionPreview)});
+
+
+// ===== V127 BEDRIJVEN / GROEPEN =====
+const GROUP_ACTIVITIES_KEY="cc_group_activities_v127";
+const GROUP_DEFAULT_ACTIVITIES=["Wakeboarden","Splash","Mountainbike","Stadsfietstocht","Nordic Walking"];
+let groupEditing=null;
+function getGroupActivities(){try{const v=JSON.parse(localStorage.getItem(GROUP_ACTIVITIES_KEY)||"null");return Array.isArray(v)&&v.length?v:GROUP_DEFAULT_ACTIVITIES.slice()}catch(_){return GROUP_DEFAULT_ACTIVITIES.slice()}}
+function saveGroupActivities(v){localStorage.setItem(GROUP_ACTIVITIES_KEY,JSON.stringify([...new Set(v.map(x=>String(x).trim()).filter(Boolean))]));renderGroupActivitiesManager();renderGroupActivityChoices()}
+function renderGroupActivitiesManager(){const list=$("groupActivitiesList");if(!list)return;const acts=getGroupActivities();list.innerHTML=acts.map(a=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff"><b>${esc(a)}</b><button type="button" data-remove-group-activity="${esc(a)}" class="danger" style="padding:5px 7px;font-size:11px">Verwijderen</button></div>`).join("");list.querySelectorAll("[data-remove-group-activity]").forEach(b=>b.onclick=()=>{const a=b.dataset.removeGroupActivity;if(!confirm(`${a} verwijderen uit de keuzelijst?`))return;saveGroupActivities(getGroupActivities().filter(x=>x!==a))})}
+function addGroupActivity(){const input=$("newGroupActivityInput");const name=(input.value||"").trim();if(!name)return;saveGroupActivities([...getGroupActivities(),name]);input.value=""}
+function selectedGroupActivities(){return [...document.querySelectorAll('#groupActivityChoices input[type="checkbox"]:checked')].map(x=>x.value)}
+function renderGroupActivityChoices(selected=[]){const wrap=$("groupActivityChoices");if(!wrap)return;const chosen=new Set(selected);wrap.innerHTML=getGroupActivities().map(a=>`<label><input type="checkbox" value="${esc(a)}" ${chosen.has(a)?"checked":""}> ${esc(a)}</label>`).join("");wrap.querySelectorAll('input[type="checkbox"]').forEach(c=>c.onchange=()=>{renderGroupAssignments(readGroupAssignments());updateGroupPreview()})}
+function groupZones(){return typeof getActiveZoneNames==="function"?getActiveZoneNames().filter(z=>z!=="VERLOF"):zones.filter(z=>z!=="VERLOF")}
+function readGroupAssignments(){const out=[];document.querySelectorAll("#groupAssignments .group-assignment-row").forEach(row=>{const activity=row.dataset.activity;const zone=row.querySelector("select")?.value||"PRO";const employees=[...row.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);out.push({activity,zone,employees})});return out}
+function renderGroupAssignments(existing=[]){const wrap=$("groupAssignments");if(!wrap)return;const previous=new Map((existing||[]).map(a=>[a.activity,a]));wrap.innerHTML=selectedGroupActivities().map(activity=>{const old=previous.get(activity)||{activity,zone:"PRO",employees:[]};const zoneNames=groupZones();const names=plannablePeople(old.zone||"PRO");const chosen=new Set(old.employees||[]);return `<div class="group-assignment-row" data-activity="${esc(activity)}"><div class="group-assignment-head"><b>${esc(activity)}</b><select>${zoneNames.map(z=>`<option value="${esc(z)}" ${z===old.zone?"selected":""}>${esc(z)}</option>`).join("")}</select></div><div class="group-employee-grid">${names.length?names.map(n=>`<label><input type="checkbox" value="${esc(n)}" ${chosen.has(n)?"checked":""}> ${esc(n)}</label>`).join(""):'<div class="empty">Geen inplanbare medewerkers.</div>'}</div></div>`}).join("")||'<div class="empty">Kies eerst minstens één activiteit.</div>';wrap.querySelectorAll("select").forEach(sel=>sel.onchange=()=>{const current=readGroupAssignments();renderGroupAssignments(current.map(a=>a.activity===sel.closest('.group-assignment-row').dataset.activity?{...a,zone:sel.value}:a));updateGroupPreview()});wrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.onchange=updateGroupPreview)}
+function updateGroupPreview(){const box=$("groupPreview");if(!box)return;const asg=readGroupAssignments();box.innerHTML=`<b>🏢 ${esc($("groupName").value||"Bedrijf / Groep")}</b> · ${esc($("groupStart").value||"")}–${esc($("groupEnd").value||"")}${Number($("groupParticipants").value)||0?` · ${Number($("groupParticipants").value)} deelnemers`:""}<br>${asg.length?asg.map(a=>`${esc(a.activity)} (${esc(a.zone)}): ${(a.employees||[]).map(esc).join(", ")||"geen medewerkers"}`).join("<br>"):"Kies activiteiten en medewerkers."}`}
+function groupRecords(){return activityRecords().filter(x=>x.activityType==="GROUP")}
+function renderPlannedGroups(){const list=$("plannedGroupsList");if(!list)return;const rows=groupRecords().slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.start||"").localeCompare(b.start||""));list.innerHTML=rows.length?rows.map(x=>`<div class="planned-group-row"><div><b>🏢 ${esc(x.groupName||"Bedrijf / Groep")}</b><div class="planned-group-meta">${esc(x.date||"")} · ${esc(x.start||"")}–${esc(x.end||"")}${x.participants?` · ${Number(x.participants)} deelnemers`:""}<br>${(x.groupAssignments||[]).map(a=>`${esc(a.activity)} (${esc(a.zone)}): ${(a.employees||[]).map(esc).join(", ")}`).join(" · ")}</div></div><div class="planned-group-actions"><button data-edit-group="${esc(x._id)}">Bewerken</button><button data-duplicate-group="${esc(x._id)}">📋 Dupliceren</button></div></div>`).join(""):'<div class="empty">Nog geen bedrijven of groepen gepland.</div>';list.querySelectorAll("[data-edit-group]").forEach(b=>b.onclick=()=>openGroupEditor(shifts.find(x=>x._id===b.dataset.editGroup)));list.querySelectorAll("[data-duplicate-group]").forEach(b=>b.onclick=()=>openGroupEditor(shifts.find(x=>x._id===b.dataset.duplicateGroup),true))}
+function openGroupEditor(x=null,duplicate=false){groupEditing=duplicate?null:x;$("groupEditor").style.display="block";$("groupActivitiesManager").style.display="none";$("groupEditorTitle").textContent=duplicate?"Groep dupliceren":(x?"Groep aanpassen":"Nieuwe groep");$("groupName").value=x?.groupName||"";$("groupDate").value=x?.date||$("date").value||realTodayKey();$("groupStart").value=x?.start||"09:00";$("groupEnd").value=x?.end||"12:00";$("groupParticipants").value=x?.participants||"";$("groupColor").value=x?.groupColor||"#f2ebff";$("groupContact").value=x?.groupContact||"";$("groupPhone").value=x?.groupPhone||"";$("groupNote").value=x?.note||"";$("groupCreateShifts").checked=x?.createOrdinaryShifts!==false;const selected=(x?.groupAssignments||[]).map(a=>a.activity);renderGroupActivityChoices(selected.length?selected:[getGroupActivities()[0]]);renderGroupAssignments(x?.groupAssignments||[]);$("deleteGroupBtn").style.display=x&&!duplicate?"inline-block":"none";$("duplicateGroupBtn").style.display=x&&!duplicate?"inline-block":"none";updateGroupPreview();$("groupEditor").scrollIntoView({behavior:"smooth",block:"start"})}
+async function deleteGeneratedGroupShifts(record){for(const id of (Array.isArray(record?.generatedShiftIds)?record.generatedShiftIds:[])){try{await deleteDoc(doc(db,"shifts",id))}catch(_){}}}
+async function saveGroup(){const assignments=readGroupAssignments();const v={recordType:"activity",activityType:"GROUP",groupName:$("groupName").value.trim(),date:$("groupDate").value,start:$("groupStart").value,end:$("groupEnd").value,participants:Number($("groupParticipants").value)||0,groupColor:$("groupColor").value||"#f2ebff",groupContact:$("groupContact").value.trim(),groupPhone:$("groupPhone").value.trim(),note:$("groupNote").value.trim(),groupAssignments:assignments,activityZones:[...new Set(assignments.map(a=>a.zone).filter(Boolean))],assignedEmployees:[...new Set(assignments.flatMap(a=>a.employees||[]))],createOrdinaryShifts:$("groupCreateShifts").checked,employee:"",zone:"__ACTIVITY__",generatedShiftIds:[]};if(!v.groupName)return alert("Vul de naam van het bedrijf of de groep in.");if(!v.date||!v.start||!v.end)return alert("Vul datum en uren in.");if(mins(v.end)<=mins(v.start))return alert("Het einduur moet na het startuur liggen.");if(!assignments.length)return alert("Kies minstens één activiteit.");try{if(groupEditing)await deleteGeneratedGroupShifts(groupEditing);let ref;if(groupEditing){ref=doc(db,"shifts",groupEditing._id);await updateDoc(ref,v)}else ref=await addDoc(collection(db,"shifts"),v);const generated=[];if(v.createOrdinaryShifts){for(const a of assignments){for(const employee of a.employees||[]){const sr=await addDoc(collection(db,"shifts"),{date:v.date,start:v.start,end:v.end,zone:a.zone,employee,note:`${v.groupName}: ${a.activity}`,groupActivityId:ref.id});generated.push(sr.id)}}}await updateDoc(doc(db,"shifts",ref.id),{generatedShiftIds:generated});await writeAudit(`${v.groupName} ${groupEditing?"aangepast":"toegevoegd"}`,groupEditing||null,{...v,generatedShiftIds:generated});$("groupEditor").style.display="none";groupEditing=null;renderPlannedGroups()}catch(e){alert("Groep opslaan mislukt: "+e.message)}}
+async function deleteGroup(){if(!groupEditing||!confirm("Deze groep en automatisch aangemaakte shifts verwijderen?"))return;try{await deleteGeneratedGroupShifts(groupEditing);await deleteDoc(doc(db,"shifts",groupEditing._id));$("groupEditor").style.display="none";groupEditing=null;renderPlannedGroups()}catch(e){alert("Verwijderen mislukt: "+e.message)}}
+$("groupsBtn").onclick=()=>{renderPlannedGroups();renderGroupActivitiesManager();$("groupEditor").style.display="none";$("groupActivitiesManager").style.display="none";$("groupsModal").classList.add("show")};$("closeGroupsBtn").onclick=()=>$("groupsModal").classList.remove("show");$("groupsModal").onclick=e=>{if(e.target===$("groupsModal"))$("groupsModal").classList.remove("show")};$("newGroupBtn").onclick=()=>openGroupEditor();$("manageGroupActivitiesBtn").onclick=()=>{$("groupActivitiesManager").style.display=$("groupActivitiesManager").style.display==="none"?"block":"none";renderGroupActivitiesManager()};$("addGroupActivityBtn").onclick=addGroupActivity;$("newGroupActivityInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addGroupActivity()}});$("cancelGroupEditBtn").onclick=()=>{$("groupEditor").style.display="none";groupEditing=null};$("saveGroupBtn").onclick=saveGroup;$("deleteGroupBtn").onclick=deleteGroup;$("duplicateGroupBtn").onclick=()=>{if(groupEditing)openGroupEditor(groupEditing,true)};["groupName","groupDate","groupStart","groupEnd","groupParticipants","groupColor","groupContact","groupPhone","groupNote"].forEach(id=>{$(id)?.addEventListener("input",updateGroupPreview);$(id)?.addEventListener("change",updateGroupPreview)});
+
 $("cancelActivityBtn").onclick=()=>$("activityModal").classList.remove("show");
 $("saveActivityBtn").onclick=saveActivity;
 $("deleteActivityBtn").onclick=async()=>{
