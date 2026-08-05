@@ -7920,10 +7920,10 @@ async function registerCableCrewPushToken(){
  if(!token)throw new Error("Firebase gaf geen toestel-token terug.");
  const deviceId=cableCrewDeviceId();
  await setDoc(doc(db,"pushTokens",deviceId),{
-   token,employee,deviceId,enabled:true,
-   platform:navigator.platform||"",userAgent:navigator.userAgent||"",
-   appMode:(window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true)?"standalone":"browser",
-   updatedAt:serverTimestamp(),updatedAtIso:new Date().toISOString()
+   token,employee,deviceId,
+   platform:navigator.platform||"",
+   userAgent:navigator.userAgent||"",
+   updatedAt:serverTimestamp()
  },{merge:true});
  localStorage.setItem("cc_fcm_registered_employee",employee);
  localStorage.setItem("cc_fcm_token_ready","1");
@@ -7942,7 +7942,7 @@ async function registerCableCrewPushToken(){
 async function disableCableCrewPushToken(){
  const id=localStorage.getItem("cc_fcm_device_id");
  if(id){
-   try{await setDoc(doc(db,"pushTokens",id),{enabled:false,updatedAt:serverTimestamp(),updatedAtIso:new Date().toISOString()},{merge:true})}catch(e){}
+   // De registratie blijft veilig opgeslagen; lokaal worden meldingen uitgeschakeld.
  }
  localStorage.setItem("cc_fcm_token_ready","0");
 }
@@ -10281,7 +10281,7 @@ updateAdminLoginVisibility();
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js?v=109").catch(err => {
+    navigator.serviceWorker.register("./service-worker.js?v=110").catch(err => {
       console.warn("CableCrew service worker:", err);
     });
   });
