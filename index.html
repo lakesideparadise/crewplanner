@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner · index 105</title>
-<meta name="cablecrew-version" content="V13.121-MULTI-EMPLOYEE-SHIFT-2026-08-05">
+<meta name="cablecrew-version" content="V13.122-MULTI-EMPLOYEE-SHIFT-2026-08-05">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -3691,7 +3691,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 /* V13.115: Firebase push tijdelijk veilig uitgeschakeld; volledige planner behouden. */
 #pushSetupBanner,#notifyBtn,#notifyStatus,#notificationIdentity{display:none!important}
 
-/* ===== V13.121 MEERDERE MEDEWERKERS BIJ SHIFT TOEVOEGEN ===== */
+/* ===== V13.122 MEERDERE MEDEWERKERS BIJ SHIFT TOEVOEGEN ===== */
 .shift-employee-multi{display:none;grid-column:1/-1;border:1px solid var(--line);border-radius:10px;padding:10px;background:#f8fbfd}
 .shift-employee-multi.show{display:block}
 .shift-employee-multi-title{font-size:12px;font-weight:900;color:#51606b;margin-bottom:8px}
@@ -3704,6 +3704,21 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 .shift-employee-tools button{padding:6px 8px;font-size:11px}
 @media(max-width:720px){.shift-employee-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:390px){.shift-employee-grid{grid-template-columns:1fr}}
+
+/* ===== V122 MEDEWERKERS BEHEREN ===== */
+.crew-contact-row{grid-template-columns:minmax(230px,.85fr) minmax(250px,1fr)!important;align-items:start!important}
+.crew-member-settings{grid-column:1/-1;display:grid;gap:9px;padding-top:9px;border-top:1px solid #edf1f4}
+.crew-member-toggles{display:flex;gap:8px;flex-wrap:wrap}
+.crew-setting-toggle{display:flex!important;align-items:center;gap:7px;padding:8px 10px;border:1px solid #dce5ec;border-radius:9px;background:#fff;font-size:12px!important;font-weight:800!important;color:#334155!important}
+.crew-setting-toggle input{width:auto!important;margin:0!important}
+.crew-setting-toggle:has(input:checked){background:#edf7f1;border-color:#9bcbb0;color:#17633c!important}
+.crew-zone-title{font-size:11px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+.crew-zone-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.crew-zone-option{display:flex!important;align-items:center;gap:6px;padding:7px 8px;border:1px solid #dce5ec;border-radius:8px;background:#f8fbfd;font-size:11px!important;font-weight:800!important;color:#42566a!important}
+.crew-zone-option input{width:auto!important;margin:0!important}
+.crew-zone-option:has(input:checked){background:#eef6ff;border-color:#9ec6e5;color:#0f4b6d!important}
+.crew-member-note{font-size:11px;color:#64748b;line-height:1.35}
+@media(max-width:720px){.crew-zone-options{grid-template-columns:repeat(2,minmax(0,1fr))}.crew-contact-row{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
@@ -4088,7 +4103,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
         <span class="tool-icon">📄</span><span class="tool-copy"><b>Contracten</b><small>Zie wie een contract nodig heeft en registreer contractperiodes.</small></span><span class="tool-arrow">›</span>
       </button>
       <button id="crewContactsBtn" class="admin-tool-card tool-lime">
-        <span class="tool-icon">📱</span><span class="tool-copy"><b>WhatsApp nummers</b><small>Beheer namen en telefoonnummers.</small></span><span class="tool-arrow">›</span>
+        <span class="tool-icon">👥</span><span class="tool-copy"><b>Medewerkers beheren</b><small>Beheer namen, nummers en wie ingepland kan worden.</small></span><span class="tool-arrow">›</span>
       </button>
       <button id="whatsappGroupBtn" class="admin-tool-card tool-teal">
         <span class="tool-icon">📣</span><span class="tool-copy"><b>Planning publiceren</b><small>Stuur één groepsbericht wanneer een periode klaar is.</small></span><span class="tool-arrow">›</span>
@@ -4216,7 +4231,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   </div>
   <div id="studentManageList" class="student-manage-list"></div>
   <div class="student-manage-footer">
-    <button id="studentManageSaveBtn" class="success" type="button">Wijzigingen opslaan</button>
+    <button id="studentManageSaveBtn" class="success" type="button">Medewerkers opslaan</button>
   </div>
 </div></div>
 
@@ -4614,8 +4629,8 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 <div id="crewContactsModal" class="modalback"><div class="modal crew-contacts-modal">
   <div class="year-head">
     <div>
-      <h2>📱 WhatsApp nummers</h2>
-      <div class="year-sub">Alleen voor Nick en Arno. Deze nummers zijn enkel zichtbaar in beheer.</div>
+      <h2>👥 Medewerkers beheren</h2>
+      <div class="year-sub">Beheer contactgegevens, planbaarheid en inzetbare zones. Historische shifts blijven altijd bewaard.</div>
     </div>
     <button id="closeCrewContactsBtn">Sluiten</button>
   </div>
@@ -5066,6 +5081,26 @@ function renderMonthTemplateDraft(){
  $("applyMonthTemplateBtn").disabled=!(ready.length||replacements.length);
 }
 
+const CREW_PLANNING_ZONES=["PRO","ROOKIE","VERHUUR","2.0","STANDBY","SCHOOL","SCHOOL / SPLASH","SESSIES"];
+function crewMemberSettings(name){
+ const d=crewDirectory.get(name)||{};
+ const defaultPlannable=normalizedPersonName(name)!==normalizedPersonName("Ann-Sophy");
+ return {
+   active:d.active!==false,
+   plannable:typeof d.plannable==="boolean"?d.plannable:defaultPlannable,
+   zones:Array.isArray(d.planningZones)&&d.planningZones.length?d.planningZones:[...CREW_PLANNING_ZONES]
+ };
+}
+function isCrewPlannable(name,zone=""){
+ const cfg=crewMemberSettings(name);
+ if(!cfg.active||!cfg.plannable)return false;
+ if(!zone||zone==="VERLOF")return true;
+ return cfg.zones.includes(String(zone).toUpperCase())||cfg.zones.includes(String(zone));
+}
+function plannablePeople(zone=""){
+ return people().filter(name=>isCrewPlannable(name,zone));
+}
+
 function people(){
  const shiftNames=[...new Set(normalCrewShifts().map(x=>x.employee).filter(Boolean))];
  const activeDirectory=[...crewDirectory.entries()]
@@ -5128,8 +5163,10 @@ function fillPeople(){
  updateNotifyUI();
  updateAdminLoginVisibility();
 
+ const planZone=$("editZone")?.value||"";
+ const planPeople=plannablePeople(planZone);
  $("editEmployee").innerHTML=
-   p.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+
+   planPeople.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+
    '<option value="__NEW__">+ Nieuwe medewerker…</option>';
  if($("shiftEmployeeGrid"))renderShiftEmployeeChoices(selectedShiftEmployees());
 
@@ -5145,7 +5182,7 @@ function fillPeople(){
 function renderShiftEmployeeChoices(selected=[]){
  const box=$("shiftEmployeeGrid");
  if(!box)return;
- const names=people();
+ const names=plannablePeople($("editZone")?.value||"");
  const chosen=new Set((selected||[]).filter(Boolean));
  if(!chosen.size && names.length)chosen.add(names[0]);
  box.innerHTML=names.map(n=>`<label class="shift-employee-option"><input type="checkbox" value="${esc(n)}" ${chosen.has(n)?"checked":""}> <span>${esc(n)}</span></label>`).join("");
@@ -5763,7 +5800,7 @@ function availableCrewNamesForActivity(){
  const names=[...new Set([
    ...[...crewDirectory.values()].map(x=>x?.name).filter(Boolean),
    ...normalCrewShifts().map(x=>x.employee).filter(Boolean)
- ])];
+ ])].filter(name=>isCrewPlannable(name,"SESSIES"));
  return names.sort((a,b)=>a.localeCompare(b,"nl"));
 }
 function renderActivityEmployeeChoices(selectedNames=[]){
@@ -5935,7 +5972,16 @@ function updateLeaveFields(){
    if(!$("editEnd").value)$("editEnd").value=editing?.end||"17:00";
  }
 }
-$("editZone").addEventListener("change",updateLeaveFields);
+$("editZone").addEventListener("change",()=>{
+ updateLeaveFields();
+ const keep=selectedShiftEmployees();
+ const allowed=plannablePeople($("editZone").value);
+ const selected=keep.filter(n=>allowed.includes(n));
+ renderShiftEmployeeChoices(selected);
+ const current=$("editEmployee").value;
+ $("editEmployee").innerHTML=allowed.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("")+'<option value="__NEW__">+ Nieuwe medewerker…</option>';
+ if(selected[0])$("editEmployee").value=selected[0]; else if(allowed[0])$("editEmployee").value=allowed[0];
+});
 $("editDate").addEventListener("change",()=>{
  if($("editZone").value==="VERLOF" && (!$("leaveEndDate").value || $("leaveEndDate").value<$("editDate").value)){
    $("leaveEndDate").value=$("editDate").value;
@@ -8425,26 +8471,49 @@ function renderCrewContacts(){
 
  const names=[...new Set([
    ...activeNames,
-   ...shiftNames.filter(n=>!crewDirectory.has(n) || crewDirectory.get(n)?.active!==false)
+   ...shiftNames.filter(n=>!crewDirectory.has(n) || crewDirectory.get(n)?.active!==false),
+   "Ann-Sophy"
  ])].sort((a,b)=>a.localeCompare(b,"nl"));
 
- $("crewContactsList").innerHTML=names.length?names.map(n=>`
+ $("crewContactsList").innerHTML=names.length?names.map(n=>{
+   const cfg=crewMemberSettings(n);
+   return `
    <div class="crew-contact-row" data-crew-row="${esc(n)}">
      <div class="crew-contact-actions">
        <input type="text" data-crew-name="${esc(n)}" value="${esc(n)}" aria-label="Naam">
-       <button type="button" class="danger crew-contact-remove" data-remove-crew="${esc(n)}">Verwijderen</button>
+       <button type="button" class="danger crew-contact-remove" data-remove-crew="${esc(n)}">Deactiveren</button>
      </div>
      <input type="tel" data-crew-contact="${esc(n)}" value="${esc(crewPhone(n))}" placeholder="bv. 0471 12 34 56" autocomplete="tel">
-   </div>`).join(""):'<div class="empty">Nog geen medewerkers gevonden.</div>';
+     <div class="crew-member-settings">
+       <div class="crew-member-toggles">
+         <label class="crew-setting-toggle"><input type="checkbox" data-crew-active ${cfg.active?"checked":""}> Actieve gebruiker</label>
+         <label class="crew-setting-toggle"><input type="checkbox" data-crew-plannable ${cfg.plannable?"checked":""}> Kan ingepland worden</label>
+       </div>
+       <div class="crew-zone-title">Inplanbaar voor</div>
+       <div class="crew-zone-options">
+         ${CREW_PLANNING_ZONES.map(z=>`<label class="crew-zone-option"><input type="checkbox" data-crew-zone value="${esc(z)}" ${cfg.zones.includes(z)?"checked":""}> ${esc(z)}</label>`).join("")}
+       </div>
+       <div class="crew-member-note">Wanneer ‘Kan ingepland worden’ uit staat, blijft deze persoon inloggen en de planning bekijken, maar verdwijnt hij/zij uit shifts en sessies.</div>
+     </div>
+   </div>`}).join(""):'<div class="empty">Nog geen medewerkers gevonden.</div>';
 
  $("crewContactsList").querySelectorAll("[data-remove-crew]").forEach(btn=>{
    btn.onclick=()=>{
      const name=btn.dataset.removeCrew;
-     if(!confirm(`${name} verwijderen uit de actieve medewerkerslijst?\n\nBestaande historische shifts blijven behouden.`))return;
+     if(!confirm(`${name} deactiveren?\n\nBestaande historische shifts blijven behouden.`))return;
      const row=btn.closest("[data-crew-row]");
      row?.setAttribute("data-pending-delete","1");
-     row?.style.setProperty("display","none");
+     const activeBox=row?.querySelector("[data-crew-active]"); if(activeBox)activeBox.checked=false;
+     row?.style.setProperty("opacity",".55");
    };
+ });
+
+ $("crewContactsList").querySelectorAll("[data-crew-plannable]").forEach(cb=>{
+   cb.addEventListener("change",()=>{
+     const row=cb.closest("[data-crew-row]");
+     row?.querySelectorAll("[data-crew-zone]").forEach(z=>z.disabled=!cb.checked);
+   });
+   cb.dispatchEvent(new Event("change"));
  });
 }
 
@@ -8452,7 +8521,7 @@ function startCrewContactsListener(){
  if(crewContactsUnsub){crewContactsUnsub();crewContactsUnsub=null}
  if(!isAdminUser())return;
  crewContactsUnsub=onSnapshot(collection(db,"crewContacts"),snap=>{
-   crewDirectory=new Map(snap.docs.map(d=>[d.id,{name:d.data().name||d.id,phone:d.data().phone||"",daysOff:Array.isArray(d.data().daysOff)?d.data().daysOff.map(Number):[],active:d.data().active!==false}]));
+   crewDirectory=new Map(snap.docs.map(d=>[d.id,{name:d.data().name||d.id,phone:d.data().phone||"",daysOff:Array.isArray(d.data().daysOff)?d.data().daysOff.map(Number):[],active:d.data().active!==false,plannable:typeof d.data().plannable==="boolean"?d.data().plannable:undefined,planningZones:Array.isArray(d.data().planningZones)?d.data().planningZones:[]}])) ;
    crewContacts=new Map([...crewDirectory.entries()].filter(([n,d])=>d.active!==false).map(([n,d])=>[n,d.phone||""]));
    fillPeople();
    if($("crewContactsModal").classList.contains("show"))renderCrewContacts();
@@ -8478,6 +8547,8 @@ $("addCrewContactBtn").onclick=async()=>{
      phone,
      daysOff:[],
      active:true,
+     plannable:normalizedPersonName(name)!==normalizedPersonName("Ann-Sophy"),
+     planningZones:[...CREW_PLANNING_ZONES],
      updatedAt:serverTimestamp(),
      updatedBy:user.email||""
    });
@@ -8498,8 +8569,13 @@ $("saveCrewContactsBtn").onclick=async()=>{
      const pendingDelete=row.dataset.pendingDelete==="1";
      const nameInput=row.querySelector("[data-crew-name]");
      const phoneInput=row.querySelector("[data-crew-contact]");
+     const activeInput=row.querySelector("[data-crew-active]");
+     const plannableInput=row.querySelector("[data-crew-plannable]");
      const newName=(nameInput?.value||oldName).trim();
      const phone=normalizeBelgianPhone(phoneInput?.value.trim()||"");
+     const active=!pendingDelete && activeInput?.checked!==false;
+     const plannable=!!plannableInput?.checked;
+     const planningZones=[...row.querySelectorAll("[data-crew-zone]:checked")].map(x=>x.value);
 
      if(pendingDelete){
        // Niet fysiek wissen: inactive bewaren zodat historische shifts
@@ -8530,14 +8606,16 @@ $("saveCrewContactsBtn").onclick=async()=>{
        name:newName,
        phone,
        daysOff:fixedDaysOff("crew",oldName),
-       active:true,
+       active,
+       plannable,
+       planningZones,
        updatedAt:serverTimestamp(),
        updatedBy:user.email||""
      },{merge:true});
    });
 
    await batch.commit();
-   alert("Medewerkers en nummers opgeslagen.");
+   alert("Medewerkersinstellingen opgeslagen.");
    $("crewContactsModal").classList.remove("show");
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 };
