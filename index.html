@@ -1881,7 +1881,7 @@ body.jobstudent-viewer .planner-tabs{grid-template-columns:1fr 1fr!important}
 
 </style>
 
-<link rel="manifest" href="./manifest.webmanifest?v=115">
+<link rel="manifest" href="./manifest.webmanifest?v=120">
 <meta name="theme-color" content="#0f4b6d">
 <meta name="application-name" content="CableCrew">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3690,18 +3690,6 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 
 /* V13.115: Firebase push tijdelijk veilig uitgeschakeld; volledige planner behouden. */
 #pushSetupBanner,#notifyBtn,#notifyStatus,#notificationIdentity{display:none!important}
-
-/* ===== V13.8 MEERDERE MEDEWERKERS PER SHIFT ===== */
-.shift-employee-multi{grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:10px;background:#f8fbfd}
-.shift-employee-multi-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-.shift-employee-multi-head b{font-size:13px}
-.shift-employee-multi-head small{font-size:11px;color:var(--muted)}
-.shift-employee-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-.shift-employee-choice{display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid #dce5ec;border-radius:10px;background:#fff;font-size:12px;font-weight:800;cursor:pointer}
-.shift-employee-choice:has(input:checked){border-color:#0b5683;background:#eaf5fb;color:#083f62}
-.shift-employee-choice input{width:auto;margin:0}
-@media(max-width:720px){.shift-employee-choices{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:420px){.shift-employee-choices{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -4042,7 +4030,6 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
           <span class="edit-hint">Klik op een shift om te bewerken</span>
         </div>
         <button id="addActivityBtn" class="admin-action">🏫 <span>School / Splash</span></button>
-        <button id="addSessionBtn" class="admin-action">🎯 <span>Sessies</span></button>
         <button id="duplicateDayBtn" class="admin-action">📄 <span>Dag kopiëren</span></button>
         <button id="copyWeekBtn" class="admin-action">🗓️ <span>Week kopiëren</span></button>
       </div>
@@ -4473,14 +4460,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   <div class="formgrid">
     <label>Datum<input id="editDate" type="date"></label>
     <label id="leaveEndLabel" style="display:none">Verlof t/m<input id="leaveEndDate" type="date"></label>
-    <label id="singleEmployeeLabel">Medewerker<select id="editEmployee"></select></label>
-    <div id="multiEmployeePicker" class="shift-employee-multi">
-      <div class="shift-employee-multi-head">
-        <div><b>Medewerkers voor deze shift</b><br><small>Klik één of meerdere medewerkers aan.</small></div>
-        <button id="selectAllShiftEmployees" type="button">Alles kiezen</button>
-      </div>
-      <div id="shiftEmployeeChoices" class="shift-employee-choices"></div>
-    </div>
+    <label>Medewerker<select id="editEmployee"></select></label>
     <label>Startuur<input id="editStart" type="time"></label>
     <label>Einduur<input id="editEnd" type="time"></label>
     <div class="wide quicktimes">
@@ -4493,10 +4473,6 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
     <label class="wide">Zone<select id="editZone">
       <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option><option>SCHOOL</option><option>SCHOOL / SPLASH</option><option>KLUS</option><option>VERLOF</option>
     </select></label>
-    <div class="wide dynamic-zone-tools">
-      <button id="addCustomZoneBtn" type="button">＋ Nieuwe zone aanmaken</button>
-      <small>Nieuwe zones worden gedeeld met Nick en Arno en verschijnen voortaan in Shift toevoegen.</small>
-    </div>
     <label class="wide">Opmerking<textarea id="editNote" rows="2"></textarea></label>
     <div id="multiShiftToggleWrap" class="wide multi-shift-toggle">
       <label><input id="multiShiftMode" type="checkbox"> Meerdere shifts ineens voor deze medewerker</label>
@@ -4537,10 +4513,6 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
           <option value="SPLASH">💦 Splash</option>
           <option value="SCHOOL_SPLASH">🏫💦 School / Splash samen</option>
         </select>
-        <div id="sessionTypeTools" class="session-type-tools" style="display:none">
-          <button id="addSessionTypeBtn" type="button">＋ Nieuw sessietype</button>
-          <button id="manageSessionTypesBtn" type="button">⚙️ Sessietypes beheren</button>
-        </div>
       </label>
       <label>Startuur<input id="activityStart" type="time"></label>
       <label>Einduur<input id="activityEnd" type="time"></label>
@@ -4708,14 +4680,6 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 .alarm-whatsapp-help{font-size:12px;line-height:1.4;color:var(--muted);background:#f6f8fa;border-radius:9px;padding:9px 10px}
 @media(max-width:620px){.alarm-recipient-list{grid-template-columns:1fr}.alarm-whatsapp-row{grid-template-columns:1fr}.alarm-whatsapp-row a{justify-content:center}}
 </style>
-
-<style id="v117-sessions-dynamic-zones">
-.dynamic-zone-tools,.session-type-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 10px;border:1px dashed #9fc4da;border-radius:10px;background:#f5fbff}
-.dynamic-zone-tools small{color:var(--muted);font-size:11px;line-height:1.35}
-.session-type-tools button,.dynamic-zone-tools button{padding:8px 10px;font-size:12px}
-.activity-block.session,.mini-activity.session{border-left-color:#8b5cf6;background:#f4f0ff}
-@media(max-width:720px){.dynamic-zone-tools,.session-type-tools{display:grid!important;grid-template-columns:1fr}.dynamic-zone-tools button,.session-type-tools button{width:100%}}
-</style>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -4737,8 +4701,7 @@ let cableCrewMessaging=null;
 let cableCrewMessagingReady=false;
 let cableCrewForegroundUnsub=null;
 const $=id=>document.getElementById(id);
-const DEFAULT_CREW_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
-const zones=[...DEFAULT_CREW_ZONES];
+const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
 let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewDirectory=new Map(), crewContactsUnsub=null,
 studentShifts=[], studentDirectory=new Map(), studentShiftUnsub=null, studentDirectoryUnsub=null,
@@ -5173,7 +5136,7 @@ function activityRecords(){
  return shifts.filter(x=>x.recordType==="activity");
 }
 function normalCrewShifts(){
- return shifts.filter(x=>!x.recordType);
+ return shifts.filter(x=>x.recordType!=="activity");
 }
 function activityBlocksFor(dateKey,zone){
  return activityRecords()
@@ -5183,12 +5146,11 @@ function activityBlocksFor(dateKey,zone){
 function activityLabel(x){
  if(x.activityType==="SPLASH")return "💦 Splash";
  if(x.activityType==="SCHOOL_SPLASH")return "🏫💦 School / Splash";
- if((x.activityType||"").startsWith("SESSION::"))return "🎯 "+(x.activityType||"").slice(9);
  return "🏫 School";
 }
 function activityBlockHtml(x,mini=false){
  const count=Number(x.participants)||0;
- const activityClass=(x.activityType||"").startsWith("SESSION::")?"session":(x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school"));
+ const activityClass=x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school");
  const classes=`${mini?"mini-activity":"activity-block"} ${activityClass} ${editMode?"editable":""}`;
  if(mini){
    const assigned=Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
@@ -5627,10 +5589,10 @@ function updateWhatsAppShiftButton(){
 }
 
 
-function multiShiftZones(){return zones.filter(z=>z!=="VERLOF");}
+const MULTI_SHIFT_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS"];
 
 function multiShiftZoneOptions(selected="PRO"){
- return multiShiftZones().map(z=>`<option value="${esc(z)}"${z===selected?' selected':''}>${esc(z)}</option>`).join("");
+ return MULTI_SHIFT_ZONES.map(z=>`<option value="${esc(z)}"${z===selected?' selected':''}>${esc(z)}</option>`).join("");
 }
 function addMultiShiftRow(data={}){
  const wrap=$("multiShiftRows");
@@ -5738,72 +5700,6 @@ async function saveMultiShifts(){
 }
 
 
-
-const DEFAULT_SESSION_TYPES=["Women Session","Daddy is Cool","Kids Session","BK","EK"];
-function definitionRecords(type){return shifts.filter(x=>x.recordType===type);}
-function customZoneNames(){return definitionRecords("zoneDefinition").map(x=>(x.name||"").trim().toUpperCase()).filter(Boolean);}
-function sessionTypeNames(){
- const saved=definitionRecords("sessionType").map(x=>(x.name||"").trim()).filter(Boolean);
- return [...new Set([...DEFAULT_SESSION_TYPES,...saved])].sort((a,b)=>a.localeCompare(b,"nl"));
-}
-function defaultSessionTypeValue(){return "SESSION::"+(sessionTypeNames()[0]||"Women Session");}
-function renderActivityTypeOptions(selected=""){
- const select=$("activityType");if(!select)return;
- const base=window.__ccSessionMode
-   ?sessionTypeNames().map(n=>`<option value="SESSION::${esc(n)}">🎯 ${esc(n)}</option>`).join("")
-   :`<option value="SCHOOL">🏫 School</option><option value="SPLASH">💦 Splash</option><option value="SCHOOL_SPLASH">🏫💦 School / Splash samen</option>`;
- select.innerHTML=base;
- if(selected && [...select.options].some(o=>o.value===selected))select.value=selected;
-}
-function syncDynamicDefinitions(){
- const custom=customZoneNames().filter(z=>!DEFAULT_CREW_ZONES.includes(z));
- zones.splice(0,zones.length,...DEFAULT_CREW_ZONES.filter(z=>z!=="VERLOF"),...custom,"VERLOF");
- const select=$("editZone");
- if(select){
-   const current=select.value;
-   select.innerHTML=zones.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join("");
-   select.value=zones.includes(current)?current:"PRO";
- }
- document.querySelectorAll('[data-multi="zone"]').forEach(sel=>{
-   const current=sel.value;sel.innerHTML=multiShiftZoneOptions(current);sel.value=multiShiftZones().includes(current)?current:"PRO";
- });
- renderActivityTypeOptions($("activityType")?.value||"");
-}
-async function addCustomZone(){
- if(!isPlannerAdmin())return alert("Alleen Nick en Arno kunnen zones toevoegen.");
- const raw=prompt("Naam van de nieuwe zone:");
- const name=(raw||"").trim().toUpperCase();
- if(!name)return;
- if(name.length>30)return alert("Gebruik maximaal 30 tekens.");
- if(zones.includes(name))return alert("Deze zone bestaat al.");
- try{
-   await addDoc(collection(db,"shifts"),{recordType:"zoneDefinition",name,createdAt:serverTimestamp(),createdBy:user?.email||""});
-   alert(`Zone ${name} is toegevoegd en verschijnt voortaan bij Shift toevoegen.`);
- }catch(e){alert("Zone toevoegen mislukt: "+e.message)}
-}
-async function addSessionType(){
- if(!isPlannerAdmin())return alert("Alleen Nick en Arno kunnen sessietypes toevoegen.");
- const raw=prompt("Naam van het nieuwe sessietype:");
- const name=(raw||"").trim();
- if(!name)return;
- if(name.length>40)return alert("Gebruik maximaal 40 tekens.");
- if(sessionTypeNames().some(x=>x.toLowerCase()===name.toLowerCase()))return alert("Dit sessietype bestaat al.");
- try{
-   await addDoc(collection(db,"shifts"),{recordType:"sessionType",name,createdAt:serverTimestamp(),createdBy:user?.email||""});
-   renderActivityTypeOptions("SESSION::"+name);$("activityType").value="SESSION::"+name;updateActivityPreview();
- }catch(e){alert("Sessietype toevoegen mislukt: "+e.message)}
-}
-async function manageSessionTypes(){
- const custom=definitionRecords("sessionType");
- if(!custom.length)return alert("Er zijn nog geen zelf toegevoegde sessietypes. De standaardtypes zijn: "+DEFAULT_SESSION_TYPES.join(", "));
- const list=custom.map((x,i)=>`${i+1}. ${x.name}`).join("\n");
- const answer=prompt(`Zelf toegevoegde sessietypes:\n${list}\n\nGeef het nummer in dat je wilt verwijderen, of laat leeg om te sluiten.`);
- if(!answer)return;
- const idx=Number(answer)-1;if(!custom[idx])return alert("Ongeldig nummer.");
- if(!confirm(`Sessietype ${custom[idx].name} verwijderen? Bestaande sessies blijven zichtbaar.`))return;
- try{await deleteDoc(doc(db,"shifts",custom[idx]._id));}catch(e){alert("Verwijderen mislukt: "+e.message)}
-}
-
 let activityEditing=null;
 
 
@@ -5834,7 +5730,6 @@ function selectedActivityZones(){
 function activityTypeDisplay(type){
  if(type==="SPLASH")return "💦 Splash";
  if(type==="SCHOOL_SPLASH")return "🏫💦 School / Splash";
- if((type||"").startsWith("SESSION::"))return "🎯 "+type.slice(9);
  return "🏫 School";
 }
 function syncActivityTypeZones(){
@@ -5854,14 +5749,11 @@ function updateActivityPreview(){
  const employees=selectedActivityEmployees();
  box.innerHTML=`<b>${type}</b>${count?` · ${count} personen`:""}${start&&end?` · ${start}–${end}`:""}<br>${zonesChosen.length?`Zichtbaar in: ${zonesChosen.map(esc).join(", ")}`:"Kies minstens één zone."}${employees.length?`<br>Medewerkers: ${employees.map(esc).join(", ")}`:""}`;
 }
-function openActivity(x=null,sessionMode=false){
+function openActivity(x=null){
  activityEditing=x;
- window.__ccSessionMode=!!sessionMode || !!(x?.activityType||"").startsWith("SESSION::");
- $("activityTitle").textContent=window.__ccSessionMode?(x?"Sessie aanpassen":"Sessie toevoegen"):(x?"School / Splash aanpassen":"School / Splash toevoegen");
+ $("activityTitle").textContent=x?"School / Splash aanpassen":"School / Splash toevoegen";
  $("activityDate").value=x?.date||$("date").value||realTodayKey();
- renderActivityTypeOptions(x?.activityType||"");
- $("activityType").value=x?.activityType||(window.__ccSessionMode?defaultSessionTypeValue():"SCHOOL");
- if($("sessionTypeTools"))$("sessionTypeTools").style.display=window.__ccSessionMode?"flex":"none";
+ $("activityType").value=x?.activityType||"SCHOOL";
  $("activityStart").value=x?.start||"09:00";
  $("activityEnd").value=x?.end||"12:00";
  $("activityParticipants").value=x?.participants||"";
@@ -5905,39 +5797,6 @@ async function saveActivity(){
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 }
 
-function renderShiftEmployeeChoices(selected=[]){
- const box=$("shiftEmployeeChoices");
- if(!box)return;
- const names=people().filter(Boolean);
- const chosen=new Set((selected||[]).filter(Boolean));
- box.innerHTML=names.map(name=>`<label class="shift-employee-choice"><input type="checkbox" value="${esc(name)}" ${chosen.has(name)?"checked":""}> <span>${esc(name)}</span></label>`).join("");
- box.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener("change",()=>{
-   const selectedNow=selectedShiftEmployees();
-   if(selectedNow.length && $("editEmployee"))$("editEmployee").value=selectedNow[0];
-   updateOverlapWarning();
- }));
-}
-function selectedShiftEmployees(){
- if(editing)return [$("editEmployee").value].filter(Boolean);
- const checked=[...document.querySelectorAll('#shiftEmployeeChoices input[type="checkbox"]:checked')].map(x=>x.value).filter(Boolean);
- return checked.length?checked:[$("editEmployee").value].filter(Boolean);
-}
-function syncShiftEmployeePicker(){
- const picker=$("multiEmployeePicker");
- const single=$("singleEmployeeLabel");
- const show=!editing && !$("multiShiftMode")?.checked;
- if(picker)picker.style.display=show?"block":"none";
- if(single)single.style.display=show?"none":"flex";
-}
-$("selectAllShiftEmployees")?.addEventListener("click",()=>{
- const boxes=[...document.querySelectorAll('#shiftEmployeeChoices input[type="checkbox"]')];
- const allSelected=boxes.length && boxes.every(x=>x.checked);
- boxes.forEach(x=>x.checked=!allSelected);
- const selected=selectedShiftEmployees();
- if(selected.length)$("editEmployee").value=selected[0];
- $("selectAllShiftEmployees").textContent=allSelected?"Alles kiezen":"Alles wissen";
- updateOverlapWarning();
-});
 function openShift(x=null){
  editing=x;
  if($("multiShiftRows"))$("multiShiftRows").innerHTML="";
@@ -5947,8 +5806,6 @@ function openShift(x=null){
  $("editDate").value=x?.date||$("date").value;
  $("leaveEndDate").value=x?.date||$("editDate").value;
  $("editEmployee").value=x?.employee||people()[0]||"";
- renderShiftEmployeeChoices([x?.employee||people()[0]||""]);
- syncShiftEmployeePicker();
  $("editStart").value=x?.start||"09:00";$("editEnd").value=x?.end||"17:00";
  $("editZone").value=x?.zone||"PRO";$("editNote").value=x?.note||"";updateLeaveFields();
  $("deleteShift").style.display=x?"inline-block":"none";$("duplicateShift").style.display=x?"inline-block":"none";
@@ -5985,15 +5842,11 @@ function syncKeepAddingUi(){
 $("keepAdding")?.addEventListener("change",syncKeepAddingUi);
 $("addShiftBtn").onclick=()=>openShift();
 $("addActivityBtn").onclick=()=>openActivity();
-$("addSessionBtn").onclick=()=>openActivity(null,true);
-$("addCustomZoneBtn").onclick=addCustomZone;
-$("addSessionTypeBtn").onclick=addSessionType;
-$("manageSessionTypesBtn").onclick=manageSessionTypes;
 $("cancelActivityBtn").onclick=()=>$("activityModal").classList.remove("show");
 $("saveActivityBtn").onclick=saveActivity;
 $("deleteActivityBtn").onclick=async()=>{
  if(!activityEditing)return;
- if(!confirm(window.__ccSessionMode?"Deze sessie verwijderen?":"Dit School / Splash-blok verwijderen?"))return;
+ if(!confirm("Dit School / Splash-blok verwijderen?"))return;
  try{
    await deleteDoc(doc(db,"shifts",activityEditing._id));
    await writeAudit(`${activityEditing.activityType==="SPLASH"?"Splash":(activityEditing.activityType==="SCHOOL_SPLASH"?"School / Splash":"School")} verwijderd`,activityEditing,null);
@@ -6006,7 +5859,7 @@ $("deleteActivityBtn").onclick=async()=>{
 });
 document.querySelectorAll('#activityZoneChoices input[type="checkbox"]').forEach(c=>c.addEventListener("change",updateActivityPreview));
 $("cancelShift").onclick=()=>{$("shiftModal").classList.remove("show");setMultiShiftMode(false)};
-$("multiShiftMode").addEventListener("change",e=>{setMultiShiftMode(e.target.checked);syncShiftEmployeePicker()});
+$("multiShiftMode").addEventListener("change",e=>setMultiShiftMode(e.target.checked));
 $("addMultiShiftRow").onclick=()=>addMultiShiftRow();
 $("editEmployee").addEventListener("change",updateMultiShiftSummary);
 function updateLeaveFields(){
@@ -6036,10 +5889,6 @@ $("editEmployee").onchange=()=>{
   const n=prompt("Naam nieuwe medewerker:");
   if(n){const o=document.createElement("option");o.value=n;o.textContent=n;$("editEmployee").insertBefore(o,$("editEmployee").lastElementChild);$("editEmployee").value=n}
   else $("editEmployee").value=editing?.employee||people()[0]||"";
- }
- if(!editing){
-   const chosen=$("editEmployee").value;
-   document.querySelectorAll('#shiftEmployeeChoices input[type="checkbox"]').forEach(cb=>cb.checked=(cb.value===chosen));
  }
  updateWhatsAppShiftButton();
 };
@@ -6145,24 +5994,18 @@ async function writeAudit(action,before,after){
 $("saveShift").onclick=async()=>{
  if(!editing && $("multiShiftMode")?.checked){await saveMultiShifts();return}
  const v=formObj();
- const employees=editing?[v.employee]:selectedShiftEmployees();
- if(!v.date||!employees.length||(v.zone!=="VERLOF"&&(!v.start||!v.end))){
-   alert(v.zone==="VERLOF"?"Vul datum en minstens één medewerker in.":"Vul datum, minstens één medewerker en uren in.");
+ if(!v.date||!v.employee||(v.zone!=="VERLOF"&&(!v.start||!v.end))){
+   alert(v.zone==="VERLOF"?"Vul datum en medewerker in.":"Vul datum, medewerker en uren in.");
    return;
  }
 
- for(const employee of employees){
-   if(v.zone!=="VERLOF" && !await confirmAvailabilityOverride("crew",employee,v.date))return;
- }
+ if(v.zone!=="VERLOF" && !await confirmAvailabilityOverride("crew",v.employee,v.date))return;
 
- if(!editing && employees.length>1 && $("whatsappAfterSave")?.checked){
-   alert("De shifts worden voor alle gekozen medewerkers opgeslagen. Automatisch meerdere WhatsApp-chats openen wordt geblokkeerd; WhatsApp wordt daarom bij deze multi-selectie niet geopend.");
- }
  const sendWhatsApp=editing
    ? !!whatsappUrlForShift(v,"gewijzigd")
-   : (employees.length===1 && !!$("whatsappAfterSave")?.checked && !!whatsappUrlForShift({...v,employee:employees[0]},"ingepland"));
+   : (!!$("whatsappAfterSave")?.checked && !!whatsappUrlForShift(v,"ingepland"));
  const pendingWhatsAppUrl=sendWhatsApp
-   ? whatsappUrlForShift({...v,employee:employees[0]},editing?"gewijzigd":"ingepland")
+   ? whatsappUrlForShift(v,editing?"gewijzigd":"ingepland")
    : "";
  if(editing && !sendWhatsApp){
    alert(`Deze shift kan niet worden gewijzigd omdat er geen WhatsApp-nummer voor ${v.employee} is ingesteld. Voeg eerst een nummer toe bij WhatsApp nummers.`);
@@ -6178,45 +6021,19 @@ $("saveShift").onclick=async()=>{
        return;
      }
 
-     for(const employee of employees){
-       const existing=new Set(
-         shifts.filter(x=>x.zone==="VERLOF"&&x.employee===employee).map(x=>x.date)
-       );
-       const toAdd=dates.filter(d=>!existing.has(d));
-       await Promise.all(toAdd.map(async date=>{
-         const leave={...v,employee,date,start:"",end:""};
-         await addDoc(collection(db,"shifts"),leave);
-         await writeAudit("Verlof toegevoegd",null,leave);
-       }));
-     }
+     const existing=new Set(
+       shifts.filter(x=>x.zone==="VERLOF"&&x.employee===v.employee).map(x=>x.date)
+     );
+     const toAdd=dates.filter(d=>!existing.has(d));
+
+     await Promise.all(toAdd.map(async date=>{
+       const leave={...v,date,start:"",end:""};
+       await addDoc(collection(db,"shifts"),leave);
+       await writeAudit("Verlof toegevoegd",null,leave);
+     }));
 
      $("shiftModal").classList.remove("show");
      if(pendingWhatsAppUrl)openWhatsAppUrlAfterSave(pendingWhatsAppUrl);
-     return;
-   }
-
-   if(!editing && employees.length>1){
-     const overlapMessages=[];
-     for(const employee of employees){
-       const candidate={...v,employee};
-       const hits=normalCrewShifts().filter(x=>x.date===candidate.date && x.employee===employee && candidate.zone!=="VERLOF" && mins(candidate.start)<mins(x.end) && mins(candidate.end)>mins(x.start));
-       if(hits.length)overlapMessages.push(`${employee}: ${hits.map(x=>`${x.start}–${x.end} (${x.zone})`).join(", ")}`);
-     }
-     if(overlapMessages.length && !confirm(`⚠️ Overlappende shifts gevonden:
-
-${overlapMessages.join("
-")}
-
-Toch voor iedereen opslaan?`))return;
-     for(const employee of employees){
-       const row={...v,employee};
-       await addDoc(collection(db,"shifts"),row);
-       await writeAudit("Shift toegevoegd",null,row);
-     }
-     alert(`${employees.length} medewerkers zijn aan dezelfde shift toegevoegd.`);
-     $("shiftModal").classList.remove("show");
-     $("keepAdding").checked=false;
-     syncKeepAddingUi();
      return;
    }
 
@@ -6255,7 +6072,6 @@ Toch voor iedereen opslaan?`))return;
        $("shiftModal").classList.remove("show");
      }
    }else{
-     v.employee=employees[0];
      const createdRef=await addDoc(collection(db,"shifts"),v);
      const createdShift={...v,_id:createdRef.id};
      await writeAudit("Shift toegevoegd",null,v);
@@ -8173,7 +7989,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
  if(shiftsInitialized && notificationsEnabled()){
    snap.docChanges().forEach(ch=>{
      const data={_id:ch.doc.id,...ch.doc.data()};
-     if(data.recordType)return;
+     if(data.recordType==="activity")return;
      if(!relevantToMe(data))return;
 
      if(ch.type==="added"){
@@ -8199,7 +8015,6 @@ onSnapshot(collection(db,"shifts"),snap=>{
    $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
  }
  shiftsInitialized=true;
- syncDynamicDefinitions();
  updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();applyCrewDeepLink();applyStudentDeepLink();renderMobileDayScroller();updateZoneAlertButtonState();setTimeout(ensureDailyBackup,500);
 },err=>{
  firestoreReady=false;shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
@@ -8258,7 +8073,7 @@ function cableCrewDeviceId(){
 }
 async function cableCrewServiceWorkerRegistration(){
  if(!("serviceWorker" in navigator))throw new Error("Serviceworkers worden niet ondersteund.");
- const reg=await navigator.serviceWorker.register("./service-worker.js?v=115",{scope:"./"});
+ const reg=await navigator.serviceWorker.register("./service-worker.js?v=120",{scope:"./"});
  await navigator.serviceWorker.ready;
  return reg;
 }
@@ -10634,7 +10449,7 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     localStorage.removeItem("cc_notify_enabled");
     localStorage.removeItem("cc_fcm_token_ready");
-    navigator.serviceWorker.register("./service-worker.js?v=115",{scope:"./"}).catch(err => {
+    navigator.serviceWorker.register("./service-worker.js?v=120",{scope:"./"}).catch(err => {
       console.warn("CableCrew service worker:", err);
     });
   });
