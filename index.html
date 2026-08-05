@@ -4030,6 +4030,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
           <span class="edit-hint">Klik op een shift om te bewerken</span>
         </div>
         <button id="addActivityBtn" class="admin-action">🏫 <span>School / Splash</span></button>
+        <button id="addSessionBtn" class="admin-action">🎯 <span>Sessies</span></button>
         <button id="duplicateDayBtn" class="admin-action">📄 <span>Dag kopiëren</span></button>
         <button id="copyWeekBtn" class="admin-action">🗓️ <span>Week kopiëren</span></button>
       </div>
@@ -4473,6 +4474,10 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
     <label class="wide">Zone<select id="editZone">
       <option>PRO</option><option>ROOKIE</option><option>2.0</option><option>STANDBY</option><option>FOIL</option><option>TT / SP / KIDSSESSION</option><option>SCHOOL</option><option>SCHOOL / SPLASH</option><option>KLUS</option><option>VERLOF</option>
     </select></label>
+    <div class="wide dynamic-zone-tools">
+      <button id="addCustomZoneBtn" type="button">＋ Nieuwe zone aanmaken</button>
+      <small>Nieuwe zones worden gedeeld met Nick en Arno en verschijnen voortaan in Shift toevoegen.</small>
+    </div>
     <label class="wide">Opmerking<textarea id="editNote" rows="2"></textarea></label>
     <div id="multiShiftToggleWrap" class="wide multi-shift-toggle">
       <label><input id="multiShiftMode" type="checkbox"> Meerdere shifts ineens voor deze medewerker</label>
@@ -4513,6 +4518,10 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
           <option value="SPLASH">💦 Splash</option>
           <option value="SCHOOL_SPLASH">🏫💦 School / Splash samen</option>
         </select>
+        <div id="sessionTypeTools" class="session-type-tools" style="display:none">
+          <button id="addSessionTypeBtn" type="button">＋ Nieuw sessietype</button>
+          <button id="manageSessionTypesBtn" type="button">⚙️ Sessietypes beheren</button>
+        </div>
       </label>
       <label>Startuur<input id="activityStart" type="time"></label>
       <label>Einduur<input id="activityEnd" type="time"></label>
@@ -4680,6 +4689,14 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 .alarm-whatsapp-help{font-size:12px;line-height:1.4;color:var(--muted);background:#f6f8fa;border-radius:9px;padding:9px 10px}
 @media(max-width:620px){.alarm-recipient-list{grid-template-columns:1fr}.alarm-whatsapp-row{grid-template-columns:1fr}.alarm-whatsapp-row a{justify-content:center}}
 </style>
+
+<style id="v117-sessions-dynamic-zones">
+.dynamic-zone-tools,.session-type-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 10px;border:1px dashed #9fc4da;border-radius:10px;background:#f5fbff}
+.dynamic-zone-tools small{color:var(--muted);font-size:11px;line-height:1.35}
+.session-type-tools button,.dynamic-zone-tools button{padding:8px 10px;font-size:12px}
+.activity-block.session,.mini-activity.session{border-left-color:#8b5cf6;background:#f4f0ff}
+@media(max-width:720px){.dynamic-zone-tools,.session-type-tools{display:grid!important;grid-template-columns:1fr}.dynamic-zone-tools button,.session-type-tools button{width:100%}}
+</style>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -4701,7 +4718,8 @@ let cableCrewMessaging=null;
 let cableCrewMessagingReady=false;
 let cableCrewForegroundUnsub=null;
 const $=id=>document.getElementById(id);
-const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
+const DEFAULT_CREW_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
+const zones=[...DEFAULT_CREW_ZONES];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
 let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewDirectory=new Map(), crewContactsUnsub=null,
 studentShifts=[], studentDirectory=new Map(), studentShiftUnsub=null, studentDirectoryUnsub=null,
@@ -5136,7 +5154,7 @@ function activityRecords(){
  return shifts.filter(x=>x.recordType==="activity");
 }
 function normalCrewShifts(){
- return shifts.filter(x=>x.recordType!=="activity");
+ return shifts.filter(x=>!x.recordType);
 }
 function activityBlocksFor(dateKey,zone){
  return activityRecords()
@@ -5146,11 +5164,12 @@ function activityBlocksFor(dateKey,zone){
 function activityLabel(x){
  if(x.activityType==="SPLASH")return "💦 Splash";
  if(x.activityType==="SCHOOL_SPLASH")return "🏫💦 School / Splash";
+ if((x.activityType||"").startsWith("SESSION::"))return "🎯 "+(x.activityType||"").slice(9);
  return "🏫 School";
 }
 function activityBlockHtml(x,mini=false){
  const count=Number(x.participants)||0;
- const activityClass=x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school");
+ const activityClass=(x.activityType||"").startsWith("SESSION::")?"session":(x.activityType==="SPLASH"?"splash":(x.activityType==="SCHOOL_SPLASH"?"school-splash":"school"));
  const classes=`${mini?"mini-activity":"activity-block"} ${activityClass} ${editMode?"editable":""}`;
  if(mini){
    const assigned=Array.isArray(x.assignedEmployees)?x.assignedEmployees:[];
@@ -5589,10 +5608,10 @@ function updateWhatsAppShiftButton(){
 }
 
 
-const MULTI_SHIFT_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS"];
+function multiShiftZones(){return zones.filter(z=>z!=="VERLOF");}
 
 function multiShiftZoneOptions(selected="PRO"){
- return MULTI_SHIFT_ZONES.map(z=>`<option value="${esc(z)}"${z===selected?' selected':''}>${esc(z)}</option>`).join("");
+ return multiShiftZones().map(z=>`<option value="${esc(z)}"${z===selected?' selected':''}>${esc(z)}</option>`).join("");
 }
 function addMultiShiftRow(data={}){
  const wrap=$("multiShiftRows");
@@ -5700,6 +5719,72 @@ async function saveMultiShifts(){
 }
 
 
+
+const DEFAULT_SESSION_TYPES=["Women Session","Daddy is Cool","Kids Session","BK","EK"];
+function definitionRecords(type){return shifts.filter(x=>x.recordType===type);}
+function customZoneNames(){return definitionRecords("zoneDefinition").map(x=>(x.name||"").trim().toUpperCase()).filter(Boolean);}
+function sessionTypeNames(){
+ const saved=definitionRecords("sessionType").map(x=>(x.name||"").trim()).filter(Boolean);
+ return [...new Set([...DEFAULT_SESSION_TYPES,...saved])].sort((a,b)=>a.localeCompare(b,"nl"));
+}
+function defaultSessionTypeValue(){return "SESSION::"+(sessionTypeNames()[0]||"Women Session");}
+function renderActivityTypeOptions(selected=""){
+ const select=$("activityType");if(!select)return;
+ const base=window.__ccSessionMode
+   ?sessionTypeNames().map(n=>`<option value="SESSION::${esc(n)}">🎯 ${esc(n)}</option>`).join("")
+   :`<option value="SCHOOL">🏫 School</option><option value="SPLASH">💦 Splash</option><option value="SCHOOL_SPLASH">🏫💦 School / Splash samen</option>`;
+ select.innerHTML=base;
+ if(selected && [...select.options].some(o=>o.value===selected))select.value=selected;
+}
+function syncDynamicDefinitions(){
+ const custom=customZoneNames().filter(z=>!DEFAULT_CREW_ZONES.includes(z));
+ zones.splice(0,zones.length,...DEFAULT_CREW_ZONES.filter(z=>z!=="VERLOF"),...custom,"VERLOF");
+ const select=$("editZone");
+ if(select){
+   const current=select.value;
+   select.innerHTML=zones.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join("");
+   select.value=zones.includes(current)?current:"PRO";
+ }
+ document.querySelectorAll('[data-multi="zone"]').forEach(sel=>{
+   const current=sel.value;sel.innerHTML=multiShiftZoneOptions(current);sel.value=multiShiftZones().includes(current)?current:"PRO";
+ });
+ renderActivityTypeOptions($("activityType")?.value||"");
+}
+async function addCustomZone(){
+ if(!isPlannerAdmin())return alert("Alleen Nick en Arno kunnen zones toevoegen.");
+ const raw=prompt("Naam van de nieuwe zone:");
+ const name=(raw||"").trim().toUpperCase();
+ if(!name)return;
+ if(name.length>30)return alert("Gebruik maximaal 30 tekens.");
+ if(zones.includes(name))return alert("Deze zone bestaat al.");
+ try{
+   await addDoc(collection(db,"shifts"),{recordType:"zoneDefinition",name,createdAt:serverTimestamp(),createdBy:user?.email||""});
+   alert(`Zone ${name} is toegevoegd en verschijnt voortaan bij Shift toevoegen.`);
+ }catch(e){alert("Zone toevoegen mislukt: "+e.message)}
+}
+async function addSessionType(){
+ if(!isPlannerAdmin())return alert("Alleen Nick en Arno kunnen sessietypes toevoegen.");
+ const raw=prompt("Naam van het nieuwe sessietype:");
+ const name=(raw||"").trim();
+ if(!name)return;
+ if(name.length>40)return alert("Gebruik maximaal 40 tekens.");
+ if(sessionTypeNames().some(x=>x.toLowerCase()===name.toLowerCase()))return alert("Dit sessietype bestaat al.");
+ try{
+   await addDoc(collection(db,"shifts"),{recordType:"sessionType",name,createdAt:serverTimestamp(),createdBy:user?.email||""});
+   renderActivityTypeOptions("SESSION::"+name);$("activityType").value="SESSION::"+name;updateActivityPreview();
+ }catch(e){alert("Sessietype toevoegen mislukt: "+e.message)}
+}
+async function manageSessionTypes(){
+ const custom=definitionRecords("sessionType");
+ if(!custom.length)return alert("Er zijn nog geen zelf toegevoegde sessietypes. De standaardtypes zijn: "+DEFAULT_SESSION_TYPES.join(", "));
+ const list=custom.map((x,i)=>`${i+1}. ${x.name}`).join("\n");
+ const answer=prompt(`Zelf toegevoegde sessietypes:\n${list}\n\nGeef het nummer in dat je wilt verwijderen, of laat leeg om te sluiten.`);
+ if(!answer)return;
+ const idx=Number(answer)-1;if(!custom[idx])return alert("Ongeldig nummer.");
+ if(!confirm(`Sessietype ${custom[idx].name} verwijderen? Bestaande sessies blijven zichtbaar.`))return;
+ try{await deleteDoc(doc(db,"shifts",custom[idx]._id));}catch(e){alert("Verwijderen mislukt: "+e.message)}
+}
+
 let activityEditing=null;
 
 
@@ -5730,6 +5815,7 @@ function selectedActivityZones(){
 function activityTypeDisplay(type){
  if(type==="SPLASH")return "💦 Splash";
  if(type==="SCHOOL_SPLASH")return "🏫💦 School / Splash";
+ if((type||"").startsWith("SESSION::"))return "🎯 "+type.slice(9);
  return "🏫 School";
 }
 function syncActivityTypeZones(){
@@ -5749,11 +5835,14 @@ function updateActivityPreview(){
  const employees=selectedActivityEmployees();
  box.innerHTML=`<b>${type}</b>${count?` · ${count} personen`:""}${start&&end?` · ${start}–${end}`:""}<br>${zonesChosen.length?`Zichtbaar in: ${zonesChosen.map(esc).join(", ")}`:"Kies minstens één zone."}${employees.length?`<br>Medewerkers: ${employees.map(esc).join(", ")}`:""}`;
 }
-function openActivity(x=null){
+function openActivity(x=null,sessionMode=false){
  activityEditing=x;
- $("activityTitle").textContent=x?"School / Splash aanpassen":"School / Splash toevoegen";
+ window.__ccSessionMode=!!sessionMode || !!(x?.activityType||"").startsWith("SESSION::");
+ $("activityTitle").textContent=window.__ccSessionMode?(x?"Sessie aanpassen":"Sessie toevoegen"):(x?"School / Splash aanpassen":"School / Splash toevoegen");
  $("activityDate").value=x?.date||$("date").value||realTodayKey();
- $("activityType").value=x?.activityType||"SCHOOL";
+ renderActivityTypeOptions(x?.activityType||"");
+ $("activityType").value=x?.activityType||(window.__ccSessionMode?defaultSessionTypeValue():"SCHOOL");
+ if($("sessionTypeTools"))$("sessionTypeTools").style.display=window.__ccSessionMode?"flex":"none";
  $("activityStart").value=x?.start||"09:00";
  $("activityEnd").value=x?.end||"12:00";
  $("activityParticipants").value=x?.participants||"";
@@ -5842,11 +5931,15 @@ function syncKeepAddingUi(){
 $("keepAdding")?.addEventListener("change",syncKeepAddingUi);
 $("addShiftBtn").onclick=()=>openShift();
 $("addActivityBtn").onclick=()=>openActivity();
+$("addSessionBtn").onclick=()=>openActivity(null,true);
+$("addCustomZoneBtn").onclick=addCustomZone;
+$("addSessionTypeBtn").onclick=addSessionType;
+$("manageSessionTypesBtn").onclick=manageSessionTypes;
 $("cancelActivityBtn").onclick=()=>$("activityModal").classList.remove("show");
 $("saveActivityBtn").onclick=saveActivity;
 $("deleteActivityBtn").onclick=async()=>{
  if(!activityEditing)return;
- if(!confirm("Dit School / Splash-blok verwijderen?"))return;
+ if(!confirm(window.__ccSessionMode?"Deze sessie verwijderen?":"Dit School / Splash-blok verwijderen?"))return;
  try{
    await deleteDoc(doc(db,"shifts",activityEditing._id));
    await writeAudit(`${activityEditing.activityType==="SPLASH"?"Splash":(activityEditing.activityType==="SCHOOL_SPLASH"?"School / Splash":"School")} verwijderd`,activityEditing,null);
@@ -7989,7 +8082,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
  if(shiftsInitialized && notificationsEnabled()){
    snap.docChanges().forEach(ch=>{
      const data={_id:ch.doc.id,...ch.doc.data()};
-     if(data.recordType==="activity")return;
+     if(data.recordType)return;
      if(!relevantToMe(data))return;
 
      if(ch.type==="added"){
@@ -8015,6 +8108,7 @@ onSnapshot(collection(db,"shifts"),snap=>{
    $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
  }
  shiftsInitialized=true;
+ syncDynamicDefinitions();
  updateImportButton();renderAll();applyPastDateVisibility();updateNotifyUI();applyCrewDeepLink();applyStudentDeepLink();renderMobileDayScroller();updateZoneAlertButtonState();setTimeout(ensureDailyBackup,500);
 },err=>{
  firestoreReady=false;shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
