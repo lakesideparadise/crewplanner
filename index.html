@@ -2508,6 +2508,14 @@ body.contract-manager #contractsBtn{grid-column:1}
   .contract-notify-actions,.contract-event-actions{justify-content:stretch}
   .contract-notify-actions button,.contract-notify-actions a,.contract-event-actions a{flex:1}
 }
+.contract-status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
+.contract-status-grid label{display:flex;align-items:center;gap:7px;padding:9px;border:1px solid var(--line);border-radius:9px;background:#f8fafc;font-size:11px;font-weight:850;color:#405468}
+.contract-status-grid input{width:auto;margin:0}
+.contract-mini-flags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.contract-mini-flag{display:inline-flex;align-items:center;padding:3px 6px;border-radius:999px;background:#eef3f7;color:#43576a;font-size:9px;font-weight:850}
+.contract-mini-flag.ok{background:#e8f6ee;color:#17683e}
+.contract-mini-flag.warn{background:#fff3d8;color:#805b00}
+@media(max-width:720px){.contract-status-grid{grid-template-columns:1fr}}
 </style>
 
 
@@ -4739,6 +4747,12 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
     <label class="wide">Persoon<input id="contractPerson" readonly></label>
     <label>Begin contract<input id="contractStart" type="date"></label>
     <label>Einde contract<input id="contractEnd" type="date"></label>
+    <label class="wide">Contracttype<input id="contractType" placeholder="Bijv. weekcontract of interim"></label>
+    <div class="wide contract-status-grid">
+      <label><input id="contractSigned" type="checkbox"> Contract ondertekend</label>
+      <label><input id="clothingReceived" type="checkbox"> Werkkledij ontvangen</label>
+      <label><input id="clothingReturned" type="checkbox"> Werkkledij ingeleverd</label>
+    </div>
     <label class="wide">Opmerking<input id="contractNote" placeholder="optioneel"></label>
   </div>
   <div class="modalactions">
@@ -7886,6 +7900,11 @@ function contractCovers(type,name,date){
    c.start<=date && c.end>=date
  );
 }
+function contractRecordForPeriod(type,name,start){
+ return contractRecords
+   .filter(c=>c.type===type && normalizedPersonName(c.person)===normalizedPersonName(name) && c.start<=start && c.end>=start)
+   .sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||"")))[0] || null;
+}
 function isContractPersonHidden(type,name){
  return contractHiddenPeople.some(x=>x.type===type && normalizedPersonName(x.person)===normalizedPersonName(name));
 }
@@ -7978,6 +7997,19 @@ function buildContractEvents(){
    });
  });
 
+ // Eerste en voorlaatste werkdag van jobstudenten opvolgen.
+ contractOverview("student").forEach(r=>{
+   const today=realTodayKey();
+   const contract=r.contract;
+   if(r.period.start===today && !contract?.contractSigned){
+     result.push({key:`student-first|${normalizedPersonName(r.name)}|${r.period.start}`,kind:"urgent",title:`Contract tekenen vandaag · ${r.name}`,body:`Vandaag is de eerste ingeplande werkdag. Contract laten ondertekenen aan het onthaal.`,person:r.name,type:"student",studentMessage:true});
+   }
+   const penultimate=r.period.dates.length>1?r.period.dates[r.period.dates.length-2]:"";
+   if(penultimate===today && !contract?.clothingReturned){
+     result.push({key:`student-clothing|${normalizedPersonName(r.name)}|${r.period.start}`,kind:"soon",title:`Kledijherinnering · ${r.name}`,body:`Vandaag is de voorlaatste ingeplande werkdag. Werkkledij op de laatste werkdag laten inleveren aan het onthaal.`,person:r.name,type:"student",studentMessage:true});
+   }
+ });
+
  return result;
 }
 function contractMessageForAnnSophy(ev){
@@ -8015,11 +8047,17 @@ function renderContractEvents(){
      const mail=`mailto:${ANN_SOPHY_EMAIL}?subject=${encodeURIComponent(ev.title)}&body=${msg}`;
      const phone=whatsappDigits(annSophyPhone());
      const wa=phone?`https://wa.me/${phone}?text=${msg}`:"";
+     const studentDigits=ev.type==="student"?whatsappDigits(studentPhone(ev.person)):"";
+     const studentText=ev.key.startsWith("student-first|")
+       ?`Dag ${ev.person}, vandaag is je eerste ingeplande werkdag. Vergeet niet om vóór de start van je shift je contract aan het onthaal te ondertekenen.`
+       :`Dag ${ev.person}, dit is je voorlaatste ingeplande werkdag. Vergeet niet om op je laatste werkdag je werkkledij opnieuw aan het onthaal in te leveren.`;
+     const studentWa=ev.studentMessage&&studentDigits?`https://wa.me/${studentDigits}?text=${encodeURIComponent(studentText)}`:"";
      return `<div class="contract-event ${ev.kind}">
        <div class="contract-event-text"><b>${esc(ev.title)}</b><span>${esc(ev.body)}</span></div>
        <div class="contract-event-actions">
-         <a href="${mail}">✉️ Mail</a>
-         ${wa?`<a href="${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>`:""}
+         ${studentWa?`<a href="${studentWa}" target="_blank" rel="noopener">💬 Naar jobstudent</a>`:""}
+         <a href="${mail}">✉️ Mail Ann-Sophy</a>
+         ${wa?`<a href="${wa}" target="_blank" rel="noopener">💬 Ann-Sophy</a>`:""}
        </div>
      </div>`;
    }).join(""):"";
@@ -8071,6 +8109,33 @@ function maybeNotifyAnnSophyContractEvents(){
  showLocalNotice(`📄 ${first.title}${more}`,first.body,"important");
 }
 
+function studentPeriodForDate(name,date=realTodayKey()){
+ return plannedContractPeriods("student",name).find(p=>p.dates.includes(date))||null;
+}
+function studentReminderFor(name,date=realTodayKey()){
+ const period=studentPeriodForDate(name,date);
+ if(!period)return null;
+ const contract=contractRecordForPeriod("student",name,period.start);
+ const first=period.dates[0];
+ const penultimate=period.dates.length>1?period.dates[period.dates.length-2]:"";
+ if(date===first && !contract?.contractSigned){
+   return {key:`contract-sign|${normalizedPersonName(name)}|${period.start}`,title:"📄 Contract ondertekenen",body:"Vandaag is je eerste ingeplande werkdag. Meld je vóór de start van je shift aan het onthaal om je contract te ondertekenen."};
+ }
+ if(penultimate && date===penultimate && !contract?.clothingReturned){
+   return {key:`clothing-return|${normalizedPersonName(name)}|${period.start}`,title:"👕 Werkkledij terugbrengen",body:"Dit is je voorlaatste ingeplande werkdag. Vergeet niet om je werkkledij op je laatste werkdag opnieuw aan het onthaal in te leveren."};
+ }
+ return null;
+}
+function maybeShowStudentWorkdayReminder(){
+ const name=($("studentPerson")?.value||"").trim();
+ if(!name)return;
+ const reminder=studentReminderFor(name);
+ if(!reminder)return;
+ const seenKey=`cc_student_contract_notice_${reminder.key}_${realTodayKey()}`;
+ if(localStorage.getItem(seenKey)==="1")return;
+ localStorage.setItem(seenKey,"1");
+ showLocalNotice(reminder.title,reminder.body,"important");
+}
 function updateContractBadge(){
  const studentRows=contractOverview("student");
  const crewRows=contractOverview("crew");
@@ -8109,6 +8174,12 @@ function renderContracts(){
      status=`✅ In orde: ${contractDate(r.contract.start)} – ${contractDate(r.contract.end)}`;
    }
 
+   const flags=r.type==="student" && r.contract ? `<div class="contract-mini-flags">
+     <span class="contract-mini-flag ${r.contract.contractSigned?"ok":"warn"}">${r.contract.contractSigned?"✅":"⚠️"} contract</span>
+     <span class="contract-mini-flag ${r.contract.clothingReceived?"ok":""}">${r.contract.clothingReceived?"✅":"▫️"} kledij ontvangen</span>
+     <span class="contract-mini-flag ${r.contract.clothingReturned?"ok":""}">${r.contract.clothingReturned?"✅":"▫️"} kledij terug</span>
+   </div>` : "";
+
    const editAction=builtIn && !ibeReminder
      ?`<span class="contract-known">Geen actie nodig</span>`
      :`<button data-contract="${r.type}" data-person="${esc(r.name)}" data-start="${r.period.start}" data-end="${r.period.end}">${r.needs?"Registreren":ibeReminder?"Nakijken / registreren":"Aanpassen"}</button>`;
@@ -8116,7 +8187,7 @@ function renderContracts(){
 
    return `<div class="contract-row ${rowClass}">
      <div><div class="contract-person">${esc(r.name)}</div><div class="contract-meta">${r.period.dates.length} geplande dag${r.period.dates.length===1?"":"en"} · ${esc(r.period.label||r.period.start.slice(0,7))}</div></div>
-     <div class="contract-status">${status}<div class="contract-meta">Planning: ${contractDate(r.period.start)} – ${contractDate(r.period.end)}</div></div>
+     <div class="contract-status">${status}<div class="contract-meta">Planning: ${contractDate(r.period.start)} – ${contractDate(r.period.end)}</div>${flags}</div>
      <div class="contract-actions">${action}</div>
    </div>`;
  }).join(""):'<div class="empty">Geen ingeplande personen gevonden.</div>';
@@ -8125,20 +8196,27 @@ function renderContracts(){
  renderHiddenContractPeople();
 }
 function openContractEdit(type,name,start,end=""){
- contractEditing={type,name};
+ const existing=contractRecordForPeriod(type,name,start);
+ contractEditing={type,name,recordId:existing?._id||""};
  $("contractPerson").value=name;
- $("contractStart").value=start;
+ $("contractStart").value=existing?.start||start;
 
  // Standaard nemen we de laatste ingeplande dag van deze werkperiode.
  // Als die ontbreekt, vallen we terug op het einde van de startmaand.
- if(end){
+ if(existing?.end){
+   $("contractEnd").value=existing.end;
+ }else if(end){
    $("contractEnd").value=end;
  }else{
    const d=new Date(start+"T12:00:00");
    $("contractEnd").value=ymd(new Date(d.getFullYear(),d.getMonth()+1,0));
  }
 
- $("contractNote").value="";
+ $("contractType").value=existing?.contractType||"";
+ $("contractSigned").checked=!!existing?.contractSigned;
+ $("clothingReceived").checked=!!existing?.clothingReceived;
+ $("clothingReturned").checked=!!existing?.clothingReturned;
+ $("contractNote").value=existing?.note||"";
  $("contractEditTitle").textContent=`Contract registreren · ${name}`;
  $("contractEditModal").classList.add("show");
 }
@@ -8166,23 +8244,30 @@ async function restoreContractPerson(id){
 
 async function saveContractRecord(){
  if(!contractEditing)return;
- const start=$("contractStart").value,end=$("contractEnd").value,note=$("contractNote").value.trim();
- if(!start||!end)return alert("Vul begin- en einddatum in.");if(end<start)return alert("Einddatum moet na begindatum liggen.");
+ const start=$("contractStart").value,end=$("contractEnd").value;
+ const contractType=$("contractType").value.trim(),note=$("contractNote").value.trim();
+ const contractSigned=$("contractSigned").checked;
+ const clothingReceived=$("clothingReceived").checked;
+ const clothingReturned=$("clothingReturned").checked;
+ if(!start||!end)return alert("Vul begin- en einddatum in.");
+ if(end<start)return alert("Einddatum moet na begindatum liggen.");
+ const payload={
+   type:contractEditing.type,person:contractEditing.name,start,end,note,contractType,
+   contractSigned,clothingReceived,clothingReturned,
+   updatedAt:new Date().toISOString(),updatedBy:user?.email||""
+ };
  try{
-   await addDoc(collection(db,"contracts"),{
-     type:contractEditing.type,
-     person:contractEditing.name,
-     start,end,note,
-     updatedAt:new Date().toISOString(),
-     updatedBy:user?.email||""
-   });
+   if(contractEditing.recordId)await setDoc(doc(db,"contracts",contractEditing.recordId),payload,{merge:true});
+   else await addDoc(collection(db,"contracts"),payload);
    $("contractEditModal").classList.remove("show");
    setTimeout(()=>{
      updateContractBadge();
      if($("contractsModal")?.classList.contains("show"))renderContracts();
+     maybeShowStudentWorkdayReminder();
    },80);
  }catch(e){alert("Opslaan mislukt: "+e.message)}
 }
+
 
 
 
@@ -9380,6 +9465,7 @@ $("studentWeekBtn").onclick=()=>{
 };
 $("studentDate").onchange=()=>{renderStudentDay();renderStudentWeek()};
 $("studentPerson").onchange=()=>{recordAppUsage("student",$("studentPerson").value,"open");updateDailyPlanningPreferenceUI();renderStudentDay();renderStudentWeek()};
+$("studentPerson").addEventListener("change",()=>setTimeout(maybeShowStudentWorkdayReminder,120));
 
 function openStudentShift(x=null){
  if(!isPlannerAdmin())return;
@@ -9751,6 +9837,7 @@ setTimeout(refreshRealtimeAlertState,1500);
 setInterval(refreshRealtimeAlertState,30000);
 document.addEventListener("visibilitychange",()=>{
  if(!document.hidden)refreshRealtimeAlertState();
+ setTimeout(maybeShowStudentWorkdayReminder,150);
 });
 window.addEventListener("focus",refreshRealtimeAlertState);
 window.addEventListener("pageshow",refreshRealtimeAlertState);
