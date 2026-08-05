@@ -3720,6 +3720,19 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 .crew-member-note{font-size:11px;color:#64748b;line-height:1.35}
 @media(max-width:720px){.crew-zone-options{grid-template-columns:repeat(2,minmax(0,1fr))}.crew-contact-row{grid-template-columns:1fr!important}}
 </style>
+
+<style id="v126-zone-management">
+.zone-manager-modal{width:min(760px,96vw);max-height:90vh;overflow:auto}
+.zone-manager-tools{display:grid;grid-template-columns:1fr 130px auto;gap:8px;margin:10px 0 14px}
+.zone-manager-list{display:grid;gap:8px}
+.zone-manager-row{display:grid;grid-template-columns:minmax(160px,1fr) 90px auto auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.zone-manager-row input[type="text"]{width:100%}
+.zone-manager-row input[type="color"]{width:54px;height:38px;padding:3px}
+.zone-manager-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800}
+.zone-manager-toggle input{width:auto}
+.zone-manager-note{font-size:11px;color:var(--muted);line-height:1.35;margin-top:8px}
+@media(max-width:620px){.zone-manager-tools{grid-template-columns:1fr}.zone-manager-row{grid-template-columns:1fr auto}.zone-manager-row input[type="text"]{grid-column:1/-1}.zone-manager-toggle{justify-self:start}}
+</style>
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -4105,6 +4118,9 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
       </button>
       <button id="crewContactsBtn" class="admin-tool-card tool-lime">
         <span class="tool-icon">👥</span><span class="tool-copy"><b>Medewerkers beheren</b><small>Beheer namen, nummers en wie ingepland kan worden.</small></span><span class="tool-arrow">›</span>
+      </button>
+      <button id="zonesManageBtn" class="admin-tool-card tool-purple" type="button">
+        <span class="tool-icon">📍</span><span class="tool-copy"><b>Zones beheren</b><small>Voeg zones toe, zet ze uit of verwijder eigen zones.</small></span><span class="tool-arrow">›</span>
       </button>
       <button id="whatsappGroupBtn" class="admin-tool-card tool-teal">
         <span class="tool-icon">📣</span><span class="tool-copy"><b>Planning publiceren</b><small>Stuur één groepsbericht wanneer een periode klaar is.</small></span><span class="tool-arrow">›</span>
@@ -4717,6 +4733,21 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   </div>
 </div></div>
 
+<div id="zonesManageModal" class="modalback"><div class="modal zone-manager-modal">
+  <div class="year-head">
+    <div><h2>📍 Zones beheren</h2><div class="year-sub">Nieuwe zones worden gedeeld met alle toestellen. Uitgeschakelde of verwijderde zones verdwijnen uit keuzelijsten; historische shifts blijven zichtbaar.</div></div>
+    <button id="closeZonesManageBtn" type="button">Sluiten</button>
+  </div>
+  <div class="zone-manager-tools">
+    <input id="newZoneName" type="text" placeholder="Naam nieuwe zone">
+    <input id="newZoneColor" type="color" value="#dfeeff" aria-label="Kleur nieuwe zone">
+    <button id="addZoneBtn" class="primary" type="button">+ Zone toevoegen</button>
+  </div>
+  <div id="zonesManageList" class="zone-manager-list"></div>
+  <div class="zone-manager-note">PRO, ROOKIE, 2.0 en STANDBY zijn kernzones en kunnen worden uitgeschakeld, maar niet definitief verwijderd. VERLOF blijft een systeemoptie.</div>
+  <div class="modalactions"><button id="saveZonesBtn" class="success" type="button">Zones opslaan</button></div>
+</div></div>
+
 <div id="dayCopyModal" class="modalback"><div class="modal">
   <h2>Dag kopiëren</h2>
   <p>Kopieer alle shifts van de gekozen dag naar een andere datum.</p>
@@ -4810,7 +4841,19 @@ let cableCrewMessaging=null;
 let cableCrewMessagingReady=false;
 let cableCrewForegroundUnsub=null;
 const $=id=>document.getElementById(id);
-const zones=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS","VERLOF"];
+const DEFAULT_ZONE_DEFS=[
+ {name:"PRO",color:"#f4cccc",active:true,core:true},
+ {name:"ROOKIE",color:"#d9ead3",active:true,core:true},
+ {name:"2.0",color:"#d9e6f7",active:true,core:true},
+ {name:"STANDBY",color:"#fff2cc",active:true,core:true},
+ {name:"FOIL",color:"#e6dcf7",active:true,core:false},
+ {name:"TT / SP / KIDSSESSION",color:"#d9eeee",active:true,core:false},
+ {name:"SCHOOL",color:"#dfeeff",active:true,core:false},
+ {name:"SCHOOL / SPLASH",color:"#e6f4ff",active:true,core:false},
+ {name:"KLUS",color:"#eeeeee",active:true,core:false}
+];
+let crewZoneDefs=DEFAULT_ZONE_DEFS.map(x=>({...x}));
+let zones=[...crewZoneDefs.map(x=>x.name),"VERLOF"];
 const css={"PRO":"pro","ROOKIE":"rookie","2.0":"two","STANDBY":"standby","FOIL":"foil","TT / SP / KIDSSESSION":"tt","SCHOOL":"school","SCHOOL / SPLASH":"schoolsplash","KLUS":"klus","VERLOF":"verlof"};
 let shifts=[], fallbackShifts=[], firestoreReady=false, user=null, editMode=false, editing=null, currentView="day", crewMessages=[], shiftsInitialized=false, messagesInitialized=false, previousShiftMap=new Map(), yearViewYear=new Date().getFullYear(), adminPlanningFilterChosen=false, crewContacts=new Map(), crewDirectory=new Map(), crewContactsUnsub=null,
 studentShifts=[], studentDirectory=new Map(), studentShiftUnsub=null, studentDirectoryUnsub=null,
@@ -4821,7 +4864,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 function mondayOf(k){const d=new Date(k+"T12:00:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
 function label(k){return new Date(k+"T12:00:00").toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-function sorted(a){return [...a].sort((x,y)=>x.date.localeCompare(y.date)||x.start.localeCompare(y.start)||x.zone.localeCompare(y.zone)||x.employee.localeCompare(y.employee))}
+function sorted(a){return [...a].sort((x,y)=>String(x.date||"").localeCompare(String(y.date||""))||String(x.start||"").localeCompare(String(y.start||""))||String(x.zone||"").localeCompare(String(y.zone||""))||String(x.employee||"").localeCompare(String(y.employee||"")))}
 function visibleShifts(){const n=$("myEmployee").value;const base=normalCrewShifts();return n?base.filter(x=>x.employee===n):base}
 
 // Instelbaar door Nick en Arno: afgelopen shifts van vandaag wel of niet tonen in "Iedereen".
@@ -5153,7 +5196,54 @@ function renderMonthTemplateDraft(){
  $("applyMonthTemplateBtn").disabled=!(ready.length||replacements.length);
 }
 
-const CREW_PLANNING_ZONES=["PRO","ROOKIE","VERHUUR","2.0","STANDBY","SCHOOL","SCHOOL / SPLASH","SESSIES"];
+let CREW_PLANNING_ZONES=["PRO","ROOKIE","VERHUUR","2.0","STANDBY","SCHOOL","SCHOOL / SPLASH","SESSIES"];
+const ZONE_CONFIG_DOC_ID="__cablecrew_zone_config__";
+function activeZoneDefs(){return crewZoneDefs.filter(z=>z.active!==false)}
+function activeZoneNames(){return activeZoneDefs().map(z=>z.name)}
+function zoneDef(name){return crewZoneDefs.find(z=>z.name===name)||{name,color:"#e8eef3",active:true,core:false}}
+function zoneHeaderStyle(name){return `background:${zoneDef(name).color||"#e8eef3"}`}
+function refreshZoneDerivedLists(){
+ const active=activeZoneNames();
+ const historical=[...new Set(shifts.filter(x=>x.recordType!=="activity"&&x.recordType!=="zoneConfig").map(x=>x.zone).filter(Boolean))];
+ zones=[...new Set([...active,...historical,"VERLOF"])];
+ MULTI_SHIFT_ZONES=[...active];
+ SESSION_ZONES=[...active.filter(z=>z!=="VERLOF")];
+ CREW_PLANNING_ZONES=[...new Set([...active,"VERHUUR","SESSIES"])];
+ refreshShiftZoneSelect();
+}
+function refreshShiftZoneSelect(selected){
+ const sel=$("editZone");if(!sel)return;
+ const keep=selected||sel.value||"PRO";
+ const opts=[...activeZoneNames(),"VERLOF"];
+ if(keep&&!opts.includes(keep))opts.push(keep);
+ sel.innerHTML=opts.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join("");
+ sel.value=opts.includes(keep)?keep:(opts[0]||"VERLOF");
+}
+function applyZoneConfig(list){
+ if(Array.isArray(list)&&list.length){
+   const cleaned=list.filter(x=>x&&typeof x.name==="string"&&x.name.trim()).map(x=>({name:x.name.trim(),color:x.color||"#e8eef3",active:x.active!==false,core:!!x.core}));
+   const byName=new Map(cleaned.map(x=>[x.name,x]));
+   DEFAULT_ZONE_DEFS.forEach(d=>{if(!byName.has(d.name))cleaned.push({...d,active:false})});
+   crewZoneDefs=cleaned;
+ }else crewZoneDefs=DEFAULT_ZONE_DEFS.map(x=>({...x}));
+ refreshZoneDerivedLists();
+}
+function renderZonesManager(){
+ const list=$("zonesManageList");if(!list)return;
+ list.innerHTML=crewZoneDefs.map((z,i)=>`<div class="zone-manager-row" data-zone-index="${i}">
+   <input type="text" data-zone-name value="${esc(z.name)}" ${z.core?'readonly':''}>
+   <input type="color" data-zone-color value="${esc(z.color||'#e8eef3')}">
+   <label class="zone-manager-toggle"><input type="checkbox" data-zone-active ${z.active!==false?'checked':''}> Actief</label>
+   ${z.core?'<span style="font-size:11px;color:var(--muted);font-weight:800">Kernzone</span>':`<button type="button" class="danger" data-delete-zone="${i}" style="padding:7px 9px;font-size:11px">Verwijderen</button>`}
+ </div>`).join("");
+ list.querySelectorAll('[data-delete-zone]').forEach(btn=>btn.onclick=()=>{const i=Number(btn.dataset.deleteZone);const z=crewZoneDefs[i];if(!z)return;if(!confirm(`${z.name} verwijderen uit de keuzelijsten?\n\nBestaande shifts in deze zone blijven zichtbaar.`))return;crewZoneDefs.splice(i,1);renderZonesManager()});
+}
+async function saveZoneConfiguration(){
+ const rows=[...document.querySelectorAll('#zonesManageList [data-zone-index]')];
+ const defs=rows.map(row=>{const idx=Number(row.dataset.zoneIndex),old=crewZoneDefs[idx]||{};return {name:(row.querySelector('[data-zone-name]')?.value||old.name||'').trim(),color:row.querySelector('[data-zone-color]')?.value||old.color||'#e8eef3',active:!!row.querySelector('[data-zone-active]')?.checked,core:!!old.core}}).filter(x=>x.name);
+ const seen=new Set();for(const z of defs){const k=z.name.toLowerCase();if(seen.has(k))return alert(`Zone ${z.name} staat dubbel in de lijst.`);seen.add(k)}
+ try{await setDoc(doc(db,'shifts',ZONE_CONFIG_DOC_ID),{recordType:'zoneConfig',zones:defs,date:'9999-12-31',start:'00:00',end:'00:00',zone:'__CONFIG__',employee:'__CONFIG__',updatedAt:serverTimestamp(),updatedBy:user?.email||''});applyZoneConfig(defs);$('zonesManageModal').classList.remove('show');renderAll();alert('Zones opgeslagen.')}catch(e){alert('Zones opslaan mislukt: '+e.message)}
+}
 function crewMemberSettings(name){
  const d=crewDirectory.get(name)||{};
  const defaultPlannable=normalizedPersonName(name)!==normalizedPersonName("Ann-Sophy");
@@ -5398,7 +5488,7 @@ function renderDay(){
      return "";
    }
 
-   return `<section class="zone ${css[z]}"><h2>${esc(z)}</h2>${relevantBlocks.map(x=>activityBlockHtml(x,false,z)).join("")}${rows.map(shiftHtml).join("")}</section>`;
+   return `<section class="zone ${css[z]||""}"><h2 style="${zoneHeaderStyle(z)}">${esc(z)}</h2>${relevantBlocks.map(x=>activityBlockHtml(x,false,z)).join("")}${rows.map(shiftHtml).join("")}</section>`;
  }).join("");
 
  if(!vacationRows.length && !zoneHtml){
@@ -5471,7 +5561,7 @@ function renderWeek(){
          rows.length>0
        );
      }
-     if(rows.length||blocks.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="background:var(--${css[z]})">${esc(z)}</div>${blocks.map(x=>activityBlockHtml(x,true,z)).join("")}${rows.map(x=>{const ch=shiftChangeState(x._id);return `<div class="mini-shift ${editMode?'editable':''}${ch?' has-planning-change':''}" data-id="${esc(x._id||'')}"><b>${ch?'<span class="mini-change-dot"></span>':''}${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}${ch?` <span class="mini-change-label" data-ack-shift="${esc(x._id||'')}">${ch}</span>`:""}</div>`}).join("")}</div>`;
+     if(rows.length||blocks.length)daysHtml+=`<div class="mini-zone"><div class="mini-title" style="${zoneHeaderStyle(z)}">${esc(z)}</div>${blocks.map(x=>activityBlockHtml(x,true,z)).join("")}${rows.map(x=>{const ch=shiftChangeState(x._id);return `<div class="mini-shift ${editMode?'editable':''}${ch?' has-planning-change':''}" data-id="${esc(x._id||'')}"><b>${ch?'<span class="mini-change-dot"></span>':''}${esc(x.employee)}</b> ${esc(x.start)}–${esc(x.end)}${x.note?` <span class="mini-note">📝 ${esc(x.note)}</span>`:""}${ch?` <span class="mini-change-label" data-ack-shift="${esc(x._id||'')}">${ch}</span>`:""}</div>`}).join("")}</div>`;
    });
    daysHtml+=`</section>`;
  }
@@ -5761,7 +5851,7 @@ function updateWhatsAppShiftButton(){
 }
 
 
-const MULTI_SHIFT_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS"];
+let MULTI_SHIFT_ZONES=["PRO","ROOKIE","2.0","STANDBY","FOIL","TT / SP / KIDSSESSION","SCHOOL","SCHOOL / SPLASH","KLUS"];
 
 function multiShiftZoneOptions(selected="PRO"){
  return MULTI_SHIFT_ZONES.map(z=>`<option value="${esc(z)}"${z===selected?' selected':''}>${esc(z)}</option>`).join("");
@@ -5971,6 +6061,7 @@ async function saveActivity(){
 
 function openShift(x=null){
  editing=x;
+ refreshShiftZoneSelect(x?.zone||"PRO");
  if($("multiShiftRows"))$("multiShiftRows").innerHTML="";
  if($("multiShiftToggleWrap"))$("multiShiftToggleWrap").style.display=x?"none":"block";
  setMultiShiftMode(false);
@@ -6016,9 +6107,9 @@ function syncKeepAddingUi(){
 $("keepAdding")?.addEventListener("change",syncKeepAddingUi);
 $("addShiftBtn").onclick=()=>openShift();
 $("addActivityBtn").onclick=()=>openActivity();
-const SESSION_TYPES_STORAGE_KEY="cc_session_types_v125";
+const SESSION_TYPES_STORAGE_KEY="cc_session_types_v126";
 const DEFAULT_SESSION_TYPES=["Women Session","Daddy is Cool","UFO Session","BK","EK"];
-const SESSION_ZONES=["PRO","ROOKIE","VERHUUR","2.0","STANDBY"];
+let SESSION_ZONES=["PRO","ROOKIE","VERHUUR","2.0","STANDBY"];
 let sessionEditing=null;
 function getSessionTypes(){
   try{
@@ -8333,10 +8424,13 @@ onSnapshot(collection(db,"contracts"),snap=>{
 onSnapshot(collection(db,"shifts"),snap=>{
  firestoreReady=true;
 
+ const allOnline=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ const zoneConfig=allOnline.find(x=>x.recordType==="zoneConfig"||x._id===ZONE_CONFIG_DOC_ID);
+ applyZoneConfig(zoneConfig?.zones);
  if(shiftsInitialized && notificationsEnabled()){
    snap.docChanges().forEach(ch=>{
      const data={_id:ch.doc.id,...ch.doc.data()};
-     if(data.recordType==="activity")return;
+     if(data.recordType==="activity"||data.recordType==="zoneConfig")return;
      if(!relevantToMe(data))return;
 
      if(ch.type==="added"){
@@ -8353,10 +8447,10 @@ onSnapshot(collection(db,"shifts"),snap=>{
    });
  }
 
- const online=snap.docs.map(d=>({_id:d.id,...d.data()}));
+ const online=allOnline.filter(x=>x.recordType!=="zoneConfig"&&x._id!==ZONE_CONFIG_DOC_ID);
  previousShiftMap=new Map(online.map(x=>[x._id,{...x}]));
  if(online.length){
-   shifts=sorted(online);$("syncStatus").textContent="🟢 Live planning";
+   shifts=sorted(online);refreshZoneDerivedLists();$("syncStatus").textContent="🟢 Live planning";
  }else{
    shifts=sorted(fallbackShifts.map((x,i)=>({...x,_id:"fallback_"+i})));
    $("syncStatus").textContent=fallbackShifts.length?"🟠 Huidige JSON (nog niet online geïmporteerd)":"⚪ Nog geen planning";
@@ -8669,6 +8763,15 @@ function updateAdminLoginVisibility(){
 }
 
 
+
+$("zonesManageBtn")?.addEventListener("click",()=>{if(!isAdminUser())return;renderZonesManager();$("zonesManageModal").classList.add("show")});
+$("closeZonesManageBtn")?.addEventListener("click",()=>$("zonesManageModal").classList.remove("show"));
+$("addZoneBtn")?.addEventListener("click",()=>{
+ const name=($("newZoneName")?.value||"").trim();if(!name)return alert("Vul een zonenaam in.");
+ if(crewZoneDefs.some(z=>z.name.toLowerCase()===name.toLowerCase()))return alert("Deze zone bestaat al.");
+ crewZoneDefs.push({name,color:$("newZoneColor")?.value||"#dfeeff",active:true,core:false});$("newZoneName").value="";renderZonesManager();
+});
+$("saveZonesBtn")?.addEventListener("click",saveZoneConfiguration);
 
 function renderCrewContacts(){
  if(!isAdminUser())return;
