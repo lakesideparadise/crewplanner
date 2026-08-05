@@ -3875,6 +3875,49 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
   </div>
 </div>
 
+<div id="alarmRecipientsModal" class="modalback">
+  <div class="modal alarm-recipients-modal">
+    <div class="year-head">
+      <div>
+        <h2 id="alarmRecipientsTitle">🚨 Ontvangers kiezen</h2>
+        <div class="year-sub">Actieve medewerkers en standby zijn automatisch geselecteerd. Je kunt de selectie aanpassen.</div>
+      </div>
+      <button id="closeAlarmRecipientsBtn" type="button">Sluiten</button>
+    </div>
+    <div class="alarm-recipient-toolbar">
+      <button id="selectRecommendedAlarmRecipients" type="button">✓ Aanbevolen selectie</button>
+      <button id="selectAllAlarmRecipients" type="button">Iedereen</button>
+      <button id="clearAlarmRecipients" type="button">Selectie wissen</button>
+    </div>
+    <div id="alarmRecipientsContext" class="zone-alert-context"></div>
+    <div id="alarmRecipientsList" class="alarm-recipient-list"></div>
+    <div id="alarmRecipientsWarning" class="alarm-recipient-warning"></div>
+    <div class="modalactions">
+      <button id="cancelAlarmRecipientsBtn" type="button">Annuleren</button>
+      <button id="confirmAlarmRecipientsBtn" class="danger" type="button">🚨 Alarm activeren</button>
+    </div>
+  </div>
+</div>
+
+<div id="alarmWhatsAppModal" class="modalback">
+  <div class="modal alarm-whatsapp-modal">
+    <div class="year-head">
+      <div>
+        <h2>📲 WhatsApp-alarm</h2>
+        <div class="year-sub">Het alarm staat live in CableCrew. Open hieronder de chats; het bericht is al ingevuld.</div>
+      </div>
+      <button id="closeAlarmWhatsAppBtn" type="button">Klaar</button>
+    </div>
+    <div id="alarmWhatsAppSummary" class="zone-alert-context"></div>
+    <div id="alarmWhatsAppList" class="alarm-whatsapp-list"></div>
+    <div class="alarm-whatsapp-help">WhatsApp laat een webapp niet automatisch meerdere berichten verzenden. Per persoon hoef je alleen de chat te openen en op <b>Verzenden</b> te drukken.</div>
+    <div class="modalactions">
+      <button id="openOperatorsGroupBackup" type="button">💬 Operators-groep als back-up</button>
+      <button id="finishAlarmWhatsAppBtn" class="success" type="button">Klaar</button>
+    </div>
+  </div>
+</div>
+
 <div id="todoPhotoViewer" class="modalback">
   <div class="modal todo-photo-viewer-modal">
     <div class="todo-photo-viewer-head">
@@ -4616,6 +4659,27 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
     </div>
   </div>
 </div>
+
+<style id="v114-alarm-recipients">
+.alarm-recipients-modal,.alarm-whatsapp-modal{width:min(640px,96vw);max-height:90vh;overflow:auto}
+.alarm-recipient-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 10px}
+.alarm-recipient-toolbar button{padding:7px 9px;font-size:12px}
+.alarm-recipient-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.alarm-recipient-option{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:11px;padding:10px 11px;background:#fff;cursor:pointer}
+.alarm-recipient-option.recommended{border-color:#efb340;background:#fff9e8}
+.alarm-recipient-option input{width:19px;height:19px;flex:0 0 auto}
+.alarm-recipient-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
+.alarm-recipient-copy b{font-size:14px}
+.alarm-recipient-copy small{font-size:11px;color:var(--muted)}
+.alarm-recipient-warning{font-size:12px;font-weight:800;color:#9a3412;min-height:18px;margin-top:4px}
+.alarm-whatsapp-list{display:grid;gap:9px;margin:12px 0}
+.alarm-whatsapp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:10px 11px;background:#fff}
+.alarm-whatsapp-row.no-phone{opacity:.7}
+.alarm-whatsapp-row b{display:block}.alarm-whatsapp-row small{color:var(--muted);font-size:11px}
+.alarm-whatsapp-row a{display:inline-flex;text-decoration:none;padding:9px 11px;border-radius:9px;background:#168b52;color:#fff;font-weight:900;white-space:nowrap}
+.alarm-whatsapp-help{font-size:12px;line-height:1.4;color:var(--muted);background:#f6f8fa;border-radius:9px;padding:9px 10px}
+@media(max-width:620px){.alarm-recipient-list{grid-template-columns:1fr}.alarm-whatsapp-row{grid-template-columns:1fr}.alarm-whatsapp-row a{justify-content:center}}
+</style>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
@@ -6418,7 +6482,97 @@ function showAlarmRecipientToast(data){
  const body=names.length?`Alarm naar ${names.length} actieve medewerker${names.length===1?"":"s"}: ${names.join(", ")}`:"Geen actieve ontvangers gevonden.";
  if(typeof showToast==="function")showToast("🚨 Alarmontvangers",body,"important");
 }
-async function activateZoneAlert(type){
+let pendingAlarmType="";
+let lastAlarmWhatsAppMessage="";
+let lastAlarmWhatsAppRecipients=[];
+
+function allAlarmRecipientNames(){
+ const names=new Set(["Nick","Arno","Simon"]);
+ normalCrewShifts().forEach(x=>{if(x.employee)names.add(x.employee)});
+ crewDirectory.forEach((data,name)=>{if(data?.active!==false&&name)names.add(name)});
+ return [...names].sort((a,b)=>a.localeCompare(b,"nl"));
+}
+function recommendedAlarmRecipientNames(){
+ const names=new Set(["Nick","Arno","Simon",...activeAlarmRecipients()]);
+ return names;
+}
+function alarmRecipientReason(name){
+ const active=currentActiveCrewShiftsFor(name);
+ const zones=[...new Set(active.map(x=>normalizedAlarmZone(x.zone)))];
+ if(zones.length)return `Nu ingepland: ${zones.join(", ")}`;
+ if(["Nick","Arno","Simon"].includes(name))return "Vaste alarmverantwoordelijke";
+ return crewPhone(name)?"WhatsApp-nummer beschikbaar":"Niet actief ingepland";
+}
+function renderAlarmRecipients(){
+ const list=$("alarmRecipientsList");
+ const recommended=recommendedAlarmRecipientNames();
+ const names=allAlarmRecipientNames();
+ list.innerHTML=names.map(name=>{
+   const rec=recommended.has(name);
+   const phone=crewPhone(name);
+   return `<label class="alarm-recipient-option ${rec?"recommended":""}">
+     <input type="checkbox" value="${esc(name)}" ${rec?"checked":""}>
+     <span class="alarm-recipient-copy"><b>${esc(name)}</b><small>${esc(alarmRecipientReason(name))}${phone?" · 📱":" · geen nummer"}</small></span>
+   </label>`;
+ }).join("");
+ $("alarmRecipientsWarning").textContent=names.length?"":"Geen medewerkers gevonden.";
+}
+function applyAlarmRecipientSelection(mode){
+ const recommended=recommendedAlarmRecipientNames();
+ document.querySelectorAll('#alarmRecipientsList input[type="checkbox"]').forEach(cb=>{
+   cb.checked=mode==="all"?true:mode==="none"?false:recommended.has(cb.value);
+ });
+}
+function openAlarmRecipients(type){
+ const ctx=pendingZoneAlert;
+ if(!ctx)return;
+ pendingAlarmType=type;
+ $("zoneAlertModal").classList.remove("show");
+ $("alarmRecipientsTitle").textContent=`${alarmTypeIcon(type)} ${alarmTypeLabel(type)} · ontvangers kiezen`;
+ $("alarmRecipientsContext").textContent=`${ctx.person} · ${ctx.zone} · ${new Date().toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"})}`;
+ renderAlarmRecipients();
+ $("alarmRecipientsModal").classList.add("show");
+}
+function closeAlarmRecipients(){
+ $("alarmRecipientsModal").classList.remove("show");
+ pendingAlarmType="";
+ pendingZoneAlert=null;
+}
+function selectedAlarmRecipientNames(){
+ return [...document.querySelectorAll('#alarmRecipientsList input[type="checkbox"]:checked')].map(x=>x.value);
+}
+async function confirmAlarmRecipients(){
+ const selected=selectedAlarmRecipientNames();
+ if(!selected.length){
+   $("alarmRecipientsWarning").textContent="Selecteer minstens één ontvanger.";
+   return;
+ }
+ $("alarmRecipientsWarning").textContent="";
+ $("confirmAlarmRecipientsBtn").disabled=true;
+ try{await activateZoneAlert(pendingAlarmType,selected)}finally{$("confirmAlarmRecipientsBtn").disabled=false}
+}
+function alarmWhatsAppUrl(name,message){
+ const digits=whatsappDigits(crewPhone(name));
+ return digits?`https://wa.me/${digits}?text=${encodeURIComponent(message)}`:"";
+}
+function showAlarmWhatsAppRecipients(data,message){
+ lastAlarmWhatsAppMessage=message;
+ lastAlarmWhatsAppRecipients=[...(data.recipients||[])];
+ $("alarmWhatsAppSummary").textContent=`${alarmTypeLabel(data.type)} · ${data.zone} · ${data.timeLabel} · ${data.recipients.length} ontvanger${data.recipients.length===1?"":"s"}`;
+ $("alarmWhatsAppList").innerHTML=data.recipients.map(name=>{
+   const url=alarmWhatsAppUrl(name,message);
+   return `<div class="alarm-whatsapp-row ${url?"":"no-phone"}">
+     <div><b>${esc(name)}</b><small>${url?"Bericht staat automatisch klaar":"Geen WhatsApp-nummer ingesteld"}</small></div>
+     ${url?`<a href="${url}" target="_blank" rel="noopener">💬 Open WhatsApp</a>`:`<span>Nummer ontbreekt</span>`}
+   </div>`;
+ }).join("");
+ $("alarmWhatsAppModal").classList.add("show");
+}
+function closeAlarmWhatsApp(){
+ $("alarmWhatsAppModal").classList.remove("show");
+}
+
+async function activateZoneAlert(type,selectedRecipients=null){
  const ctx=pendingZoneAlert;
  if(!ctx)return;
  const active=currentActiveAlarmShiftsFor(ctx.person);
@@ -6436,17 +6590,19 @@ async function activateZoneAlert(type){
    date:realTodayKey(),
    timeLabel:now.toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"}),
    createdAt:now.toISOString(),active:true,test:alarmTestModeEnabled(),
-   recipients:activeAlarmRecipients(),recipientMode:"active-shifts-and-standby",pushRequested:true,pushVersion:"index106"
+   recipients:Array.isArray(selectedRecipients)?selectedRecipients:activeAlarmRecipients(),recipientMode:"manually-confirmed",pushRequested:false,pushVersion:"disabled"
  };
  $("zoneAlertModal").classList.remove("show");
+ $("alarmRecipientsModal")?.classList.remove("show");
  pendingZoneAlert=null;
+ pendingAlarmType="";
  startZoneAlarmSound(type);
  const msg=zoneAlertMessage(data);
  showAlarmRecipientToast(data);
  ensureAlarmNotificationPermission();
- // WhatsApp-groepen aanvaarden technisch geen vooraf ingevulde tekst via een uitnodigingslink.
- // CableCrew opent daarom de operatorgroep en houdt de tekst als nood-back-up op het klembord.
- openLakesideOperatorsGroup(msg);
+ // Toon per geselecteerde medewerker een persoonlijke WhatsApp-knop.
+ // De tekst staat automatisch klaar; alleen Verzenden blijft handmatig.
+ showAlarmWhatsAppRecipients(data,msg);
  try{
    const ref=await addDoc(collection(db,"zoneAlerts"),data);
    showZoneAlertBanner(data,ref.id);
@@ -7566,8 +7722,17 @@ $("saveAlarmReportBtn").onclick=saveAlarmReport;
 $("zoneAlertBtn").onclick=openZoneAlert;
 $("mobileNavAlert").onclick=openZoneAlert;
 $("cancelZoneAlertBtn").onclick=()=>{$("zoneAlertModal").classList.remove("show");pendingZoneAlert=null};
-$("medicalAlarmBtn").onclick=()=>activateZoneAlert("medical");
-$("technicalAlarmBtn").onclick=()=>activateZoneAlert("technical");
+$("medicalAlarmBtn").onclick=()=>openAlarmRecipients("medical");
+$("technicalAlarmBtn").onclick=()=>openAlarmRecipients("technical");
+$("closeAlarmRecipientsBtn").onclick=closeAlarmRecipients;
+$("cancelAlarmRecipientsBtn").onclick=closeAlarmRecipients;
+$("selectRecommendedAlarmRecipients").onclick=()=>applyAlarmRecipientSelection("recommended");
+$("selectAllAlarmRecipients").onclick=()=>applyAlarmRecipientSelection("all");
+$("clearAlarmRecipients").onclick=()=>applyAlarmRecipientSelection("none");
+$("confirmAlarmRecipientsBtn").onclick=confirmAlarmRecipients;
+$("closeAlarmWhatsAppBtn").onclick=closeAlarmWhatsApp;
+$("finishAlarmWhatsAppBtn").onclick=closeAlarmWhatsApp;
+$("openOperatorsGroupBackup").onclick=()=>{if(lastAlarmWhatsAppMessage)openLakesideOperatorsGroup(lastAlarmWhatsAppMessage)};
 
 $("todoAudienceFilter").onchange=renderTodo;
 $("todoAddBtn").onclick=()=>openTodoEdit();
