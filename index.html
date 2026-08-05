@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CableCrew Planner</title>
-<meta name="cablecrew-version" content="V13.96-SAFETY-ALARM-TYPES-2026-08-04">
+<meta name="cablecrew-version" content="V13.100-ALARM-ZONES-2026-08-05">
 <style>
 :root{
   --bg:#f2f6f9;--card:#fff;--line:#d6e0e8;--text:#102030;--muted:#64748b;--navy:#0f4b6d;
@@ -6151,10 +6151,20 @@ function currentActiveCrewShiftsFor(name){
    .sort((a,b)=>(a.start||"").localeCompare(b.start||""));
 }
 
+const DEFAULT_ALARM_ZONES=new Set(["PRO","ROOKIE","2.0"]);
+function normalizedAlarmZone(zone){
+ return String(zone||"").trim().toUpperCase();
+}
+function alarmAllowedForZone(zone){
+ return DEFAULT_ALARM_ZONES.has(normalizedAlarmZone(zone));
+}
+function currentActiveAlarmShiftsFor(name){
+ return currentActiveCrewShiftsFor(name).filter(x=>alarmAllowedForZone(x.zone));
+}
 function alarmCanBeActivatedNow(){
  const person=alertPersonName();
  if(!person)return false;
- return currentActiveCrewShiftsFor(person).length>0;
+ return currentActiveAlarmShiftsFor(person).length>0;
 }
 
 function updateZoneAlertButtonState(){
@@ -6180,14 +6190,18 @@ function updateZoneAlertButtonState(){
  }
  if(btn)btn.style.display="";
 
- const active=currentActiveCrewShiftsFor(person);
+ const active=currentActiveAlarmShiftsFor(person);
  const enabled=active.length>0;
  if(btn)btn.disabled=!enabled;
  if(mobileBtn)mobileBtn.disabled=!enabled;
 
  if(!enabled){
-   if(btn)btn.title="Alarm is alleen actief tijdens je ingeplande shift";
-   if(mobileBtn)mobileBtn.title="Alarm is alleen actief tijdens je ingeplande shift";
+   const anyActive=currentActiveCrewShiftsFor(person).length>0;
+   const reason=anyActive
+     ? "Alarm is alleen beschikbaar in PRO, ROOKIE of 2.0"
+     : "Alarm is alleen actief tijdens je ingeplande shift";
+   if(btn)btn.title=reason;
+   if(mobileBtn)mobileBtn.title=reason;
  }else{
    const zones=[...new Set(active.map(x=>x.zone))];
    const title=`Alarm actief · ${zones.join(", ")}`;
@@ -6232,9 +6246,12 @@ function openZoneAlert(){
    updateZoneAlertButtonState();
    return;
  }
- const active=currentActiveCrewShiftsFor(person);
+ const allActive=currentActiveCrewShiftsFor(person);
+ const active=currentActiveAlarmShiftsFor(person);
  if(!active.length){
-   alert("De alarmknop kan alleen gebruikt worden tijdens je ingeplande shift.");
+   alert(allActive.length
+     ? "Alarm niet beschikbaar. Je bent momenteel niet ingepland in PRO, ROOKIE of 2.0."
+     : "De alarmknop kan alleen gebruikt worden tijdens je ingeplande shift.");
    updateZoneAlertButtonState();
    return;
  }
@@ -6287,13 +6304,15 @@ function whatsappShareUrl(message){
 async function activateZoneAlert(type){
  const ctx=pendingZoneAlert;
  if(!ctx)return;
- const active=currentActiveCrewShiftsFor(ctx.person);
+ const active=currentActiveAlarmShiftsFor(ctx.person);
  if(!active.length){
    $("zoneAlertModal").classList.remove("show");
    pendingZoneAlert=null;
    updateZoneAlertButtonState();
-   return alert("Je actieve shift is intussen afgelopen. Het alarm werd niet verstuurd.");
+   return alert("Je shift in PRO, ROOKIE of 2.0 is intussen afgelopen. Het alarm werd niet verstuurd.");
  }
+ // Gebruik opnieuw de actuele alarmzone, zodat Standby of een andere gelijktijdige shift nooit gekozen wordt.
+ ctx.zone=active[0].zone;
  const now=new Date();
  const data={
    person:ctx.person,zone:ctx.zone,type,urgency:"urgent",
