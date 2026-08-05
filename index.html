@@ -1881,7 +1881,7 @@ body.jobstudent-viewer .planner-tabs{grid-template-columns:1fr 1fr!important}
 
 </style>
 
-<link rel="manifest" href="./manifest.webmanifest?v=107">
+<link rel="manifest" href="./manifest.webmanifest?v=109">
 <meta name="theme-color" content="#0f4b6d">
 <meta name="application-name" content="CableCrew">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3668,7 +3668,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 #alarmTestModeBtn.test-mode-on{outline:3px solid #e3b21b;background:#fff8d9}
 #alarmTestModeBtn.test-mode-on .tool-icon{background:#ffe89a}
 
-/* ===== V13.107 PUSH ACTIVATION BANNER ===== */
+/* ===== V13.109 PUSH ACTIVATION BANNER ===== */
 .push-setup-banner{
   max-width:1280px;margin:10px auto 0;padding:12px 14px;border-radius:14px;
   display:flex;align-items:center;gap:12px;background:#eef7ff;border:1px solid #b9d8f3;
@@ -3692,7 +3692,7 @@ body.contract-manager .admin-primary-action .edit-hint{display:none!important}
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
 <header><div class="header-inner">
-  <div class="brand-wrap"><img class="brand-logo" src="./icon-192.png?v=108" alt="CableCrew Lakeside-logo"><div class="brand">CableCrew Lakeside</div></div>
+  <div class="brand-wrap"><img class="brand-logo" src="./cablecrew_logo.png?v=109" alt="CableCrew Lakeside-logo"><div class="brand">CableCrew Lakeside</div></div>
   <div class="mobile-header-actions">
     <div id="mobileHeaderWeather" class="mobile-header-weather"></div>
     <button id="mobileAuthBtn" class="mobile-auth-btn" type="button" style="display:none">Login</button>
@@ -4629,7 +4629,7 @@ const firebaseConfig = {
 };
 
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
-const CABLECREW_VAPID_KEY="BPdFx5C4GB1qqICD16w6yW_wwp8L5a7s_zQvkwIegbsSgJISM_RI5tr1moKjc-PombUw6djYblZFlN35nLgZRC0";
+const CABLECREW_VAPID_KEY="BPdFx5C4GBlqqICD16wgyW_wwp8L5a7s_zQvkwIegbsSgJISM_R15tr1moKjc-PombUw6djYblZFlN35nLgZRC0";
 let cableCrewMessaging=null;
 let cableCrewMessagingReady=false;
 let cableCrewForegroundUnsub=null;
@@ -10281,7 +10281,7 @@ updateAdminLoginVisibility();
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js?v=107").catch(err => {
+    navigator.serviceWorker.register("./service-worker.js?v=109").catch(err => {
       console.warn("CableCrew service worker:", err);
     });
   });

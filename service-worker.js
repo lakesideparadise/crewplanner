@@ -1,5 +1,5 @@
-const CACHE="cablecrew-v108";
-const CORE=["./","./index.html","./manifest.webmanifest","./icon-192.png"];
+const CACHE="cablecrew-v109";
+const CORE=["./","./index.html","./manifest.webmanifest","./cablecrew_logo.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE).catch(()=>{})));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request).then(r=>r||caches.match("./index.html"))))});
@@ -7,5 +7,5 @@ importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js
 importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
 firebase.initializeApp({apiKey:"AIzaSyBdeGM27e5xNRGipmEeQzmTW4aNMrKtc3A",authDomain:"cable-crew-planner.firebaseapp.com",projectId:"cable-crew-planner",storageBucket:"cable-crew-planner.firebasestorage.app",messagingSenderId:"179845869941",appId:"1:179845869941:web:3a4c640053c9eaf9f9e33c"});
 const messaging=firebase.messaging();
-messaging.onBackgroundMessage(payload=>{const n=payload.notification||{};const d=payload.data||{};const title=n.title||d.title||"CableCrew alarm";const options={body:n.body||d.body||"Open CableCrew voor meer informatie.",icon:"./icon-192.png",badge:"./icon-192.png",tag:d.alertId?`alarm-${d.alertId}`:"cablecrew",renotify:true,requireInteraction:d.type==="medical",data:{url:d.url||"./index.html",alertId:d.alertId||""}};self.registration.showNotification(title,options)});
+messaging.onBackgroundMessage(payload=>{const n=payload.notification||{};const d=payload.data||{};const title=n.title||d.title||"CableCrew alarm";const options={body:n.body||d.body||"Open CableCrew voor meer informatie.",icon:"./cablecrew_logo.png",badge:"./cablecrew_logo.png",tag:d.alertId?`alarm-${d.alertId}`:"cablecrew",renotify:true,requireInteraction:d.type==="medical",data:{url:d.url||"./index.html",alertId:d.alertId||""}};self.registration.showNotification(title,options)});
 self.addEventListener("notificationclick",event=>{event.notification.close();const url=event.notification.data?.url||"./index.html";event.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(list=>{for(const c of list){if("focus" in c){c.navigate(url);return c.focus()}}return clients.openWindow(url)}))});
