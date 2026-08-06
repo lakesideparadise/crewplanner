@@ -5254,7 +5254,7 @@ function refreshZoneDerivedLists(){
  const historical=[...new Set(shifts.filter(x=>x.recordType!=="activity"&&x.recordType!=="zoneConfig").map(x=>x.zone).filter(Boolean))];
  zones=[...new Set([...active,...historical,"VERLOF"])];
  MULTI_SHIFT_ZONES=[...active];
- SESSION_ZONES=[...active.filter(z=>{const key=String(z||"").trim().toUpperCase();return key!=="VERLOF"&&!new Set(["FOIL","TT","SP","KLUS"]).has(key)})];
+ SESSION_ZONES=[...active.filter(z=>{const key=String(z||"").trim().toUpperCase();return key!=="VERLOF"&&!(["FOIL","KLUS","KIDSSESSION","KIDS SESSION"].some(x=>key.includes(x))||/(^|\s|\/)TT(\s|\/|$)/.test(key)||/(^|\s|\/)SP(\s|\/|$)/.test(key))})];
  CREW_PLANNING_ZONES=[...new Set([...active,"VERHUUR","SESSIES"])];
  refreshShiftZoneSelect();
 }
